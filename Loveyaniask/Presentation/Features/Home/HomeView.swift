@@ -2,7 +2,7 @@
 //  HomeView.swift
 //  Loveyaniask
 //
-//  Ana ekran: kaç gündür birlikte olduğumuzu gösterir.
+//  Ana ekran. En üstte canlı "birlikteyiz" sayaç kartı.
 //  Sadece görünümden sorumlu; tüm mantık HomeViewModel'de.
 //
 
@@ -20,26 +20,14 @@ struct HomeView: View {
             AppColors.background
                 .ignoresSafeArea()
 
-            VStack(spacing: AppSpacing.md) {
-                Image(systemName: "heart.fill")
-                    .font(.system(size: 64))
-                    .foregroundStyle(AppColors.primary)
+            ScrollView {
+                VStack(spacing: AppSpacing.lg) {
+                    TimeTogetherCard(viewModel: viewModel)
 
-                Text("\(viewModel.daysTogether)")
-                    .font(.system(size: 96, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColors.textPrimary)
-                    .contentTransition(.numericText())
-
-                Text("gün birlikteyiz")
-                    .font(.title3)
-                    .foregroundStyle(AppColors.textSecondary)
-
-                Text("\(viewModel.formattedStartDate)'dan beri")
-                    .font(.subheadline)
-                    .foregroundStyle(AppColors.textSecondary)
-                    .padding(.top, AppSpacing.xs)
+                    // İleride: diğer kartlar (anılar, istek listesi, ...) buraya gelecek.
+                }
+                .padding(AppSpacing.md)
             }
-            .padding(AppSpacing.lg)
         }
         .onAppear {
             viewModel.onAppear()
@@ -50,6 +38,8 @@ struct HomeView: View {
 #Preview {
     let dataSource = UserDefaultsCoupleDataSource()
     let repository = CoupleRepositoryImpl(localDataSource: dataSource)
-    let useCase = GetDaysTogetherUseCase(repository: repository)
-    return HomeView(viewModel: HomeViewModel(getDaysTogether: useCase))
+    return HomeView(viewModel: HomeViewModel(
+        getDaysTogether: GetDaysTogetherUseCase(repository: repository),
+        getTimeTogether: GetTimeTogetherUseCase(repository: repository)
+    ))
 }

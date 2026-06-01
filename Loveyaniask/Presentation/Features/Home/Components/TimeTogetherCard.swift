@@ -1,0 +1,78 @@
+//
+//  TimeTogetherCard.swift
+//  Loveyaniask
+//
+//  Ana sayfanın üstündeki canlı sayaç kartı.
+//  TimelineView ile her saniye yeniden çizilir → saniye saniye ilerler.
+//
+
+import SwiftUI
+
+struct TimeTogetherCard: View {
+    let viewModel: HomeViewModel
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            content(for: viewModel.timeTogether(at: context.date))
+        }
+    }
+
+    private func content(for time: TimeTogether) -> some View {
+        VStack(spacing: AppSpacing.lg) {
+            HStack(spacing: AppSpacing.xs) {
+                Image(systemName: "heart.fill")
+                    .font(.subheadline)
+                Text("Birlikteyiz")
+                    .font(.headline)
+            }
+            .foregroundStyle(.white.opacity(0.95))
+
+            HStack(alignment: .top, spacing: AppSpacing.xs) {
+                unit(value: time.days, label: "Gün")
+                separator
+                unit(value: time.hours, label: "Saat", padded: true)
+                separator
+                unit(value: time.minutes, label: "Dakika", padded: true)
+                separator
+                unit(value: time.seconds, label: "Saniye", padded: true)
+            }
+
+            Text("\(viewModel.formattedStartDate)'dan beri")
+                .font(.footnote)
+                .foregroundStyle(.white.opacity(0.8))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, AppSpacing.xl)
+        .padding(.horizontal, AppSpacing.md)
+        .background(
+            LinearGradient(
+                colors: [AppColors.primary, AppColors.secondary],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .shadow(color: AppColors.primary.opacity(0.35), radius: 20, x: 0, y: 10)
+    }
+
+    private func unit(value: Int, label: String, padded: Bool = false) -> some View {
+        VStack(spacing: AppSpacing.xs) {
+            Text(padded ? String(format: "%02d", value) : "\(value)")
+                .font(.system(size: 32, weight: .bold, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(.white)
+                .contentTransition(.numericText())
+
+            Text(label.uppercased())
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.8))
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var separator: some View {
+        RoundedRectangle(cornerRadius: 1)
+            .fill(.white.opacity(0.25))
+            .frame(width: 1, height: 34)
+    }
+}

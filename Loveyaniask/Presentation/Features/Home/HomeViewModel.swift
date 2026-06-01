@@ -2,7 +2,7 @@
 //  HomeViewModel.swift
 //  Loveyaniask
 //
-//  Home ekranının sunum mantığı. Use case'i çağırır, sonucu
+//  Home ekranının sunum mantığı. Use case'leri çağırır, sonucu
 //  View'ın göstereceği biçime dönüştürür. View'da iş mantığı kalmaz.
 //
 
@@ -11,19 +11,26 @@ import Observation
 
 @Observable
 final class HomeViewModel {
-    private(set) var daysTogether: Int = 0
     private(set) var startDate: Date = Date()
 
     private let getDaysTogether: GetDaysTogetherUseCase
+    private let getTimeTogether: GetTimeTogetherUseCase
 
-    init(getDaysTogether: GetDaysTogetherUseCase) {
+    init(
+        getDaysTogether: GetDaysTogetherUseCase,
+        getTimeTogether: GetTimeTogetherUseCase
+    ) {
         self.getDaysTogether = getDaysTogether
+        self.getTimeTogether = getTimeTogether
     }
 
     func onAppear() {
-        let output = getDaysTogether.execute()
-        daysTogether = output.days
-        startDate = output.startDate
+        startDate = getDaysTogether.execute().startDate
+    }
+
+    /// Canlı sayaç için: verilen ana kadar geçen süreyi döndürür.
+    func timeTogether(at date: Date) -> TimeTogether {
+        getTimeTogether.execute(asOf: date)
     }
 
     /// Başlangıç tarihinin Türkçe, okunabilir hâli (örn. "10 Mayıs 2026").

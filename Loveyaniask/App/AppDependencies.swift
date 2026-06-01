@@ -13,7 +13,9 @@ struct AppDependencies {
     func makeHomeViewModel() -> HomeViewModel {
         let dataSource = UserDefaultsCoupleDataSource()
         let repository = CoupleRepositoryImpl(localDataSource: dataSource)
-        let getDaysTogether = GetDaysTogetherUseCase(repository: repository)
-        return HomeViewModel(getDaysTogether: getDaysTogether)
+        return HomeViewModel(
+            getDaysTogether: GetDaysTogetherUseCase(repository: repository),
+            getTimeTogether: GetTimeTogetherUseCase(repository: repository)
+        )
     }
 }
