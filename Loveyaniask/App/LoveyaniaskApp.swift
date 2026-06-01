@@ -2,7 +2,7 @@
 //  LoveyaniaskApp.swift
 //  Loveyaniask
 //
-//  Created by Şevval Ay Alış on 31.05.2026.
+//  Uygulamanın giriş noktası (entry point).
 //
 
 import SwiftUI
@@ -11,7 +11,7 @@ import SwiftUI
 struct LoveyaniaskApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
         }
     }
 }
