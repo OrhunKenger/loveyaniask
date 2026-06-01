@@ -2,35 +2,16 @@
 //  RootView.swift
 //  Loveyaniask
 //
-//  Uygulamanın kök ekranı. Şimdilik iskeletin/tasarım sisteminin
-//  çalıştığını doğrulamak için basit bir karşılama ekranı.
+//  Uygulamanın kök ekranı / kabuğu. İleride sekmeler (TabView)
+//  ve gezinme (navigation) burada yaşayacak. Şimdilik Home'u gösterir.
 //
 
 import SwiftUI
 
 struct RootView: View {
+    let homeViewModel: HomeViewModel
+
     var body: some View {
-        ZStack {
-            AppColors.background
-                .ignoresSafeArea()
-
-            VStack(spacing: AppSpacing.md) {
-                Image(systemName: "heart.fill")
-                    .font(.system(size: 72))
-                    .foregroundStyle(AppColors.primary)
-
-                Text("loveyaniask")
-                    .font(.largeTitle.bold())
-                    .foregroundStyle(AppColors.textPrimary)
-
-                Text("birlikte, hep birlikte")
-                    .font(.body)
-                    .foregroundStyle(AppColors.textSecondary)
-            }
-        }
+        HomeView(viewModel: homeViewModel)
     }
-}
-
-#Preview {
-    RootView()
 }
