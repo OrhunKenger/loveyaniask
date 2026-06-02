@@ -46,7 +46,7 @@ struct MoodView: View {
                 .font(.title2.bold())
                 .foregroundStyle(AppColors.textPrimary)
                 .multilineTextAlignment(.center)
-            Text("Bir güne dokunup ruh halinizi seçin")
+            Text("Bugünün ruh halini seç")
                 .font(.subheadline)
                 .foregroundStyle(AppColors.textSecondary)
         }
@@ -137,8 +137,11 @@ struct MoodView: View {
                 .stroke(isToday ? AppColors.primary : .clear, lineWidth: 1.2)
         )
         .contentShape(Rectangle())
+        .opacity(viewModel.isToday(date) ? 1 : 0.55)
         .onTapGesture {
-            viewModel.select(date)
+            if viewModel.isToday(date) {
+                viewModel.select(date)
+            }
         }
     }
 

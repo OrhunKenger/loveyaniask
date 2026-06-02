@@ -2,7 +2,8 @@
 //  MoodDayEditorSheet.swift
 //  Loveyaniask
 //
-//  Bir gün için ikinizin ruh halini (dropdown) ve fotoğrafını düzenleme ekranı.
+//  Bir gün için ruh hali + fotoğraf. Sadece KENDİ kartın düzenlenebilir,
+//  partnerinki salt-okunur (görüntülenir).
 //
 
 import SwiftUI
@@ -18,7 +19,12 @@ struct MoodDayEditorSheet: View {
             ScrollView {
                 VStack(spacing: AppSpacing.lg) {
                     ForEach(Partner.allCases) { partner in
-                        PartnerMoodCard(viewModel: viewModel, date: date, partner: partner)
+                        PartnerMoodCard(
+                            viewModel: viewModel,
+                            date: date,
+                            partner: partner,
+                            editable: partner == .me
+                        )
                     }
                 }
                 .padding(AppSpacing.md)
@@ -40,6 +46,7 @@ private struct PartnerMoodCard: View {
     let viewModel: MoodViewModel
     let date: Date
     let partner: Partner
+    let editable: Bool
 
     @State private var pickerItem: PhotosPickerItem?
 
@@ -49,8 +56,13 @@ private struct PartnerMoodCard: View {
                 .font(.headline)
                 .foregroundStyle(AppColors.textPrimary)
 
-            moodMenu
-            photoArea
+            if editable {
+                moodMenu
+                photoArea
+            } else {
+                readOnlyMood
+                readOnlyPhoto
+            }
         }
         .padding(AppSpacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -58,6 +70,8 @@ private struct PartnerMoodCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .shadow(color: .black.opacity(0.05), radius: 8, y: 3)
     }
+
+    // MARK: - Düzenlenebilir (kendi kartın)
 
     private var moodMenu: some View {
         Menu {
@@ -121,6 +135,39 @@ private struct PartnerMoodCard: View {
                     }
                 }
             }
+        }
+    }
+
+    // MARK: - Salt-okunur (partnerin kartı)
+
+    private var readOnlyMood: some View {
+        HStack {
+            if let mood = viewModel.mood(for: date, partner: partner) {
+                Text(mood.emoji)
+                Text(mood.label)
+                    .foregroundStyle(AppColors.textPrimary)
+            } else {
+                Text("Henüz bir şey paylaşmadı")
+                    .font(.subheadline)
+                    .foregroundStyle(AppColors.textSecondary)
+            }
+            Spacer()
+        }
+        .padding()
+        .background(AppColors.background)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    @ViewBuilder
+    private var readOnlyPhoto: some View {
+        if let data = viewModel.photoData(for: date, partner: partner),
+           let uiImage = UIImage(data: data) {
+            Image(uiImage: uiImage)
+                .resizable()
+                .scaledToFill()
+                .frame(height: 180)
+                .frame(maxWidth: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
     }
 }
