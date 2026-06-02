@@ -28,6 +28,10 @@ struct AppDependencies {
         )
     }
 
+    func makeSpecialDaysViewModel() -> SpecialDaysViewModel {
+        SpecialDaysViewModel(getDays: GetSpecialDaysUseCase(repository: SpecialDayRepositoryImpl()))
+    }
+
     func makeMoodViewModel() -> MoodViewModel {
         let dataSource = UserDefaultsMoodDataSource()
         let repository = MoodRepositoryImpl(localDataSource: dataSource)

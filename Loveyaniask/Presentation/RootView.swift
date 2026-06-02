@@ -10,12 +10,14 @@ import SwiftUI
 
 struct RootView: View {
     @State private var homeViewModel: HomeViewModel
+    @State private var specialDaysViewModel: SpecialDaysViewModel
     @State private var moodViewModel: MoodViewModel
     @State private var periodViewModel: PeriodViewModel
     @State private var selectedTab: AppTab = .home
 
     init(dependencies: AppDependencies) {
         _homeViewModel = State(initialValue: dependencies.makeHomeViewModel())
+        _specialDaysViewModel = State(initialValue: dependencies.makeSpecialDaysViewModel())
         _moodViewModel = State(initialValue: dependencies.makeMoodViewModel())
         _periodViewModel = State(initialValue: dependencies.makePeriodViewModel())
     }
@@ -26,7 +28,7 @@ struct RootView: View {
                 MoodView(viewModel: moodViewModel)
                     .tag(AppTab.mood)
 
-                HomeView(viewModel: homeViewModel)
+                HomeView(viewModel: homeViewModel, specialDaysViewModel: specialDaysViewModel)
                     .tag(AppTab.home)
 
                 PeriodView(viewModel: periodViewModel)
