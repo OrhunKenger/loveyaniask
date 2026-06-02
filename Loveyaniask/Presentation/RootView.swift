@@ -3,26 +3,31 @@
 //  Loveyaniask
 //
 //  Uygulamanın kök kabuğu: kaydırarak geçilen sayfalar (TabView .page)
-//  + Instagram tarzı özel alt bar.
+//  + Instagram tarzı özel alt bar. ViewModel'leri bir kez kurar.
 //
 
 import SwiftUI
 
 struct RootView: View {
-    let homeViewModel: HomeViewModel
-    let moodViewModel: MoodViewModel
-    let periodViewModel: PeriodViewModel
-
+    @State private var homeViewModel: HomeViewModel
+    @State private var moodViewModel: MoodViewModel
+    @State private var periodViewModel: PeriodViewModel
     @State private var selectedTab: AppTab = .home
+
+    init(dependencies: AppDependencies) {
+        _homeViewModel = State(initialValue: dependencies.makeHomeViewModel())
+        _moodViewModel = State(initialValue: dependencies.makeMoodViewModel())
+        _periodViewModel = State(initialValue: dependencies.makePeriodViewModel())
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             TabView(selection: $selectedTab) {
-                HomeView(viewModel: homeViewModel)
-                    .tag(AppTab.home)
-
                 MoodView(viewModel: moodViewModel)
                     .tag(AppTab.mood)
+
+                HomeView(viewModel: homeViewModel)
+                    .tag(AppTab.home)
 
                 PeriodView(viewModel: periodViewModel)
                     .tag(AppTab.period)

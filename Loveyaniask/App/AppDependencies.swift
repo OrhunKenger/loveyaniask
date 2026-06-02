@@ -10,6 +10,15 @@
 import Foundation
 
 struct AppDependencies {
+    func makeAuthViewModel() -> AuthViewModel {
+        let store = KeychainCredentialStore()
+        return AuthViewModel(
+            hasPassword: HasPasswordUseCase(store: store),
+            setPassword: SetPasswordUseCase(store: store),
+            verifyPassword: VerifyPasswordUseCase(store: store)
+        )
+    }
+
     func makeHomeViewModel() -> HomeViewModel {
         let dataSource = UserDefaultsCoupleDataSource()
         let repository = CoupleRepositoryImpl(localDataSource: dataSource)

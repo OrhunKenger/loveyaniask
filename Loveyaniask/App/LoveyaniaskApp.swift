@@ -3,7 +3,7 @@
 //  Loveyaniask
 //
 //  Uygulamanın giriş noktası (entry point).
-//  Bağımlılıkları kurar ve kök ekranı başlatır.
+//  Bağımlılıkları kurar ve giriş kapısını (AuthGateView) başlatır.
 //
 
 import SwiftUI
@@ -14,11 +14,7 @@ struct LoveyaniaskApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView(
-                homeViewModel: dependencies.makeHomeViewModel(),
-                moodViewModel: dependencies.makeMoodViewModel(),
-                periodViewModel: dependencies.makePeriodViewModel()
-            )
+            AuthGateView(dependencies: dependencies)
         }
     }
 }

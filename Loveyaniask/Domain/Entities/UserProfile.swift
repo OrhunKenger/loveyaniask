@@ -1,0 +1,36 @@
+//
+//  UserProfile.swift
+//  Loveyaniask
+//
+//  Uygulamanın iki kullanıcısı. Giriş ekranında seçilen kişi "Ben" olur.
+//
+
+import Foundation
+
+enum UserProfile: String, CaseIterable, Identifiable, Codable {
+    case orhun
+    case sevval
+
+    var id: String { rawValue }
+
+    var fullName: String {
+        switch self {
+        case .orhun: return "Orhun Sina"
+        case .sevval: return "Şevval Ay"
+        }
+    }
+
+    var firstName: String {
+        switch self {
+        case .orhun: return "Orhun"
+        case .sevval: return "Şevval"
+        }
+    }
+
+    var initials: String {
+        switch self {
+        case .orhun: return "OS"
+        case .sevval: return "ŞA"
+        }
+    }
+}
