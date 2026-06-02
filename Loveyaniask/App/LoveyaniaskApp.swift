@@ -16,6 +16,7 @@ struct LoveyaniaskApp: App {
         WindowGroup {
             RootView(
                 homeViewModel: dependencies.makeHomeViewModel(),
+                moodViewModel: dependencies.makeMoodViewModel(),
                 periodViewModel: dependencies.makePeriodViewModel()
             )
         }

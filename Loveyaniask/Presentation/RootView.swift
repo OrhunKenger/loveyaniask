@@ -10,6 +10,7 @@ import SwiftUI
 
 struct RootView: View {
     let homeViewModel: HomeViewModel
+    let moodViewModel: MoodViewModel
     let periodViewModel: PeriodViewModel
 
     @State private var selectedTab: AppTab = .home
@@ -19,6 +20,9 @@ struct RootView: View {
             TabView(selection: $selectedTab) {
                 HomeView(viewModel: homeViewModel)
                     .tag(AppTab.home)
+
+                MoodView(viewModel: moodViewModel)
+                    .tag(AppTab.mood)
 
                 PeriodView(viewModel: periodViewModel)
                     .tag(AppTab.period)

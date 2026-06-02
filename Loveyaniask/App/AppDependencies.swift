@@ -19,6 +19,18 @@ struct AppDependencies {
         )
     }
 
+    func makeMoodViewModel() -> MoodViewModel {
+        let dataSource = UserDefaultsMoodDataSource()
+        let repository = MoodRepositoryImpl(localDataSource: dataSource)
+        let photoStore = FileMoodPhotoStore()
+        return MoodViewModel(
+            getEntries: GetMoodEntriesUseCase(repository: repository),
+            setMoodUseCase: SetMoodUseCase(repository: repository),
+            setPhotoUseCase: SetMoodPhotoUseCase(repository: repository, photoStore: photoStore),
+            getPhotoUseCase: GetMoodPhotoUseCase(photoStore: photoStore)
+        )
+    }
+
     func makePeriodViewModel() -> PeriodViewModel {
         let dataSource = UserDefaultsPeriodDataSource()
         let repository = PeriodRepositoryImpl(localDataSource: dataSource)
