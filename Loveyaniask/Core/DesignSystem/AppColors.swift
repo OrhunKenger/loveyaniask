@@ -21,4 +21,12 @@ enum AppColors {
     static let textPrimary = Color(hex: "2D2A32")
     /// İkincil / soluk metin.
     static let textSecondary = Color(hex: "9A9098")
+
+    // MARK: - Regl takvimi renkleri
+    /// Regl günleri.
+    static let period = Color(hex: "E2868D")
+    /// Doğurgan (fertile) pencere.
+    static let fertile = Color(hex: "7FC8A9")
+    /// Yumurtlama (ovulation) günü.
+    static let ovulation = Color(hex: "4DB6AC")
 }

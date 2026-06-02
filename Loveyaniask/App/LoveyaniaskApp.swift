@@ -14,7 +14,10 @@ struct LoveyaniaskApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView(homeViewModel: dependencies.makeHomeViewModel())
+            RootView(
+                homeViewModel: dependencies.makeHomeViewModel(),
+                periodViewModel: dependencies.makePeriodViewModel()
+            )
         }
     }
 }

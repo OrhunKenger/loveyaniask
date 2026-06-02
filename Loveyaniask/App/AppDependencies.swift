@@ -18,4 +18,13 @@ struct AppDependencies {
             getTimeTogether: GetTimeTogetherUseCase(repository: repository)
         )
     }
+
+    func makePeriodViewModel() -> PeriodViewModel {
+        let dataSource = UserDefaultsPeriodDataSource()
+        let repository = PeriodRepositoryImpl(localDataSource: dataSource)
+        return PeriodViewModel(
+            getSettings: GetPeriodSettingsUseCase(repository: repository),
+            saveSettings: SavePeriodSettingsUseCase(repository: repository)
+        )
+    }
 }
