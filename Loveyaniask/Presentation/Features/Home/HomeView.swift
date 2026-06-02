@@ -2,7 +2,7 @@
 //  HomeView.swift
 //  Loveyaniask
 //
-//  Ana ekran. En üstte canlı sayaç kartı, altında özel günler baloncukları.
+//  Ana ekran: canlı sayaç, özel günler, "birbirimiz hakkında" kavanozu.
 //
 
 import SwiftUI
@@ -10,10 +10,12 @@ import SwiftUI
 struct HomeView: View {
     @State private var viewModel: HomeViewModel
     @State private var specialDaysViewModel: SpecialDaysViewModel
+    @State private var jarViewModel: JarViewModel
 
-    init(viewModel: HomeViewModel, specialDaysViewModel: SpecialDaysViewModel) {
+    init(viewModel: HomeViewModel, specialDaysViewModel: SpecialDaysViewModel, jarViewModel: JarViewModel) {
         _viewModel = State(initialValue: viewModel)
         _specialDaysViewModel = State(initialValue: specialDaysViewModel)
+        _jarViewModel = State(initialValue: jarViewModel)
     }
 
     var body: some View {
@@ -27,7 +29,7 @@ struct HomeView: View {
 
                     SpecialDaysSection(viewModel: specialDaysViewModel)
 
-                    // İleride: diğer kartlar (anılar, istek listesi, ...) buraya gelecek.
+                    MemoryJarSection(viewModel: jarViewModel)
                 }
                 .padding(AppSpacing.md)
             }
@@ -42,6 +44,7 @@ struct HomeView: View {
     let dependencies = AppDependencies()
     return HomeView(
         viewModel: dependencies.makeHomeViewModel(),
-        specialDaysViewModel: dependencies.makeSpecialDaysViewModel()
+        specialDaysViewModel: dependencies.makeSpecialDaysViewModel(),
+        jarViewModel: dependencies.makeJarViewModel(currentUser: .orhun)
     )
 }
