@@ -2,7 +2,7 @@
 //  AddPlaceSheet.swift
 //  Loveyaniask
 //
-//  Yeni mekan ekleme: isim, konum, puan, fotoğraf, not, tarih.
+//  Yeni mekan ekleme: ad yazınca canlı arama (dropdown), seçilince konum gelir.
 //
 
 import SwiftUI
@@ -13,34 +13,53 @@ struct AddPlaceSheet: View {
     let viewModel: PlacesViewModel
     @Environment(\.dismiss) private var dismiss
 
-    @State private var name = ""
+    @State private var search = PlaceSearchCompleter()
+    @State private var selectedTitle: String?
+    @State private var coordinate: CLLocationCoordinate2D?
+
     @State private var note = ""
     @State private var rating = 0
     @State private var dateVisited = Date()
-    @State private var coordinate: CLLocationCoordinate2D?
     @State private var pickerItem: PhotosPickerItem?
     @State private var imageData: Data?
-    @State private var showingLocationPicker = false
 
     var body: some View {
+        @Bindable var search = search
+
         NavigationStack {
             Form {
                 Section("Mekan") {
-                    TextField("İsim (örn. Moda Sahili)", text: $name)
-                }
-
-                Section("Konum") {
-                    Button {
-                        showingLocationPicker = true
-                    } label: {
+                    if let selectedTitle {
                         HStack {
-                            Image(systemName: "mappin.and.ellipse")
+                            Image(systemName: "mappin.circle.fill")
                                 .foregroundStyle(AppColors.primary)
-                            Text(coordinate == nil ? "Konum seç" : "Konum seçildi ✓")
+                            Text(selectedTitle)
                                 .foregroundStyle(AppColors.textPrimary)
                             Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundStyle(AppColors.textSecondary)
+                            Button {
+                                clearSelection()
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundStyle(AppColors.textSecondary)
+                            }
+                        }
+                    } else {
+                        TextField("Mekan ara (örn. Moda Sahili)", text: $search.query)
+
+                        ForEach(search.results, id: \.self) { result in
+                            Button {
+                                select(result)
+                            } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(result.title)
+                                        .foregroundStyle(AppColors.textPrimary)
+                                    if !result.subtitle.isEmpty {
+                                        Text(result.subtitle)
+                                            .font(.caption)
+                                            .foregroundStyle(AppColors.textSecondary)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -74,9 +93,6 @@ struct AddPlaceSheet: View {
                         .fontWeight(.semibold)
                         .disabled(!canSave)
                 }
-            }
-            .sheet(isPresented: $showingLocationPicker) {
-                LocationPickerSheet(coordinate: $coordinate, name: $name)
             }
         }
     }
@@ -119,13 +135,27 @@ struct AddPlaceSheet: View {
     }
 
     private var canSave: Bool {
-        !name.trimmingCharacters(in: .whitespaces).isEmpty && coordinate != nil
+        selectedTitle != nil && coordinate != nil
+    }
+
+    private func select(_ result: MKLocalSearchCompletion) {
+        let title = result.title
+        search.resolve(result) { coord in
+            coordinate = coord
+            selectedTitle = title
+        }
+    }
+
+    private func clearSelection() {
+        selectedTitle = nil
+        coordinate = nil
+        search.clear()
     }
 
     private func save() {
-        guard let coordinate else { return }
+        guard let selectedTitle, let coordinate else { return }
         viewModel.add(
-            name: name.trimmingCharacters(in: .whitespaces),
+            name: selectedTitle,
             latitude: coordinate.latitude,
             longitude: coordinate.longitude,
             rating: rating,
