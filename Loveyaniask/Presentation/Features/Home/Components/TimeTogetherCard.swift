@@ -36,13 +36,9 @@ struct TimeTogetherCard: View {
                 separator
                 unit(value: time.seconds, label: "Saniye", padded: true)
             }
-
-            Text("\(viewModel.formattedStartDate)'dan beri")
-                .font(.footnote)
-                .foregroundStyle(.white.opacity(0.8))
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, AppSpacing.xl)
+        .padding(.vertical, AppSpacing.lg)
         .padding(.horizontal, AppSpacing.md)
         .background(
             LinearGradient(
