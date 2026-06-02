@@ -13,6 +13,7 @@ struct RootView: View {
     @State private var specialDaysViewModel: SpecialDaysViewModel
     @State private var moodViewModel: MoodViewModel
     @State private var periodViewModel: PeriodViewModel
+    @State private var placesViewModel: PlacesViewModel
     @State private var selectedTab: AppTab = .home
 
     private let canEditPeriod: Bool
@@ -22,6 +23,7 @@ struct RootView: View {
         _specialDaysViewModel = State(initialValue: dependencies.makeSpecialDaysViewModel())
         _moodViewModel = State(initialValue: dependencies.makeMoodViewModel(currentUser: currentUser))
         _periodViewModel = State(initialValue: dependencies.makePeriodViewModel())
+        _placesViewModel = State(initialValue: dependencies.makePlacesViewModel())
         canEditPeriod = (currentUser == .sevval)
     }
 
@@ -36,6 +38,9 @@ struct RootView: View {
 
                 PeriodView(viewModel: periodViewModel, canEdit: canEditPeriod)
                     .tag(AppTab.period)
+
+                PlacesView(viewModel: placesViewModel)
+                    .tag(AppTab.places)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
 

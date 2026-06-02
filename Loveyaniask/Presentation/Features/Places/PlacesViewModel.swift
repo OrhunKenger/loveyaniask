@@ -1,0 +1,86 @@
+//
+//  PlacesViewModel.swift
+//  Loveyaniask
+//
+//  Gidilen mekanlar ekranının sunum mantığı: liste, harita bölgesi, ekleme/silme.
+//
+
+import Foundation
+import Observation
+import MapKit
+
+@Observable
+final class PlacesViewModel {
+    private(set) var places: [Place] = []
+    var showingAdd = false
+
+    private let getPlaces: GetPlacesUseCase
+    private let addPlaceUseCase: AddPlaceUseCase
+    private let deletePlaceUseCase: DeletePlaceUseCase
+    private let getPhotoUseCase: GetPlacePhotoUseCase
+
+    init(
+        getPlaces: GetPlacesUseCase,
+        addPlace: AddPlaceUseCase,
+        deletePlace: DeletePlaceUseCase,
+        getPhoto: GetPlacePhotoUseCase
+    ) {
+        self.getPlaces = getPlaces
+        self.addPlaceUseCase = addPlace
+        self.deletePlaceUseCase = deletePlace
+        self.getPhotoUseCase = getPhoto
+        self.places = getPlaces.execute()
+    }
+
+    func reload() {
+        places = getPlaces.execute()
+    }
+
+    func add(name: String, latitude: Double, longitude: Double, rating: Int, note: String, dateVisited: Date, imageData: Data?) {
+        addPlaceUseCase.execute(
+            name: name,
+            latitude: latitude,
+            longitude: longitude,
+            rating: rating,
+            note: note,
+            dateVisited: dateVisited,
+            imageData: imageData
+        )
+        reload()
+    }
+
+    func delete(_ place: Place) {
+        deletePlaceUseCase.execute(id: place.id)
+        reload()
+    }
+
+    func photoData(for place: Place) -> Data? {
+        guard let name = place.photoFileName else { return nil }
+        return getPhotoUseCase.execute(fileName: name)
+    }
+
+    func coordinate(for place: Place) -> CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: place.latitude, longitude: place.longitude)
+    }
+
+    func dateText(for place: Place) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.dateFormat = "d MMMM yyyy"
+        return formatter.string(from: place.dateVisited)
+    }
+
+    /// Harita başlangıç bölgesi: mekan varsa ilkine, yoksa Türkiye geneline.
+    var initialRegion: MKCoordinateRegion {
+        if let first = places.first {
+            return MKCoordinateRegion(
+                center: coordinate(for: first),
+                span: MKCoordinateSpan(latitudeDelta: 0.5, longitudeDelta: 0.5)
+            )
+        }
+        return MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 39.0, longitude: 35.0),
+            span: MKCoordinateSpan(latitudeDelta: 8, longitudeDelta: 8)
+        )
+    }
+}
