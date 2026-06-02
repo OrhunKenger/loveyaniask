@@ -11,8 +11,11 @@ struct PeriodView: View {
     @State private var viewModel: PeriodViewModel
     @State private var showingSettings = false
 
-    init(viewModel: PeriodViewModel) {
+    let canEdit: Bool
+
+    init(viewModel: PeriodViewModel, canEdit: Bool) {
         _viewModel = State(initialValue: viewModel)
+        self.canEdit = canEdit
     }
 
     private let columns = Array(repeating: GridItem(.flexible()), count: 7)
@@ -45,12 +48,18 @@ struct PeriodView: View {
                 .font(.title2.bold())
                 .foregroundStyle(AppColors.textPrimary)
             Spacer()
-            Button {
-                showingSettings = true
-            } label: {
-                Image(systemName: "slider.horizontal.3")
-                    .font(.title3)
-                    .foregroundStyle(AppColors.primary)
+            if canEdit {
+                Button {
+                    showingSettings = true
+                } label: {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.title3)
+                        .foregroundStyle(AppColors.primary)
+                }
+            } else {
+                Image(systemName: "lock.fill")
+                    .font(.subheadline)
+                    .foregroundStyle(AppColors.textSecondary)
             }
         }
     }
@@ -214,5 +223,5 @@ struct PeriodView: View {
     return PeriodView(viewModel: PeriodViewModel(
         getSettings: GetPeriodSettingsUseCase(repository: repository),
         saveSettings: SavePeriodSettingsUseCase(repository: repository)
-    ))
+    ), canEdit: true)
 }

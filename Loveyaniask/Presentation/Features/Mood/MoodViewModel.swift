@@ -25,6 +25,7 @@ final class MoodViewModel {
     private let setMoodUseCase: SetMoodUseCase
     private let setPhotoUseCase: SetMoodPhotoUseCase
     private let getPhotoUseCase: GetMoodPhotoUseCase
+    private let currentUser: UserProfile
 
     let weekdaySymbols = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"]
 
@@ -32,15 +33,30 @@ final class MoodViewModel {
         getEntries: GetMoodEntriesUseCase,
         setMoodUseCase: SetMoodUseCase,
         setPhotoUseCase: SetMoodPhotoUseCase,
-        getPhotoUseCase: GetMoodPhotoUseCase
+        getPhotoUseCase: GetMoodPhotoUseCase,
+        currentUser: UserProfile
     ) {
         self.getEntries = getEntries
         self.setMoodUseCase = setMoodUseCase
         self.setPhotoUseCase = setPhotoUseCase
         self.getPhotoUseCase = getPhotoUseCase
+        self.currentUser = currentUser
         self.entries = getEntries.execute()
         self.displayedMonth = Calendar.current.startOfDay(for: Date())
     }
+
+    // MARK: - Kişiye göre etiketler
+
+    /// Giriş yapan "Ben", karşı taraf takma adıyla görünür.
+    func title(for partner: Partner) -> String {
+        switch partner {
+        case .me: return "Ben"
+        case .partner: return currentUser.partner.petName
+        }
+    }
+
+    var meLabel: String { "Ben" }
+    var partnerLabel: String { currentUser.partner.petName }
 
     private var calendar: Calendar { Calendar.current }
 

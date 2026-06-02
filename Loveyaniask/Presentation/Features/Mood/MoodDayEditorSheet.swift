@@ -45,7 +45,7 @@ private struct PartnerMoodCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Text(partner.title)
+            Text(viewModel.title(for: partner))
                 .font(.headline)
                 .foregroundStyle(AppColors.textPrimary)
 

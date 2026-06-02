@@ -146,8 +146,8 @@ struct MoodView: View {
 
     private var legend: some View {
         HStack(spacing: AppSpacing.lg) {
-            Text("👈 soldaki: Ben")
-            Text("Sevgilim: sağdaki 👉")
+            Text("👈 \(viewModel.meLabel)")
+            Text("\(viewModel.partnerLabel) 👉")
         }
         .font(.caption2)
         .foregroundStyle(AppColors.textSecondary)
@@ -162,6 +162,7 @@ struct MoodView: View {
         getEntries: GetMoodEntriesUseCase(repository: repository),
         setMoodUseCase: SetMoodUseCase(repository: repository),
         setPhotoUseCase: SetMoodPhotoUseCase(repository: repository, photoStore: photoStore),
-        getPhotoUseCase: GetMoodPhotoUseCase(photoStore: photoStore)
+        getPhotoUseCase: GetMoodPhotoUseCase(photoStore: photoStore),
+        currentUser: .orhun
     ))
 }

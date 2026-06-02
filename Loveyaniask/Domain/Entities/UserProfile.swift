@@ -33,4 +33,20 @@ enum UserProfile: String, CaseIterable, Identifiable, Codable {
         case .sevval: return "ŞA"
         }
     }
+
+    /// Diğer kişi (partner).
+    var partner: UserProfile {
+        switch self {
+        case .orhun: return .sevval
+        case .sevval: return .orhun
+        }
+    }
+
+    /// Sevgilisinin ona seslendiği takma ad.
+    var petName: String {
+        switch self {
+        case .orhun: return "Orhim"
+        case .sevval: return "Şevvalim"
+        }
+    }
 }

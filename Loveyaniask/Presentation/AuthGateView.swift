@@ -20,8 +20,8 @@ struct AuthGateView: View {
 
     var body: some View {
         Group {
-            if auth.isAuthenticated {
-                RootView(dependencies: dependencies)
+            if let user = auth.currentUser {
+                RootView(dependencies: dependencies, currentUser: user)
             } else {
                 switch auth.stage {
                 case .splash:
@@ -36,6 +36,6 @@ struct AuthGateView: View {
             }
         }
         .animation(.easeInOut, value: auth.stage)
-        .animation(.easeInOut, value: auth.isAuthenticated)
+        .animation(.easeInOut, value: auth.currentUser)
     }
 }

@@ -32,7 +32,7 @@ struct AppDependencies {
         SpecialDaysViewModel(getDays: GetSpecialDaysUseCase(repository: SpecialDayRepositoryImpl()))
     }
 
-    func makeMoodViewModel() -> MoodViewModel {
+    func makeMoodViewModel(currentUser: UserProfile) -> MoodViewModel {
         let dataSource = UserDefaultsMoodDataSource()
         let repository = MoodRepositoryImpl(localDataSource: dataSource)
         let photoStore = FileMoodPhotoStore()
@@ -40,7 +40,8 @@ struct AppDependencies {
             getEntries: GetMoodEntriesUseCase(repository: repository),
             setMoodUseCase: SetMoodUseCase(repository: repository),
             setPhotoUseCase: SetMoodPhotoUseCase(repository: repository, photoStore: photoStore),
-            getPhotoUseCase: GetMoodPhotoUseCase(photoStore: photoStore)
+            getPhotoUseCase: GetMoodPhotoUseCase(photoStore: photoStore),
+            currentUser: currentUser
         )
     }
 
