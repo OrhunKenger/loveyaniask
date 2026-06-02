@@ -25,6 +25,13 @@ final class PlaceRepositoryImpl: PlaceRepository {
         localDataSource.save(cache)
     }
 
+    func update(_ place: Place) {
+        if let index = cache.firstIndex(where: { $0.id == place.id }) {
+            cache[index] = place
+            localDataSource.save(cache)
+        }
+    }
+
     func delete(id: UUID) {
         cache.removeAll { $0.id == id }
         localDataSource.save(cache)

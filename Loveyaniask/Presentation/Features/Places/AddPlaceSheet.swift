@@ -45,7 +45,7 @@ struct AddPlaceSheet: View {
                     }
                 }
 
-                Section("Puan") {
+                Section("Senin puanın") {
                     starsPicker
                 }
 

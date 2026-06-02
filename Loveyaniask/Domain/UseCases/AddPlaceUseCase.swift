@@ -2,7 +2,7 @@
 //  AddPlaceUseCase.swift
 //  Loveyaniask
 //
-//  Yeni mekan ekler; fotoğraf varsa önce saklar.
+//  Yeni mekan ekler; ekleyen kişinin puanını kaydeder, fotoğraf varsa saklar.
 //
 
 import Foundation
@@ -20,6 +20,7 @@ struct AddPlaceUseCase {
         name: String,
         latitude: Double,
         longitude: Double,
+        raterKey: String,
         rating: Int,
         note: String,
         dateVisited: Date,
@@ -29,12 +30,16 @@ struct AddPlaceUseCase {
         if let imageData {
             fileName = photoStore.save(imageData: imageData)
         }
+        var ratings: [String: Int] = [:]
+        if rating > 0 {
+            ratings[raterKey] = rating
+        }
         let place = Place(
             id: UUID(),
             name: name,
             latitude: latitude,
             longitude: longitude,
-            rating: rating,
+            ratings: ratings,
             note: note,
             dateVisited: dateVisited,
             photoFileName: fileName

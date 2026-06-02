@@ -32,15 +32,17 @@ struct AppDependencies {
         SpecialDaysViewModel(getDays: GetSpecialDaysUseCase(repository: SpecialDayRepositoryImpl()))
     }
 
-    func makePlacesViewModel() -> PlacesViewModel {
+    func makePlacesViewModel(currentUser: UserProfile) -> PlacesViewModel {
         let dataSource = UserDefaultsPlaceDataSource()
         let repository = PlaceRepositoryImpl(localDataSource: dataSource)
         let photoStore = FilePlacePhotoStore()
         return PlacesViewModel(
+            currentUser: currentUser,
             getPlaces: GetPlacesUseCase(repository: repository),
             addPlace: AddPlaceUseCase(repository: repository, photoStore: photoStore),
             deletePlace: DeletePlaceUseCase(repository: repository, photoStore: photoStore),
-            getPhoto: GetPlacePhotoUseCase(photoStore: photoStore)
+            getPhoto: GetPlacePhotoUseCase(photoStore: photoStore),
+            setRating: SetPlaceRatingUseCase(repository: repository)
         )
     }
 

@@ -23,7 +23,7 @@ struct RootView: View {
         _specialDaysViewModel = State(initialValue: dependencies.makeSpecialDaysViewModel())
         _moodViewModel = State(initialValue: dependencies.makeMoodViewModel(currentUser: currentUser))
         _periodViewModel = State(initialValue: dependencies.makePeriodViewModel())
-        _placesViewModel = State(initialValue: dependencies.makePlacesViewModel())
+        _placesViewModel = State(initialValue: dependencies.makePlacesViewModel(currentUser: currentUser))
         canEditPeriod = (currentUser == .sevval)
     }
 
