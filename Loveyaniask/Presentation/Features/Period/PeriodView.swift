@@ -2,7 +2,8 @@
 //  PeriodView.swift
 //  Loveyaniask
 //
-//  Regl takvimi ekranı: aylık ızgara, özet tahminler ve ayar butonu.
+//  Regl takvimi: bugünün durumu, gerçek kayıt, aylık takvim, günlük notlar.
+//  Şevval düzenler/kaydeder, Orhun izler.
 //
 
 import SwiftUI
@@ -18,9 +19,11 @@ struct PeriodView: View {
         self.canEdit = canEdit
     }
 
-    private let columns = Array(repeating: GridItem(.flexible()), count: 7)
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
 
     var body: some View {
+        @Bindable var viewModel = viewModel
+
         ZStack {
             AppColors.background
                 .ignoresSafeArea()
@@ -28,7 +31,20 @@ struct PeriodView: View {
             ScrollView {
                 VStack(spacing: AppSpacing.lg) {
                     header
-                    summaryCard
+
+                    PeriodStatusCard(
+                        emoji: viewModel.statusEmoji,
+                        statusText: viewModel.statusText,
+                        cycleDay: viewModel.currentCycleDay,
+                        progress: viewModel.cycleProgress,
+                        nextPeriodText: viewModel.nextPeriodDateText,
+                        daysUntilNext: viewModel.daysUntilNextPeriod
+                    )
+
+                    if canEdit {
+                        logButton
+                    }
+
                     calendarCard
                     legend
                 }
@@ -37,6 +53,9 @@ struct PeriodView: View {
         }
         .sheet(isPresented: $showingSettings) {
             PeriodSettingsSheet(viewModel: viewModel)
+        }
+        .sheet(item: $viewModel.selectedDay) { day in
+            PeriodDayDetailSheet(viewModel: viewModel, date: day.date, canEdit: canEdit)
         }
     }
 
@@ -64,44 +83,18 @@ struct PeriodView: View {
         }
     }
 
-    // MARK: - Özet kart
-
-    private var summaryCard: some View {
-        HStack(spacing: AppSpacing.md) {
-            summaryItem(
-                title: "Döngü günü",
-                value: "\(viewModel.currentCycleDay).",
-                subtitle: "gün"
-            )
-
-            Divider().frame(height: 44)
-
-            summaryItem(
-                title: "Sonraki regl",
-                value: viewModel.nextPeriodDateText,
-                subtitle: "\(viewModel.daysUntilNextPeriod) gün sonra"
-            )
+    private var logButton: some View {
+        Button {
+            withAnimation(.snappy) { viewModel.logPeriodToday() }
+        } label: {
+            Label("Bugün reglim başladı", systemImage: "drop.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, AppSpacing.md)
+                .background(AppColors.period)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
-        .frame(maxWidth: .infinity)
-        .padding(AppSpacing.lg)
-        .background(AppColors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .shadow(color: .black.opacity(0.05), radius: 10, y: 4)
-    }
-
-    private func summaryItem(title: String, value: String, subtitle: String) -> some View {
-        VStack(spacing: AppSpacing.xs) {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(AppColors.textSecondary)
-            Text(value)
-                .font(.title3.bold())
-                .foregroundStyle(AppColors.textPrimary)
-            Text(subtitle)
-                .font(.caption2)
-                .foregroundStyle(AppColors.textSecondary)
-        }
-        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Takvim kartı
@@ -121,7 +114,7 @@ struct PeriodView: View {
                     if let date {
                         dayView(for: date)
                     } else {
-                        Color.clear.frame(height: 38)
+                        Color.clear.frame(height: 40)
                     }
                 }
             }
@@ -161,22 +154,32 @@ struct PeriodView: View {
     private func dayView(for date: Date) -> some View {
         let kind = viewModel.kind(for: date)
         let isToday = viewModel.isToday(date)
+        let hasNote = viewModel.hasNote(on: date)
 
-        return Text("\(viewModel.dayNumber(for: date))")
-            .font(.system(size: 15, weight: isToday ? .bold : .regular))
-            .foregroundStyle(foreground(for: kind))
-            .frame(maxWidth: .infinity)
-            .frame(height: 38)
-            .background(
-                Circle()
-                    .fill(background(for: kind))
-                    .frame(width: 34, height: 34)
-            )
-            .overlay(
-                Circle()
-                    .stroke(isToday ? AppColors.textPrimary : .clear, lineWidth: 1.5)
-                    .frame(width: 34, height: 34)
-            )
+        return VStack(spacing: 2) {
+            Text("\(viewModel.dayNumber(for: date))")
+                .font(.system(size: 15, weight: isToday ? .bold : .regular))
+                .foregroundStyle(foreground(for: kind))
+                .frame(maxWidth: .infinity)
+                .frame(height: 34)
+                .background(
+                    Circle()
+                        .fill(background(for: kind))
+                        .frame(width: 34, height: 34)
+                )
+                .overlay(
+                    Circle()
+                        .stroke(isToday ? AppColors.textPrimary : .clear, lineWidth: 1.5)
+                        .frame(width: 34, height: 34)
+                )
+
+            Circle()
+                .fill(hasNote ? AppColors.ovulation : .clear)
+                .frame(width: 4, height: 4)
+        }
+        .frame(height: 44)
+        .contentShape(Rectangle())
+        .onTapGesture { viewModel.select(date) }
     }
 
     private func background(for kind: CycleDayKind) -> Color {
@@ -195,10 +198,10 @@ struct PeriodView: View {
         }
     }
 
-    // MARK: - Açıklama (legend)
+    // MARK: - Açıklama
 
     private var legend: some View {
-        HStack(spacing: AppSpacing.lg) {
+        HStack(spacing: AppSpacing.md) {
             legendItem(color: AppColors.period, text: "Regl")
             legendItem(color: AppColors.fertile.opacity(0.5), text: "Doğurgan")
             legendItem(color: AppColors.ovulation, text: "Yumurtlama")
@@ -215,13 +218,4 @@ struct PeriodView: View {
             Text(text)
         }
     }
-}
-
-#Preview {
-    let dataSource = UserDefaultsPeriodDataSource()
-    let repository = PeriodRepositoryImpl(localDataSource: dataSource)
-    return PeriodView(viewModel: PeriodViewModel(
-        getSettings: GetPeriodSettingsUseCase(repository: repository),
-        saveSettings: SavePeriodSettingsUseCase(repository: repository)
-    ), canEdit: true)
 }

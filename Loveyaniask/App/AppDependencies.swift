@@ -48,9 +48,16 @@ struct AppDependencies {
     func makePeriodViewModel() -> PeriodViewModel {
         let dataSource = UserDefaultsPeriodDataSource()
         let repository = PeriodRepositoryImpl(localDataSource: dataSource)
+        let scheduler = LocalPeriodReminderScheduler()
         return PeriodViewModel(
             getSettings: GetPeriodSettingsUseCase(repository: repository),
-            saveSettings: SavePeriodSettingsUseCase(repository: repository)
+            saveSettings: SavePeriodSettingsUseCase(repository: repository),
+            logPeriod: LogPeriodUseCase(repository: repository),
+            getLogs: GetPeriodLogsUseCase(repository: repository),
+            deleteLog: DeletePeriodLogUseCase(repository: repository),
+            getNote: GetDayNoteUseCase(repository: repository),
+            saveNote: SaveDayNoteUseCase(repository: repository),
+            reminderScheduler: scheduler
         )
     }
 }

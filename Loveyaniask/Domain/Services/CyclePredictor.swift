@@ -2,8 +2,8 @@
 //  CyclePredictor.swift
 //  Loveyaniask
 //
-//  Saf hesaplama: ayarlara göre bir günün türünü ve sonraki regl tahminini bulur.
-//  Döngü, son regl başlangıcından itibaren her `cycleLength` günde bir tekrarlanır.
+//  Saf hesaplama: ayarlara göre bir günün türü, döngü konumu, tahminler ve durum metni.
+//  Döngü, başlangıçtan itibaren her `cycleLength` günde bir tekrarlanır.
 //
 
 import Foundation
@@ -12,7 +12,6 @@ struct CyclePredictor {
     let settings: PeriodSettings
     private let calendar = Calendar.current
 
-    /// Verilen günün döngüdeki konumu (0 = döngünün ilk günü).
     private func position(of date: Date) -> Int {
         let start = calendar.startOfDay(for: settings.lastPeriodStart)
         let day = calendar.startOfDay(for: date)
@@ -41,12 +40,10 @@ struct CyclePredictor {
         return .none
     }
 
-    /// Bugün döngünün kaçıncı günü (1'den başlar).
     func currentCycleDay(on date: Date = Date()) -> Int {
         position(of: date) + 1
     }
 
-    /// Verilen günden sonraki ilk regl başlangıç tarihi.
     func nextPeriodStart(after date: Date = Date()) -> Date {
         let start = calendar.startOfDay(for: settings.lastPeriodStart)
         let day = calendar.startOfDay(for: date)
@@ -56,10 +53,33 @@ struct CyclePredictor {
         return calendar.date(byAdding: .day, value: nextOffset, to: start) ?? start
     }
 
-    /// Sonraki regle kaç gün kaldı.
     func daysUntilNextPeriod(from date: Date = Date()) -> Int {
         let day = calendar.startOfDay(for: date)
         let next = nextPeriodStart(after: date)
         return calendar.dateComponents([.day], from: day, to: next).day ?? 0
+    }
+
+    // MARK: - Durum metni (bugünün durumu kartı için)
+
+    func statusText(on date: Date = Date()) -> String {
+        switch kind(for: date) {
+        case .period:
+            return "Regl dönemindesin"
+        case .ovulation:
+            return "Yumurtlama günü"
+        case .fertile:
+            return "Doğurgan dönem"
+        case .none:
+            return "Regle \(daysUntilNextPeriod(from: date)) gün var"
+        }
+    }
+
+    func statusEmoji(on date: Date = Date()) -> String {
+        switch kind(for: date) {
+        case .period: return "🩸"
+        case .ovulation: return "🥚"
+        case .fertile: return "🌱"
+        case .none: return "🌸"
+        }
     }
 }
