@@ -26,5 +26,7 @@
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
 	<string>1:74070978139:ios:e4e136959d8b32ad23597e</string>
+	<key>DATABASE_URL</key>
+	<string>https://loveyaniask-7c11b-default-rtdb.europe-west1.firebasedatabase.app</string>
 </dict>
 </plist>
