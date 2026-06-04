@@ -13,9 +13,19 @@ struct SpecialDaysSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Özel Günlerimiz")
-                .font(.headline)
-                .foregroundStyle(AppColors.textPrimary)
+            HStack {
+                Text("Özel Günlerimiz")
+                    .font(.headline)
+                    .foregroundStyle(AppColors.textPrimary)
+                Spacer()
+                Button {
+                    viewModel.showingAdd = true
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title3)
+                        .foregroundStyle(AppColors.primary)
+                }
+            }
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: AppSpacing.lg) {
@@ -27,6 +37,15 @@ struct SpecialDaysSection: View {
                             index: index
                         )
                         .onTapGesture { viewModel.select(day) }
+                        .contextMenu {
+                            if !day.isBuiltIn {
+                                Button(role: .destructive) {
+                                    viewModel.delete(day)
+                                } label: {
+                                    Label("Sil", systemImage: "trash")
+                                }
+                            }
+                        }
                     }
                 }
                 .padding(.vertical, AppSpacing.sm)
@@ -39,6 +58,9 @@ struct SpecialDaysSection: View {
                 daysRemaining: viewModel.daysRemaining(for: day),
                 dateText: viewModel.nextDateText(for: day)
             )
+        }
+        .sheet(isPresented: $viewModel.showingAdd) {
+            AddSpecialDaySheet(viewModel: viewModel)
         }
     }
 }

@@ -13,4 +13,6 @@ struct SpecialDay: Identifiable, Equatable {
     var date: Date
     var emoji: String
     var repeatsYearly: Bool
+    /// Uygulamayla gelen sabit gün mü? (true = silinemez: yıldönümü/doğum günleri)
+    var isBuiltIn: Bool = false
 }

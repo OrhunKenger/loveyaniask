@@ -29,7 +29,14 @@ struct AppDependencies {
     }
 
     func makeSpecialDaysViewModel() -> SpecialDaysViewModel {
-        SpecialDaysViewModel(getDays: GetSpecialDaysUseCase(repository: SpecialDayRepositoryImpl()))
+        // Özel günler artık Firebase'de (sabit günler + eklenenler, senkron).
+        let repository = FirebaseSpecialDayRepository()
+        return SpecialDaysViewModel(
+            getDays: GetSpecialDaysUseCase(repository: repository),
+            observeDays: ObserveSpecialDaysUseCase(repository: repository),
+            addDay: AddSpecialDayUseCase(repository: repository),
+            deleteDay: DeleteSpecialDayUseCase(repository: repository)
+        )
     }
 
     func makeJarViewModel(currentUser: UserProfile) -> JarViewModel {
