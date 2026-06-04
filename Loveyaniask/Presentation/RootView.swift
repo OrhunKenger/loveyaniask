@@ -29,6 +29,8 @@ struct RootView: View {
         _periodViewModel = State(initialValue: dependencies.makePeriodViewModel())
         _placesViewModel = State(initialValue: dependencies.makePlacesViewModel(currentUser: currentUser))
         canEditPeriod = (currentUser == .sevval)
+        // Siri kısayolu (App Intent) hangi kullanıcı adına ekleyeceğini bilsin diye sakla.
+        UserDefaults.standard.set(currentUser.rawValue, forKey: "currentUserKey")
     }
 
     var body: some View {
