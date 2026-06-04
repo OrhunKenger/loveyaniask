@@ -29,9 +29,9 @@ struct HomeView: View {
                 VStack(spacing: AppSpacing.lg) {
                     TimeTogetherCard(viewModel: viewModel)
 
-                    PlansSection(viewModel: plansViewModel)
-
                     SpecialDaysSection(viewModel: specialDaysViewModel)
+
+                    PlansSection(viewModel: plansViewModel)
                 }
                 .padding(AppSpacing.md)
             }
