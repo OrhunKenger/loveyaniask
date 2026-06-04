@@ -115,7 +115,7 @@ struct WishlistView: View {
             Image(systemName: "signpost.right.fill")
                 .font(.system(size: 44))
                 .foregroundStyle(AppColors.primary)
-            Text("Hayal listesi boş")
+            Text("Henüz gitmek istediğimiz yer yok")
                 .font(.headline)
                 .foregroundStyle(AppColors.textPrimary)
             Text("Sağ üstteki + ile gitmek istediğiniz yerleri ekleyin")
