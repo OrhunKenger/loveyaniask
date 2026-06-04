@@ -19,6 +19,7 @@ final class PlacesViewModel {
     let currentUser: UserProfile
 
     private let getPlaces: GetPlacesUseCase
+    private let observePlacesUseCase: ObservePlacesUseCase
     private let addPlaceUseCase: AddPlaceUseCase
     private let deletePlaceUseCase: DeletePlaceUseCase
     private let getPhotoUseCase: GetPlacePhotoUseCase
@@ -28,6 +29,7 @@ final class PlacesViewModel {
     init(
         currentUser: UserProfile,
         getPlaces: GetPlacesUseCase,
+        observePlaces: ObservePlacesUseCase,
         addPlace: AddPlaceUseCase,
         deletePlace: DeletePlaceUseCase,
         getPhoto: GetPlacePhotoUseCase,
@@ -36,12 +38,16 @@ final class PlacesViewModel {
     ) {
         self.currentUser = currentUser
         self.getPlaces = getPlaces
+        self.observePlacesUseCase = observePlaces
         self.addPlaceUseCase = addPlace
         self.deletePlaceUseCase = deletePlace
         self.getPhotoUseCase = getPhoto
         self.setRatingUseCase = setRating
         self.setVisitedUseCase = setVisited
-        self.places = getPlaces.execute()
+        // Firebase'den gerçek zamanlı dinle.
+        observePlaces.execute { [weak self] places in
+            self?.places = places.sorted { $0.dateVisited > $1.dateVisited }
+        }
     }
 
     /// Gittiğimiz mekanlar.

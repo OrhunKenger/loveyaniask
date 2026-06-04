@@ -39,12 +39,13 @@ struct AppDependencies {
     }
 
     func makePlacesViewModel(currentUser: UserProfile) -> PlacesViewModel {
-        let dataSource = UserDefaultsPlaceDataSource()
-        let repository = PlaceRepositoryImpl(localDataSource: dataSource)
-        let photoStore = FilePlacePhotoStore()
+        // Mekanlar artık Firebase Realtime Database'de (gerçek zamanlı senkron).
+        let repository = FirebasePlaceRepository()
+        let photoStore = FilePlacePhotoStore()   // fotoğraflar şimdilik cihazda yerel
         return PlacesViewModel(
             currentUser: currentUser,
             getPlaces: GetPlacesUseCase(repository: repository),
+            observePlaces: ObservePlacesUseCase(repository: repository),
             addPlace: AddPlaceUseCase(repository: repository, photoStore: photoStore),
             deletePlace: DeletePlaceUseCase(repository: repository, photoStore: photoStore),
             getPhoto: GetPlacePhotoUseCase(photoStore: photoStore),
