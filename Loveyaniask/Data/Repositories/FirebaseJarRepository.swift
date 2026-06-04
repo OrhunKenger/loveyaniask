@@ -2,107 +2,103 @@
 //  FirebaseJarRepository.swift
 //  Loveyaniask
 //
-//  Kavanozun Firebase Firestore implementasyonu — gerçek zamanlı senkron.
-//  Yapı:
-//    jar/current        -> { cycleStart, approvals, openedAt }
-//    jarNotes/{uuid}    -> { text, authorKey, createdAt }
+//  Kavanozun Firebase Realtime Database implementasyonu — gerçek zamanlı senkron.
+//  JSON ağacı:
+//    jar/capsule        -> { cycleStart, approvals: {orhun, sevval}, openedAt }
+//    jar/notes/{uuid}   -> { text, authorKey, createdAt }
+//  Tarihler saniye (timeIntervalSince1970) olarak sayı tutulur.
 //
 
 import Foundation
-import FirebaseFirestore
+import FirebaseDatabase
 
 final class FirebaseJarRepository: JarRepository {
-    private let db = Firestore.firestore()
-    private var capsuleListener: ListenerRegistration?
-    private var notesListener: ListenerRegistration?
+    private let root = Database.database().reference()
+    private var capsuleHandle: DatabaseHandle?
+    private var notesHandle: DatabaseHandle?
 
-    private var capsuleDoc: DocumentReference {
-        db.collection("jar").document("current")
-    }
-    private var notesCol: CollectionReference {
-        db.collection("jarNotes")
-    }
+    private var capsuleRef: DatabaseReference { root.child("jar").child("capsule") }
+    private var notesRef: DatabaseReference { root.child("jar").child("notes") }
 
     // MARK: - Observe
 
     func observeCapsule(_ onChange: @escaping (JarCapsule) -> Void) {
-        capsuleListener = capsuleDoc.addSnapshotListener { [weak self] snapshot, _ in
-            guard let self, let snapshot else { return }
+        capsuleHandle = capsuleRef.observe(.value) { [weak self] snapshot in
+            guard let self else { return }
 
-            // İlk açılış: belge yoksa varsayılan döngüyü oluştur.
-            guard snapshot.exists, let data = snapshot.data() else {
-                self.capsuleDoc.setData([
-                    "cycleStart": Timestamp(date: Date()),
+            // İlk açılış: düğüm yoksa varsayılan döngüyü oluştur.
+            guard let dict = snapshot.value as? [String: Any] else {
+                self.capsuleRef.setValue([
+                    "cycleStart": Date().timeIntervalSince1970,
                     "approvals": [String: Bool](),
                     "openedAt": NSNull()
                 ])
                 return
             }
 
-            let cycleStart = (data["cycleStart"] as? Timestamp)?.dateValue() ?? Date()
-            let approvals = (data["approvals"] as? [String: Bool]) ?? [:]
-            let openedAt = (data["openedAt"] as? Timestamp)?.dateValue()
+            let cycleStart = (dict["cycleStart"] as? TimeInterval)
+                .map { Date(timeIntervalSince1970: $0) } ?? Date()
+            let approvals = (dict["approvals"] as? [String: Bool]) ?? [:]
+            let openedAt = (dict["openedAt"] as? TimeInterval)
+                .map { Date(timeIntervalSince1970: $0) }
+
             onChange(JarCapsule(cycleStart: cycleStart, approvals: approvals, openedAt: openedAt))
         }
     }
 
     func observeNotes(_ onChange: @escaping ([JarNote]) -> Void) {
-        notesListener = notesCol
-            .order(by: "createdAt")
-            .addSnapshotListener { snapshot, _ in
-                guard let docs = snapshot?.documents else { return }
-                let notes: [JarNote] = docs.compactMap { doc in
-                    let d = doc.data()
-                    guard let text = d["text"] as? String,
-                          let authorKey = d["authorKey"] as? String,
-                          let ts = d["createdAt"] as? Timestamp,
-                          let id = UUID(uuidString: doc.documentID) else { return nil }
-                    return JarNote(id: id, text: text, authorKey: authorKey, createdAt: ts.dateValue())
-                }
-                onChange(notes)
+        notesHandle = notesRef.observe(.value) { snapshot in
+            var notes: [JarNote] = []
+            for case let child as DataSnapshot in snapshot.children {
+                guard let d = child.value as? [String: Any],
+                      let text = d["text"] as? String,
+                      let authorKey = d["authorKey"] as? String,
+                      let created = d["createdAt"] as? TimeInterval,
+                      let id = UUID(uuidString: child.key) else { continue }
+                notes.append(JarNote(
+                    id: id,
+                    text: text,
+                    authorKey: authorKey,
+                    createdAt: Date(timeIntervalSince1970: created)
+                ))
             }
+            notes.sort { $0.createdAt < $1.createdAt }
+            onChange(notes)
+        }
     }
 
     // MARK: - Write
 
     func addNote(text: String, authorKey: String) {
         let id = UUID()
-        notesCol.document(id.uuidString).setData([
+        notesRef.child(id.uuidString).setValue([
             "text": text,
             "authorKey": authorKey,
-            "createdAt": Timestamp(date: Date())
+            "createdAt": Date().timeIntervalSince1970
         ])
     }
 
     func setApproval(_ approved: Bool, for authorKey: String) {
-        // merge:true iç içe map'i alan bazında birleştirir (diğer onayı silmez).
-        capsuleDoc.setData(["approvals": [authorKey: approved]], merge: true)
+        capsuleRef.child("approvals").child(authorKey).setValue(approved)
     }
 
     func markOpened(at date: Date) {
-        capsuleDoc.setData(["openedAt": Timestamp(date: date)], merge: true)
+        capsuleRef.child("openedAt").setValue(date.timeIntervalSince1970)
     }
 
     func startNewCycle(at date: Date) {
-        // Tüm notları topluca sil.
-        notesCol.getDocuments { [weak self] snapshot, _ in
-            guard let self else { return }
-            let batch = self.db.batch()
-            snapshot?.documents.forEach { batch.deleteDocument($0.reference) }
-            batch.commit()
-        }
-        // Döngüyü gerçek açılış tarihinden yeniden başlat.
-        capsuleDoc.setData([
-            "cycleStart": Timestamp(date: date),
+        notesRef.removeValue()
+        capsuleRef.setValue([
+            "cycleStart": date.timeIntervalSince1970,
             "approvals": [String: Bool](),
             "openedAt": NSNull()
         ])
     }
 
     func stop() {
-        capsuleListener?.remove()
-        notesListener?.remove()
-        capsuleListener = nil
-        notesListener = nil
+        if let capsuleHandle { capsuleRef.removeObserver(withHandle: capsuleHandle) }
+        if let notesHandle { notesRef.removeObserver(withHandle: notesHandle) }
+        capsuleHandle = nil
+        notesHandle = nil
     }
 }
