@@ -60,6 +60,9 @@ final class JarViewModel {
 
     var partnerName: String { currentUser.partner.firstName }
 
+    /// Partnerin sevgi takma adı (örn. "Şevvalim" / "Orhim").
+    var partnerPetName: String { currentUser.partner.petName }
+
     /// Not eklenebilir mi? (Sadece kapsül açıkken eklenemez.)
     var canAddNote: Bool { !isOpened }
 

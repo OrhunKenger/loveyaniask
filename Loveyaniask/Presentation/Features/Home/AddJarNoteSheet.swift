@@ -16,7 +16,7 @@ struct AddJarNoteSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: AppSpacing.md) {
-                Text("Onun hakkında bugün ne düşünüyorsun?")
+                Text("\(viewModel.partnerPetName) hakkında bugün ne düşünüyorsun?")
                     .font(.subheadline)
                     .foregroundStyle(AppColors.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
