@@ -28,11 +28,12 @@ struct HomeView: View {
                     TimeTogetherCard(viewModel: viewModel)
 
                     SpecialDaysSection(viewModel: specialDaysViewModel)
-
-                    MemoryJarSection(viewModel: jarViewModel)
                 }
                 .padding(AppSpacing.md)
             }
+
+            // Yüzen, sürüklenebilir kavanoz (her şeyin üstünde).
+            MemoryJarSection(viewModel: jarViewModel)
         }
         .onAppear {
             viewModel.onAppear()
