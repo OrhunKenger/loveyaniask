@@ -24,7 +24,8 @@ struct AddPlaceUseCase {
         rating: Int,
         note: String,
         dateVisited: Date,
-        imageData: Data?
+        imageData: Data?,
+        visited: Bool
     ) {
         var fileName: String?
         if let imageData {
@@ -42,7 +43,8 @@ struct AddPlaceUseCase {
             ratings: ratings,
             note: note,
             dateVisited: dateVisited,
-            photoFileName: fileName
+            photoFileName: fileName,
+            visited: visited
         )
         repository.add(place)
     }

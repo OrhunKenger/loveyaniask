@@ -21,7 +21,7 @@ struct PlacesView: View {
 
         ZStack(alignment: .bottomTrailing) {
             Map(initialPosition: .region(viewModel.initialRegion)) {
-                ForEach(viewModel.places) { place in
+                ForEach(viewModel.visitedPlaces) { place in
                     Annotation(place.name, coordinate: viewModel.coordinate(for: place)) {
                         Button {
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
@@ -43,7 +43,7 @@ struct PlacesView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .padding(AppSpacing.md)
 
-            if viewModel.places.isEmpty {
+            if viewModel.visitedPlaces.isEmpty {
                 emptyHint
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }

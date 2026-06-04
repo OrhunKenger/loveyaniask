@@ -32,6 +32,9 @@ struct RootView: View {
     var body: some View {
         VStack(spacing: 0) {
             TabView(selection: $selectedTab) {
+                WishlistView(viewModel: placesViewModel)
+                    .tag(AppTab.wishlist)
+
                 MoodView(viewModel: moodViewModel)
                     .tag(AppTab.mood)
 

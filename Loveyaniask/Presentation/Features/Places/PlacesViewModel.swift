@@ -23,6 +23,7 @@ final class PlacesViewModel {
     private let deletePlaceUseCase: DeletePlaceUseCase
     private let getPhotoUseCase: GetPlacePhotoUseCase
     private let setRatingUseCase: SetPlaceRatingUseCase
+    private let setVisitedUseCase: SetPlaceVisitedUseCase
 
     init(
         currentUser: UserProfile,
@@ -30,7 +31,8 @@ final class PlacesViewModel {
         addPlace: AddPlaceUseCase,
         deletePlace: DeletePlaceUseCase,
         getPhoto: GetPlacePhotoUseCase,
-        setRating: SetPlaceRatingUseCase
+        setRating: SetPlaceRatingUseCase,
+        setVisited: SetPlaceVisitedUseCase
     ) {
         self.currentUser = currentUser
         self.getPlaces = getPlaces
@@ -38,8 +40,14 @@ final class PlacesViewModel {
         self.deletePlaceUseCase = deletePlace
         self.getPhotoUseCase = getPhoto
         self.setRatingUseCase = setRating
+        self.setVisitedUseCase = setVisited
         self.places = getPlaces.execute()
     }
+
+    /// Gittiğimiz mekanlar.
+    var visitedPlaces: [Place] { places.filter { $0.visited } }
+    /// Gitmek istediğimiz mekanlar (hayal listesi).
+    var wishlistPlaces: [Place] { places.filter { !$0.visited } }
 
     func reload() {
         places = getPlaces.execute()
@@ -51,7 +59,7 @@ final class PlacesViewModel {
 
     // MARK: - Ekleme / silme / puan
 
-    func add(name: String, latitude: Double, longitude: Double, rating: Int, note: String, dateVisited: Date, imageData: Data?) {
+    func add(name: String, latitude: Double, longitude: Double, rating: Int, note: String, dateVisited: Date, imageData: Data?, visited: Bool = true) {
         addPlaceUseCase.execute(
             name: name,
             latitude: latitude,
@@ -60,8 +68,15 @@ final class PlacesViewModel {
             rating: rating,
             note: note,
             dateVisited: dateVisited,
-            imageData: imageData
+            imageData: imageData,
+            visited: visited
         )
+        reload()
+    }
+
+    /// "Gittik ✓" — hayal listesindeki mekanı gittiğimize taşır.
+    func markVisited(_ place: Place) {
+        setVisitedUseCase.execute(placeId: place.id, visited: true, dateVisited: Date())
         reload()
     }
 

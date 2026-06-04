@@ -11,6 +11,8 @@ import MapKit
 
 struct AddPlaceSheet: View {
     let viewModel: PlacesViewModel
+    /// true = gitmek istediğimiz (puan/tarih yok); false = gittiğimiz.
+    var wishlist: Bool = false
     @Environment(\.dismiss) private var dismiss
 
     @State private var search = PlaceSearchCompleter()
@@ -64,8 +66,10 @@ struct AddPlaceSheet: View {
                     }
                 }
 
-                Section("Senin puanın") {
-                    starsPicker
+                if !wishlist {
+                    Section("Senin puanın") {
+                        starsPicker
+                    }
                 }
 
                 Section("Fotoğraf") {
@@ -73,16 +77,18 @@ struct AddPlaceSheet: View {
                 }
 
                 Section("Not") {
-                    TextField("Anı / yorum", text: $note, axis: .vertical)
+                    TextField(wishlist ? "Neden gitmek istiyoruz? (örn. kahvesi efsaneymiş)" : "Anı / yorum", text: $note, axis: .vertical)
                         .lineLimit(2...4)
                 }
 
-                Section("Tarih") {
-                    DatePicker("Gidilen tarih", selection: $dateVisited, displayedComponents: .date)
-                        .environment(\.locale, Locale(identifier: "tr_TR"))
+                if !wishlist {
+                    Section("Tarih") {
+                        DatePicker("Gidilen tarih", selection: $dateVisited, displayedComponents: .date)
+                            .environment(\.locale, Locale(identifier: "tr_TR"))
+                    }
                 }
             }
-            .navigationTitle("Mekan Ekle")
+            .navigationTitle(wishlist ? "Gitmek İstediğimiz Yer" : "Mekan Ekle")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -161,7 +167,8 @@ struct AddPlaceSheet: View {
             rating: rating,
             note: note,
             dateVisited: dateVisited,
-            imageData: imageData
+            imageData: imageData,
+            visited: !wishlist
         )
         dismiss()
     }

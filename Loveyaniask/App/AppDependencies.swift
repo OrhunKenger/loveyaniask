@@ -48,7 +48,8 @@ struct AppDependencies {
             addPlace: AddPlaceUseCase(repository: repository, photoStore: photoStore),
             deletePlace: DeletePlaceUseCase(repository: repository, photoStore: photoStore),
             getPhoto: GetPlacePhotoUseCase(photoStore: photoStore),
-            setRating: SetPlaceRatingUseCase(repository: repository)
+            setRating: SetPlaceRatingUseCase(repository: repository),
+            setVisited: SetPlaceVisitedUseCase(repository: repository)
         )
     }
 
