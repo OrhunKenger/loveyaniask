@@ -139,6 +139,16 @@ final class MoodViewModel {
         calendar.isDateInToday(date)
     }
 
+    /// Gelecek bir gün mü? (bugünden sonrası — kayıt girilemez)
+    func isFuture(_ date: Date) -> Bool {
+        calendar.startOfDay(for: date) > calendar.startOfDay(for: Date())
+    }
+
+    /// Sadece bugün düzenlenebilir; geçmiş günler salt-okunur görüntülenir.
+    func canEdit(_ date: Date) -> Bool {
+        isToday(date)
+    }
+
     func dayTitle(for date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "tr_TR")

@@ -18,12 +18,19 @@ struct MoodDayEditorSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: AppSpacing.lg) {
+                    if !viewModel.canEdit(date) {
+                        Text("Geçmiş gün — sadece bakıyorsun")
+                            .font(.caption)
+                            .foregroundStyle(AppColors.textSecondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
                     ForEach(Partner.allCases) { partner in
                         PartnerMoodCard(
                             viewModel: viewModel,
                             date: date,
                             partner: partner,
-                            editable: partner == .me
+                            editable: partner == .me && viewModel.canEdit(date)
                         )
                     }
                 }

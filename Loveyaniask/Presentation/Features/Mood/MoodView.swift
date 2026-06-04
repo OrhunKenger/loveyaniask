@@ -137,9 +137,10 @@ struct MoodView: View {
                 .stroke(isToday ? AppColors.primary : .clear, lineWidth: 1.2)
         )
         .contentShape(Rectangle())
-        .opacity(viewModel.isToday(date) ? 1 : 0.55)
+        .opacity(viewModel.isToday(date) ? 1 : (viewModel.isFuture(date) ? 0.35 : 0.72))
         .onTapGesture {
-            if viewModel.isToday(date) {
+            // Bugün düzenlenir, geçmiş günler salt-okunur açılır; gelecek kapalı.
+            if !viewModel.isFuture(date) {
                 viewModel.select(date)
             }
         }
