@@ -17,6 +17,7 @@ final class JarViewModel {
 
     var showingAdd = false
     var showingReveal = false
+    var showingApprove = false
 
     private let currentUser: UserProfile
     private let repository: JarRepository

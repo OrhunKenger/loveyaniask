@@ -3,7 +3,7 @@
 //  Loveyaniask
 //
 //  Gerçeksi cam kavanoz: not eklendikçe içine kâğıtlar dolar.
-//  Üstünde not sayısı rozeti; açılmaya hazırken altında sıcak bir parıltı.
+//  `scale` ile küçültülüp ana sayfada az yer kaplayacak şekilde kullanılır.
 //
 
 import SwiftUI
@@ -11,6 +11,7 @@ import SwiftUI
 struct MemoryJarView: View {
     let count: Int
     var isReady: Bool = false
+    var scale: CGFloat = 1
 
     @State private var glow = false
 
@@ -25,41 +26,16 @@ struct MemoryJarView: View {
     }
 
     var body: some View {
-        VStack(spacing: AppSpacing.sm) {
-            countBadge
-
-            jar
-                .background(readyGlow)
-                .onAppear {
-                    guard isReady else { return }
-                    withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) {
-                        glow = true
-                    }
+        jar
+            .scaleEffect(scale, anchor: .center)
+            .frame(width: 160 * scale, height: 230 * scale)
+            .background(readyGlow)
+            .onAppear {
+                guard isReady else { return }
+                withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) {
+                    glow = true
                 }
-        }
-    }
-
-    // MARK: - Sayı rozeti
-
-    private var countBadge: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "envelope.fill")
-                .font(.caption2)
-            Text("\(count) not")
-                .font(.caption.weight(.bold))
-        }
-        .foregroundStyle(.white)
-        .padding(.horizontal, AppSpacing.md)
-        .padding(.vertical, 6)
-        .background(
-            LinearGradient(
-                colors: [AppColors.primary, AppColors.secondary],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-        )
-        .clipShape(Capsule())
-        .shadow(color: AppColors.primary.opacity(0.35), radius: 5, y: 3)
+            }
     }
 
     // MARK: - Kavanoz
@@ -135,10 +111,10 @@ struct MemoryJarView: View {
         if isReady {
             Circle()
                 .fill(Color(hex: "F4C95D"))
-                .frame(width: 150, height: 150)
-                .blur(radius: 45)
+                .frame(width: 140 * scale, height: 140 * scale)
+                .blur(radius: 40)
                 .opacity(glow ? 0.7 : 0.35)
-                .offset(y: 30)
+                .offset(y: 25 * scale)
         }
     }
 
