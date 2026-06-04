@@ -38,6 +38,12 @@ final class FirebasePlanRepository: PlanRepository {
         ref.child(plan.id.uuidString).setValue(Self.encode(plan))
     }
 
+    func update(_ plan: Plan) {
+        if let i = cache.firstIndex(where: { $0.id == plan.id }) { cache[i] = plan }
+        onChange?(cache)
+        ref.child(plan.id.uuidString).setValue(Self.encode(plan))
+    }
+
     func delete(id: UUID) {
         cache.removeAll { $0.id == id }
         onChange?(cache)

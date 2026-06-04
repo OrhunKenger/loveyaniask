@@ -19,7 +19,7 @@ struct SpecialDaysSection: View {
                     .foregroundStyle(AppColors.textPrimary)
                 Spacer()
                 Button {
-                    viewModel.showingAdd = true
+                    viewModel.startNew()
                 } label: {
                     Image(systemName: "plus.circle.fill")
                         .font(.title3)
@@ -39,6 +39,11 @@ struct SpecialDaysSection: View {
                         .onTapGesture { viewModel.select(day) }
                         .contextMenu {
                             if !day.isBuiltIn {
+                                Button {
+                                    viewModel.startEdit(day)
+                                } label: {
+                                    Label("Düzenle", systemImage: "pencil")
+                                }
                                 Button(role: .destructive) {
                                     viewModel.delete(day)
                                 } label: {
@@ -59,8 +64,8 @@ struct SpecialDaysSection: View {
                 dateText: viewModel.nextDateText(for: day)
             )
         }
-        .sheet(isPresented: $viewModel.showingAdd) {
-            AddSpecialDaySheet(viewModel: viewModel)
+        .sheet(item: $viewModel.formTarget) { target in
+            AddSpecialDaySheet(viewModel: viewModel, editing: target.day)
         }
     }
 }

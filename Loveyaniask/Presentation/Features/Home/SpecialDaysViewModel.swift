@@ -9,15 +9,22 @@
 import Foundation
 import Observation
 
+/// Ekleme/düzenleme sheet hedefi (day = nil ise yeni).
+struct SpecialDayFormTarget: Identifiable {
+    let id = UUID()
+    let day: SpecialDay?
+}
+
 @Observable
 final class SpecialDaysViewModel {
     private(set) var days: [SpecialDay] = []
     var selectedDay: SpecialDay?
-    var showingAdd = false
+    var formTarget: SpecialDayFormTarget?
 
     private let getDays: GetSpecialDaysUseCase
     private let observeDaysUseCase: ObserveSpecialDaysUseCase
     private let addDayUseCase: AddSpecialDayUseCase
+    private let updateDayUseCase: UpdateSpecialDayUseCase
     private let deleteDayUseCase: DeleteSpecialDayUseCase
     private let calculator = SpecialDayCalculator()
 
@@ -25,11 +32,13 @@ final class SpecialDaysViewModel {
         getDays: GetSpecialDaysUseCase,
         observeDays: ObserveSpecialDaysUseCase,
         addDay: AddSpecialDayUseCase,
+        updateDay: UpdateSpecialDayUseCase,
         deleteDay: DeleteSpecialDayUseCase
     ) {
         self.getDays = getDays
         self.observeDaysUseCase = observeDays
         self.addDayUseCase = addDay
+        self.updateDayUseCase = updateDay
         self.deleteDayUseCase = deleteDay
         // Firebase'den gerçek zamanlı dinle, kalan güne göre sırala.
         observeDays.execute { [weak self] days in
@@ -44,6 +53,23 @@ final class SpecialDaysViewModel {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         addDayUseCase.execute(title: trimmed, emoji: emoji, date: date, repeatsYearly: repeatsYearly)
+    }
+
+    func update(_ day: SpecialDay, title: String, emoji: String, date: Date, repeatsYearly: Bool) {
+        guard !day.isBuiltIn else { return }
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let updated = SpecialDay(
+            id: day.id, title: trimmed, date: date, emoji: emoji,
+            repeatsYearly: repeatsYearly, isBuiltIn: false
+        )
+        updateDayUseCase.execute(updated)
+    }
+
+    func startNew() { formTarget = SpecialDayFormTarget(day: nil) }
+    func startEdit(_ day: SpecialDay) {
+        guard !day.isBuiltIn else { return }
+        formTarget = SpecialDayFormTarget(day: day)
     }
 
     func delete(_ day: SpecialDay) {

@@ -9,12 +9,22 @@ import SwiftUI
 
 struct AddPlanSheet: View {
     let viewModel: PlansViewModel
+    let editing: Plan?
     @Environment(\.dismiss) private var dismiss
 
-    @State private var title = ""
-    @State private var date = Date()
-    @State private var note = ""
-    @State private var remind = true
+    @State private var title: String
+    @State private var date: Date
+    @State private var note: String
+    @State private var remind: Bool
+
+    init(viewModel: PlansViewModel, editing: Plan? = nil) {
+        self.viewModel = viewModel
+        self.editing = editing
+        _title = State(initialValue: editing?.title ?? "")
+        _date = State(initialValue: editing?.date ?? Date())
+        _note = State(initialValue: editing?.note ?? "")
+        _remind = State(initialValue: editing?.remindEnabled ?? true)
+    }
 
     var body: some View {
         NavigationStack {
@@ -37,7 +47,7 @@ struct AddPlanSheet: View {
                     Toggle("Hatırlat (1 gün önce + zamanında)", isOn: $remind)
                 }
             }
-            .navigationTitle("Plan Ekle")
+            .navigationTitle(editing == nil ? "Plan Ekle" : "Planı Düzenle")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -45,7 +55,11 @@ struct AddPlanSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Kaydet") {
-                        viewModel.add(title: title, date: date, note: note, remindEnabled: remind)
+                        if let editing {
+                            viewModel.update(editing, title: title, date: date, note: note, remindEnabled: remind)
+                        } else {
+                            viewModel.add(title: title, date: date, note: note, remindEnabled: remind)
+                        }
                         dismiss()
                     }
                     .fontWeight(.semibold)

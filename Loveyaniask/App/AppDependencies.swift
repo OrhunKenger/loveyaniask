@@ -35,6 +35,7 @@ struct AppDependencies {
             getDays: GetSpecialDaysUseCase(repository: repository),
             observeDays: ObserveSpecialDaysUseCase(repository: repository),
             addDay: AddSpecialDayUseCase(repository: repository),
+            updateDay: UpdateSpecialDayUseCase(repository: repository),
             deleteDay: DeleteSpecialDayUseCase(repository: repository)
         )
     }
@@ -46,6 +47,7 @@ struct AppDependencies {
             currentUser: currentUser,
             observePlans: ObservePlansUseCase(repository: repository),
             addPlan: AddPlanUseCase(repository: repository),
+            updatePlan: UpdatePlanUseCase(repository: repository),
             deletePlan: DeletePlanUseCase(repository: repository),
             scheduler: scheduler
         )

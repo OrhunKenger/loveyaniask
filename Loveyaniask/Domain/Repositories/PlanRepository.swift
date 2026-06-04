@@ -10,5 +10,6 @@ import Foundation
 protocol PlanRepository {
     func observe(_ onChange: @escaping ([Plan]) -> Void)
     func add(_ plan: Plan)
+    func update(_ plan: Plan)
     func delete(id: UUID)
 }

@@ -9,14 +9,24 @@ import SwiftUI
 
 struct AddSpecialDaySheet: View {
     let viewModel: SpecialDaysViewModel
+    let editing: SpecialDay?
     @Environment(\.dismiss) private var dismiss
 
-    @State private var title = ""
-    @State private var emoji = "🎉"
-    @State private var date = Date()
-    @State private var repeatsYearly = true
+    @State private var title: String
+    @State private var emoji: String
+    @State private var date: Date
+    @State private var repeatsYearly: Bool
 
     private let emojis = ["🎉", "❤️", "🎂", "💍", "✈️", "🌹", "🥂", "🎁", "💑", "🌟", "🏖️", "🎶", "🍫", "🌙", "💖"]
+
+    init(viewModel: SpecialDaysViewModel, editing: SpecialDay? = nil) {
+        self.viewModel = viewModel
+        self.editing = editing
+        _title = State(initialValue: editing?.title ?? "")
+        _emoji = State(initialValue: editing?.emoji ?? "🎉")
+        _date = State(initialValue: editing?.date ?? Date())
+        _repeatsYearly = State(initialValue: editing?.repeatsYearly ?? true)
+    }
 
     var body: some View {
         NavigationStack {
@@ -56,7 +66,7 @@ struct AddSpecialDaySheet: View {
                     Toggle("Her yıl tekrarla", isOn: $repeatsYearly)
                 }
             }
-            .navigationTitle("Özel Gün Ekle")
+            .navigationTitle(editing == nil ? "Özel Gün Ekle" : "Özel Günü Düzenle")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -64,7 +74,11 @@ struct AddSpecialDaySheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Kaydet") {
-                        viewModel.add(title: title, emoji: emoji, date: date, repeatsYearly: repeatsYearly)
+                        if let editing {
+                            viewModel.update(editing, title: title, emoji: emoji, date: date, repeatsYearly: repeatsYearly)
+                        } else {
+                            viewModel.add(title: title, emoji: emoji, date: date, repeatsYearly: repeatsYearly)
+                        }
                         dismiss()
                     }
                     .fontWeight(.semibold)

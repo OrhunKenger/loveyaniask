@@ -55,6 +55,12 @@ final class FirebaseSpecialDayRepository: SpecialDayRepository {
         ref.child(day.id.uuidString).setValue(Self.encode(day))
     }
 
+    func update(_ day: SpecialDay) {
+        if let i = custom.firstIndex(where: { $0.id == day.id }) { custom[i] = day }
+        onChange?(all())
+        ref.child(day.id.uuidString).setValue(Self.encode(day))
+    }
+
     func delete(id: UUID) {
         custom.removeAll { $0.id == id }
         onChange?(all())

@@ -8,14 +8,21 @@
 import Foundation
 import Observation
 
+/// Ekleme/düzenleme sheet hedefi (plan = nil ise yeni).
+struct PlanFormTarget: Identifiable {
+    let id = UUID()
+    let plan: Plan?
+}
+
 @Observable
 final class PlansViewModel {
     private(set) var plans: [Plan] = []   // sadece yaklaşanlar, en yakın en üstte
-    var showingAdd = false
+    var formTarget: PlanFormTarget?
 
     private let currentUser: UserProfile
     private let observePlansUseCase: ObservePlansUseCase
     private let addPlanUseCase: AddPlanUseCase
+    private let updatePlanUseCase: UpdatePlanUseCase
     private let deletePlanUseCase: DeletePlanUseCase
     private let scheduler: PlanReminderScheduler
 
@@ -23,12 +30,14 @@ final class PlansViewModel {
         currentUser: UserProfile,
         observePlans: ObservePlansUseCase,
         addPlan: AddPlanUseCase,
+        updatePlan: UpdatePlanUseCase,
         deletePlan: DeletePlanUseCase,
         scheduler: PlanReminderScheduler
     ) {
         self.currentUser = currentUser
         self.observePlansUseCase = observePlans
         self.addPlanUseCase = addPlan
+        self.updatePlanUseCase = updatePlan
         self.deletePlanUseCase = deletePlan
         self.scheduler = scheduler
         scheduler.requestAuthorization()
@@ -51,6 +60,19 @@ final class PlansViewModel {
             remindEnabled: remindEnabled, authorKey: currentUser.rawValue
         )
     }
+
+    func update(_ plan: Plan, title: String, date: Date, note: String, remindEnabled: Bool) {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let updated = Plan(
+            id: plan.id, title: trimmed, date: date, note: note,
+            remindEnabled: remindEnabled, authorKey: plan.authorKey
+        )
+        updatePlanUseCase.execute(updated)
+    }
+
+    func startNew() { formTarget = PlanFormTarget(plan: nil) }
+    func startEdit(_ plan: Plan) { formTarget = PlanFormTarget(plan: plan) }
 
     func delete(_ plan: Plan) {
         deletePlanUseCase.execute(id: plan.id)

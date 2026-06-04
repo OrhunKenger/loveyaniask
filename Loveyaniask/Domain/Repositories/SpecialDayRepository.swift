@@ -12,5 +12,6 @@ protocol SpecialDayRepository {
     /// Özel günleri gerçek zamanlı dinler (sabit + kullanıcı eklediği).
     func observe(_ onChange: @escaping ([SpecialDay]) -> Void)
     func add(_ day: SpecialDay)
+    func update(_ day: SpecialDay)
     func delete(id: UUID)
 }

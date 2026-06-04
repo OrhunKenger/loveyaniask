@@ -18,7 +18,7 @@ struct PlansSection: View {
                     .foregroundStyle(AppColors.textPrimary)
                 Spacer()
                 Button {
-                    viewModel.showingAdd = true
+                    viewModel.startNew()
                 } label: {
                     Image(systemName: "plus.circle.fill")
                         .font(.title3)
@@ -39,8 +39,8 @@ struct PlansSection: View {
                 }
             }
         }
-        .sheet(isPresented: $viewModel.showingAdd) {
-            AddPlanSheet(viewModel: viewModel)
+        .sheet(item: $viewModel.formTarget) { target in
+            AddPlanSheet(viewModel: viewModel, editing: target.plan)
         }
     }
 
@@ -89,6 +89,11 @@ struct PlansSection: View {
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .shadow(color: .black.opacity(0.05), radius: 8, y: 3)
         .contextMenu {
+            Button {
+                viewModel.startEdit(plan)
+            } label: {
+                Label("Düzenle", systemImage: "pencil")
+            }
             Button(role: .destructive) {
                 viewModel.delete(plan)
             } label: {
