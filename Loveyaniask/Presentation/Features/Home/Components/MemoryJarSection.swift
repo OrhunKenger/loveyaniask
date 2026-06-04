@@ -2,7 +2,8 @@
 //  MemoryJarSection.swift
 //  Loveyaniask
 //
-//  Ana sayfadaki kavanoz kartı: kavanoz + not ekle + (dolunca) oku.
+//  Ana sayfadaki aylık kavanoz kartı.
+//  Toplama → (ay dolunca) açılmaya hazır → iki onay → açıldı → oku & yeni döngü.
 //
 
 import SwiftUI
@@ -17,28 +18,13 @@ struct MemoryJarSection: View {
                     .font(.headline)
                     .foregroundStyle(AppColors.textPrimary)
                 Spacer()
-                Text("\(viewModel.count)/\(viewModel.capacity)")
-                    .font(.caption)
-                    .foregroundStyle(AppColors.textSecondary)
             }
 
-            MemoryJarView(count: viewModel.count)
-                .onTapGesture {
-                    if viewModel.count > 0 { viewModel.showingRead = true }
-                }
+            MemoryJarView(count: viewModel.count, isReady: viewModel.isReady)
 
-            if viewModel.isFull {
-                Text("Kavanoz doldu! 🎉 Aç ve hepsini oku")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(AppColors.primary)
-            } else {
-                Text("İçine birbiriniz hakkında düşündüklerinizi atın")
-                    .font(.caption)
-                    .foregroundStyle(AppColors.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
+            statusContent
 
-            HStack(spacing: AppSpacing.md) {
+            if viewModel.canAddNote {
                 Button {
                     viewModel.showingAdd = true
                 } label: {
@@ -50,20 +36,6 @@ struct MemoryJarSection: View {
                         .background(AppColors.primary)
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
-
-                Button {
-                    viewModel.showingRead = true
-                } label: {
-                    Label("Oku", systemImage: "book")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(AppColors.primary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, AppSpacing.sm)
-                        .background(AppColors.primary.opacity(0.12))
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                }
-                .disabled(viewModel.count == 0)
-                .opacity(viewModel.count == 0 ? 0.5 : 1)
             }
         }
         .padding(AppSpacing.lg)
@@ -74,8 +46,90 @@ struct MemoryJarSection: View {
         .sheet(isPresented: $viewModel.showingAdd) {
             AddJarNoteSheet(viewModel: viewModel)
         }
-        .sheet(isPresented: $viewModel.showingRead) {
-            JarNotesListSheet(viewModel: viewModel)
+        .sheet(isPresented: $viewModel.showingReveal) {
+            JarRevealSheet(viewModel: viewModel)
         }
+    }
+
+    // MARK: - Duruma göre alt içerik
+
+    @ViewBuilder
+    private var statusContent: some View {
+        switch viewModel.state {
+        case .collecting:
+            VStack(spacing: AppSpacing.xs) {
+                Text(viewModel.daysLeft == 0
+                     ? "Bugün açılabilir hale geliyor"
+                     : "Açılmasına \(viewModel.daysLeft) gün kaldı")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppColors.primary)
+                Text("İçine birbiriniz hakkında düşündüklerinizi atın. Ay dolunca, yan yanayken birlikte açacaksınız.")
+                    .font(.caption)
+                    .foregroundStyle(AppColors.textSecondary)
+                    .multilineTextAlignment(.center)
+            }
+
+        case .ready:
+            VStack(spacing: AppSpacing.sm) {
+                Text("Açılmaya hazır! 🎉")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(AppColors.primary)
+                Text("Açmak için ikinizin de onayı gerekli — yan yanayken birlikte açın.")
+                    .font(.caption)
+                    .foregroundStyle(AppColors.textSecondary)
+                    .multilineTextAlignment(.center)
+
+                HStack(spacing: AppSpacing.md) {
+                    approvalChip(name: "Sen", approved: viewModel.myApproved)
+                    approvalChip(name: viewModel.partnerName, approved: viewModel.partnerApproved)
+                }
+
+                Button {
+                    viewModel.toggleApproval()
+                } label: {
+                    Text(viewModel.myApproved ? "Onayını geri al" : "Açmayı onaylıyorum")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(viewModel.myApproved ? AppColors.primary : .white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, AppSpacing.sm)
+                        .background(viewModel.myApproved
+                                    ? AppColors.primary.opacity(0.12)
+                                    : AppColors.primary)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+            }
+
+        case .opened:
+            VStack(spacing: AppSpacing.sm) {
+                Text("Kavanoz açıldı! 💖")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(AppColors.primary)
+                Button {
+                    viewModel.showingReveal = true
+                } label: {
+                    Label("Aç ve Oku (\(viewModel.count))", systemImage: "book.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, AppSpacing.sm)
+                        .background(AppColors.primary)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+            }
+        }
+    }
+
+    private func approvalChip(name: String, approved: Bool) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: approved ? "checkmark.circle.fill" : "circle.dashed")
+                .foregroundStyle(approved ? .green : AppColors.textSecondary)
+            Text(name)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(AppColors.textPrimary)
+        }
+        .padding(.horizontal, AppSpacing.sm)
+        .padding(.vertical, 6)
+        .background(AppColors.background)
+        .clipShape(Capsule())
     }
 }

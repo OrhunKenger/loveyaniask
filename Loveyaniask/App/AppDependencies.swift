@@ -33,14 +33,9 @@ struct AppDependencies {
     }
 
     func makeJarViewModel(currentUser: UserProfile) -> JarViewModel {
-        let dataSource = UserDefaultsJarNoteDataSource()
-        let repository = JarNoteRepositoryImpl(localDataSource: dataSource)
-        return JarViewModel(
-            currentUser: currentUser,
-            getNotes: GetJarNotesUseCase(repository: repository),
-            addNote: AddJarNoteUseCase(repository: repository),
-            deleteNote: DeleteJarNoteUseCase(repository: repository)
-        )
+        // Kavanoz artık Firebase Firestore üzerinden gerçek zamanlı senkron.
+        let repository = FirebaseJarRepository()
+        return JarViewModel(currentUser: currentUser, repository: repository)
     }
 
     func makePlacesViewModel(currentUser: UserProfile) -> PlacesViewModel {
