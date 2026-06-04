@@ -2,12 +2,13 @@
 //  PlacesView.swift
 //  Loveyaniask
 //
-//  Tam ekran kaydırılabilir harita; mekanlar ortalama puana göre renkli pin'lerle.
+//  Tam ekran Mapbox haritası (koyu/gece tema); mekanlar ortalama puana göre renkli pin'lerle.
 //  Pine basınca balon kart yaylanarak açılır.
 //
 
 import SwiftUI
-import MapKit
+import MapboxMaps
+import CoreLocation
 
 struct PlacesView: View {
     @State private var viewModel: PlacesViewModel
@@ -26,9 +27,12 @@ struct PlacesView: View {
         @Bindable var viewModel = viewModel
 
         ZStack(alignment: .bottomTrailing) {
-            Map(initialPosition: .region(viewModel.initialRegion)) {
-                ForEach(viewModel.visitedPlaces) { place in
-                    Annotation(place.name, coordinate: viewModel.coordinate(for: place)) {
+            Map(initialViewport: .camera(
+                center: CLLocationCoordinate2D(latitude: 39.0, longitude: 35.0),
+                zoom: 4.2
+            )) {
+                ForEvery(viewModel.visitedPlaces) { place in
+                    MapViewAnnotation(coordinate: viewModel.coordinate(for: place)) {
                         Button {
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
                                 viewModel.selectedPlace = place
@@ -43,6 +47,7 @@ struct PlacesView: View {
                     }
                 }
             }
+            .mapStyle(.dark)
             .ignoresSafeArea(edges: .top)
 
             titlePill
