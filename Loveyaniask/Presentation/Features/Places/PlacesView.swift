@@ -62,25 +62,22 @@ struct PlacesView: View {
         }
     }
 
-    // Tatlı kalp pin: beyaz rozet + puana göre renkli kalp, küçük kuyruklu.
+    // İnce & tatlı kalp pin: küçük beyaz rozet + puana göre renkli kalp, minik kuyruklu.
     private func heartPin(for place: Place) -> some View {
-        VStack(spacing: -3) {
+        VStack(spacing: -2) {
             ZStack {
                 Circle()
                     .fill(.white)
-                    .frame(width: 40, height: 40)
-                    .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
-                Circle()
-                    .stroke(viewModel.pinColor(for: place).opacity(0.55), lineWidth: 2)
-                    .frame(width: 40, height: 40)
+                    .frame(width: 28, height: 28)
+                    .shadow(color: .black.opacity(0.18), radius: 2.5, y: 1.5)
                 Image(systemName: "heart.fill")
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(viewModel.pinColor(for: place))
             }
             PinTail()
                 .fill(.white)
-                .frame(width: 14, height: 8)
-                .shadow(color: .black.opacity(0.12), radius: 1, y: 1)
+                .frame(width: 9, height: 6)
+                .shadow(color: .black.opacity(0.1), radius: 1, y: 1)
         }
     }
 
