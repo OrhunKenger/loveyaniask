@@ -74,11 +74,12 @@ struct AppDependencies {
     }
 
     func makeMoodViewModel(currentUser: UserProfile) -> MoodViewModel {
-        let dataSource = UserDefaultsMoodDataSource()
-        let repository = MoodRepositoryImpl(localDataSource: dataSource)
+        // Ruh halleri artık Firebase'de (gerçek kişiye göre, senkron). Fotoğraflar cihazda yerel.
+        let repository = FirebaseMoodRepository(currentUser: currentUser)
         let photoStore = FileMoodPhotoStore()
         return MoodViewModel(
             getEntries: GetMoodEntriesUseCase(repository: repository),
+            observeEntries: ObserveMoodEntriesUseCase(repository: repository),
             setMoodUseCase: SetMoodUseCase(repository: repository),
             setPhotoUseCase: SetMoodPhotoUseCase(repository: repository, photoStore: photoStore),
             getPhotoUseCase: GetMoodPhotoUseCase(photoStore: photoStore),

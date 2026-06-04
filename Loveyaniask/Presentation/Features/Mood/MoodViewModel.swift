@@ -22,6 +22,7 @@ final class MoodViewModel {
     var selectedDay: CalendarDay?
 
     private let getEntries: GetMoodEntriesUseCase
+    private let observeEntriesUseCase: ObserveMoodEntriesUseCase
     private let setMoodUseCase: SetMoodUseCase
     private let setPhotoUseCase: SetMoodPhotoUseCase
     private let getPhotoUseCase: GetMoodPhotoUseCase
@@ -31,18 +32,23 @@ final class MoodViewModel {
 
     init(
         getEntries: GetMoodEntriesUseCase,
+        observeEntries: ObserveMoodEntriesUseCase,
         setMoodUseCase: SetMoodUseCase,
         setPhotoUseCase: SetMoodPhotoUseCase,
         getPhotoUseCase: GetMoodPhotoUseCase,
         currentUser: UserProfile
     ) {
         self.getEntries = getEntries
+        self.observeEntriesUseCase = observeEntries
         self.setMoodUseCase = setMoodUseCase
         self.setPhotoUseCase = setPhotoUseCase
         self.getPhotoUseCase = getPhotoUseCase
         self.currentUser = currentUser
-        self.entries = getEntries.execute()
         self.displayedMonth = Calendar.current.startOfDay(for: Date())
+        // Firebase'den gerçek zamanlı dinle.
+        observeEntries.execute { [weak self] entries in
+            self?.entries = entries
+        }
     }
 
     // MARK: - Kişiye göre etiketler
