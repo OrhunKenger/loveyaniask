@@ -1,0 +1,103 @@
+//
+//  PlansSection.swift
+//  Loveyaniask
+//
+//  Ana sayfada "Yaklaşan Planlar" akışı: en yakın üstte, geri sayım rozetli.
+//
+
+import SwiftUI
+
+struct PlansSection: View {
+    @Bindable var viewModel: PlansViewModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            HStack {
+                Text("Yaklaşan Planlar")
+                    .font(.headline)
+                    .foregroundStyle(AppColors.textPrimary)
+                Spacer()
+                Button {
+                    viewModel.showingAdd = true
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title3)
+                        .foregroundStyle(AppColors.primary)
+                }
+            }
+
+            if viewModel.plans.isEmpty {
+                Text("Henüz plan yok — + ile ekleyin (randevu, buluşma, etkinlik)")
+                    .font(.caption)
+                    .foregroundStyle(AppColors.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                VStack(spacing: AppSpacing.sm) {
+                    ForEach(viewModel.plans) { plan in
+                        planRow(plan)
+                    }
+                }
+            }
+        }
+        .padding(AppSpacing.lg)
+        .frame(maxWidth: .infinity)
+        .background(AppColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .shadow(color: .black.opacity(0.05), radius: 10, y: 4)
+        .sheet(isPresented: $viewModel.showingAdd) {
+            AddPlanSheet(viewModel: viewModel)
+        }
+    }
+
+    private func planRow(_ plan: Plan) -> some View {
+        HStack(spacing: AppSpacing.md) {
+            Text(viewModel.countdownText(for: plan))
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .frame(width: 60, height: 54)
+                .background(
+                    LinearGradient(
+                        colors: [AppColors.primary, AppColors.secondary],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(plan.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppColors.textPrimary)
+                    .lineLimit(1)
+                Text(viewModel.dateText(for: plan))
+                    .font(.caption)
+                    .foregroundStyle(AppColors.textSecondary)
+                if !plan.note.isEmpty {
+                    Text(plan.note)
+                        .font(.caption2)
+                        .foregroundStyle(AppColors.textSecondary)
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer()
+
+            if !plan.remindEnabled {
+                Image(systemName: "bell.slash")
+                    .font(.caption)
+                    .foregroundStyle(AppColors.textSecondary)
+            }
+        }
+        .padding(AppSpacing.sm)
+        .background(AppColors.background)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .contextMenu {
+            Button(role: .destructive) {
+                viewModel.delete(plan)
+            } label: {
+                Label("Sil", systemImage: "trash")
+            }
+        }
+    }
+}

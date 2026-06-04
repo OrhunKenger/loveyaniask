@@ -39,6 +39,18 @@ struct AppDependencies {
         )
     }
 
+    func makePlansViewModel(currentUser: UserProfile) -> PlansViewModel {
+        let repository = FirebasePlanRepository()
+        let scheduler = LocalPlanReminderScheduler()
+        return PlansViewModel(
+            currentUser: currentUser,
+            observePlans: ObservePlansUseCase(repository: repository),
+            addPlan: AddPlanUseCase(repository: repository),
+            deletePlan: DeletePlanUseCase(repository: repository),
+            scheduler: scheduler
+        )
+    }
+
     func makeJarViewModel(currentUser: UserProfile) -> JarViewModel {
         // Kavanoz artık Firebase Firestore üzerinden gerçek zamanlı senkron.
         let repository = FirebaseJarRepository()

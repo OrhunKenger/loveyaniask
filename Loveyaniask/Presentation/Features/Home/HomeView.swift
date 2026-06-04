@@ -10,11 +10,13 @@ import SwiftUI
 struct HomeView: View {
     @State private var viewModel: HomeViewModel
     @State private var specialDaysViewModel: SpecialDaysViewModel
+    @State private var plansViewModel: PlansViewModel
     @State private var jarViewModel: JarViewModel
 
-    init(viewModel: HomeViewModel, specialDaysViewModel: SpecialDaysViewModel, jarViewModel: JarViewModel) {
+    init(viewModel: HomeViewModel, specialDaysViewModel: SpecialDaysViewModel, plansViewModel: PlansViewModel, jarViewModel: JarViewModel) {
         _viewModel = State(initialValue: viewModel)
         _specialDaysViewModel = State(initialValue: specialDaysViewModel)
+        _plansViewModel = State(initialValue: plansViewModel)
         _jarViewModel = State(initialValue: jarViewModel)
     }
 
@@ -26,6 +28,8 @@ struct HomeView: View {
             ScrollView {
                 VStack(spacing: AppSpacing.lg) {
                     TimeTogetherCard(viewModel: viewModel)
+
+                    PlansSection(viewModel: plansViewModel)
 
                     SpecialDaysSection(viewModel: specialDaysViewModel)
                 }
@@ -46,6 +50,7 @@ struct HomeView: View {
     return HomeView(
         viewModel: dependencies.makeHomeViewModel(),
         specialDaysViewModel: dependencies.makeSpecialDaysViewModel(),
+        plansViewModel: dependencies.makePlansViewModel(currentUser: .orhun),
         jarViewModel: dependencies.makeJarViewModel(currentUser: .orhun)
     )
 }

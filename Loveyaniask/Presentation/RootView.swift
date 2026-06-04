@@ -11,6 +11,7 @@ import SwiftUI
 struct RootView: View {
     @State private var homeViewModel: HomeViewModel
     @State private var specialDaysViewModel: SpecialDaysViewModel
+    @State private var plansViewModel: PlansViewModel
     @State private var jarViewModel: JarViewModel
     @State private var moodViewModel: MoodViewModel
     @State private var periodViewModel: PeriodViewModel
@@ -22,6 +23,7 @@ struct RootView: View {
     init(dependencies: AppDependencies, currentUser: UserProfile) {
         _homeViewModel = State(initialValue: dependencies.makeHomeViewModel())
         _specialDaysViewModel = State(initialValue: dependencies.makeSpecialDaysViewModel())
+        _plansViewModel = State(initialValue: dependencies.makePlansViewModel(currentUser: currentUser))
         _jarViewModel = State(initialValue: dependencies.makeJarViewModel(currentUser: currentUser))
         _moodViewModel = State(initialValue: dependencies.makeMoodViewModel(currentUser: currentUser))
         _periodViewModel = State(initialValue: dependencies.makePeriodViewModel())
@@ -38,7 +40,7 @@ struct RootView: View {
                 MoodView(viewModel: moodViewModel)
                     .tag(AppTab.mood)
 
-                HomeView(viewModel: homeViewModel, specialDaysViewModel: specialDaysViewModel, jarViewModel: jarViewModel)
+                HomeView(viewModel: homeViewModel, specialDaysViewModel: specialDaysViewModel, plansViewModel: plansViewModel, jarViewModel: jarViewModel)
                     .tag(AppTab.home)
 
                 PeriodView(viewModel: periodViewModel, canEdit: canEditPeriod)
