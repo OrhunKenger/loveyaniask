@@ -47,7 +47,7 @@ struct PlacesView: View {
                     }
                 }
             }
-            .mapStyle(.dark)
+            .mapStyle(MapStyle(uri: StyleURI(rawValue: "mapbox://styles/orhunkenger/cmpzp4qsa002m01r05u8784y3")!))
             .ignoresSafeArea(edges: .top)
 
             titlePill
