@@ -38,11 +38,7 @@ struct PlacesView: View {
                                 viewModel.selectedPlace = place
                             }
                         } label: {
-                            Image(systemName: "mappin.circle.fill")
-                                .font(.title)
-                                .foregroundStyle(viewModel.pinColor(for: place))
-                                .background(Circle().fill(.white).padding(3))
-                                .shadow(radius: 2)
+                            heartPin(for: place)
                         }
                     }
                 }
@@ -63,6 +59,28 @@ struct PlacesView: View {
         }
         .sheet(isPresented: $viewModel.showingAdd) {
             AddPlaceSheet(viewModel: viewModel)
+        }
+    }
+
+    // Tatlı kalp pin: beyaz rozet + puana göre renkli kalp, küçük kuyruklu.
+    private func heartPin(for place: Place) -> some View {
+        VStack(spacing: -3) {
+            ZStack {
+                Circle()
+                    .fill(.white)
+                    .frame(width: 40, height: 40)
+                    .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
+                Circle()
+                    .stroke(viewModel.pinColor(for: place).opacity(0.55), lineWidth: 2)
+                    .frame(width: 40, height: 40)
+                Image(systemName: "heart.fill")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(viewModel.pinColor(for: place))
+            }
+            PinTail()
+                .fill(.white)
+                .frame(width: 14, height: 8)
+                .shadow(color: .black.opacity(0.12), radius: 1, y: 1)
         }
     }
 
@@ -157,5 +175,17 @@ struct PlacesView: View {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
             viewModel.selectedPlace = nil
         }
+    }
+}
+
+/// Pin'in altındaki küçük aşağı bakan kuyruk (üçgen).
+private struct PinTail: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+        path.closeSubpath()
+        return path
     }
 }
