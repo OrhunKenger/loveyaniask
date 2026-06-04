@@ -39,11 +39,6 @@ struct PlansSection: View {
                 }
             }
         }
-        .padding(AppSpacing.lg)
-        .frame(maxWidth: .infinity)
-        .background(AppColors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .shadow(color: .black.opacity(0.05), radius: 10, y: 4)
         .sheet(isPresented: $viewModel.showingAdd) {
             AddPlanSheet(viewModel: viewModel)
         }
@@ -90,8 +85,9 @@ struct PlansSection: View {
             }
         }
         .padding(AppSpacing.sm)
-        .background(AppColors.background)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(AppColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: .black.opacity(0.05), radius: 8, y: 3)
         .contextMenu {
             Button(role: .destructive) {
                 viewModel.delete(plan)
