@@ -43,11 +43,6 @@ struct PlacesView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .padding(AppSpacing.md)
 
-            if viewModel.visitedPlaces.isEmpty {
-                emptyHint
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-
             addButton
                 .padding(AppSpacing.lg)
         }
@@ -62,7 +57,7 @@ struct PlacesView: View {
     }
 
     private var titlePill: some View {
-        Text("Gittiğimiz Mekanlar")
+        Text("Gittiğimiz Yerler")
             .font(.headline)
             .foregroundStyle(AppColors.textPrimary)
             .padding(.horizontal, AppSpacing.md)
@@ -84,23 +79,6 @@ struct PlacesView: View {
                 .clipShape(Circle())
                 .shadow(color: AppColors.primary.opacity(0.4), radius: 10, y: 6)
         }
-    }
-
-    private var emptyHint: some View {
-        VStack(spacing: AppSpacing.sm) {
-            Image(systemName: "mappin.and.ellipse")
-                .font(.system(size: 40))
-                .foregroundStyle(AppColors.primary)
-            Text("Henüz mekan yok")
-                .font(.headline)
-                .foregroundStyle(AppColors.textPrimary)
-            Text("Sağ alttaki + ile ilk yerinizi ekleyin")
-                .font(.caption)
-                .foregroundStyle(AppColors.textSecondary)
-        }
-        .padding(AppSpacing.lg)
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     private func balloonOverlay(_ place: Place) -> some View {
