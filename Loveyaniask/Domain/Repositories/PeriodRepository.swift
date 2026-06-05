@@ -8,6 +8,9 @@
 import Foundation
 
 protocol PeriodRepository {
+    /// Ayarlar/kayıtlar/notlardan herhangi biri değişince çağrılır (gerçek zamanlı).
+    func observe(_ onChange: @escaping () -> Void)
+
     func fetchSettings() -> PeriodSettings
     func save(_ settings: PeriodSettings)
 

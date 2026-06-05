@@ -90,8 +90,8 @@ struct AppDependencies {
     }
 
     func makePeriodViewModel() -> PeriodViewModel {
-        let dataSource = UserDefaultsPeriodDataSource()
-        let repository = PeriodRepositoryImpl(localDataSource: dataSource)
+        // Regl takvimi artık Firebase'de (ayarlar + kayıtlar + notlar, senkron).
+        let repository = FirebasePeriodRepository()
         let scheduler = LocalPeriodReminderScheduler()
         return PeriodViewModel(
             getSettings: GetPeriodSettingsUseCase(repository: repository),
@@ -100,7 +100,9 @@ struct AppDependencies {
             getLogs: GetPeriodLogsUseCase(repository: repository),
             deleteLog: DeletePeriodLogUseCase(repository: repository),
             getNote: GetDayNoteUseCase(repository: repository),
+            getNotes: GetDayNotesUseCase(repository: repository),
             saveNote: SaveDayNoteUseCase(repository: repository),
+            observePeriod: ObservePeriodUseCase(repository: repository),
             reminderScheduler: scheduler
         )
     }

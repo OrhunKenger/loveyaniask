@@ -23,7 +23,9 @@ final class PeriodViewModel {
     private let getLogsUseCase: GetPeriodLogsUseCase
     private let deleteLogUseCase: DeletePeriodLogUseCase
     private let getNoteUseCase: GetDayNoteUseCase
+    private let getNotesUseCase: GetDayNotesUseCase
     private let saveNoteUseCase: SaveDayNoteUseCase
+    private let observePeriodUseCase: ObservePeriodUseCase
     private let reminderScheduler: PeriodReminderScheduler
 
     let weekdaySymbols = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"]
@@ -35,7 +37,9 @@ final class PeriodViewModel {
         getLogs: GetPeriodLogsUseCase,
         deleteLog: DeletePeriodLogUseCase,
         getNote: GetDayNoteUseCase,
+        getNotes: GetDayNotesUseCase,
         saveNote: SaveDayNoteUseCase,
+        observePeriod: ObservePeriodUseCase,
         reminderScheduler: PeriodReminderScheduler
     ) {
         self.getSettings = getSettings
@@ -44,12 +48,22 @@ final class PeriodViewModel {
         self.getLogsUseCase = getLogs
         self.deleteLogUseCase = deleteLog
         self.getNoteUseCase = getNote
+        self.getNotesUseCase = getNotes
         self.saveNoteUseCase = saveNote
+        self.observePeriodUseCase = observePeriod
         self.reminderScheduler = reminderScheduler
         self.settings = getSettings.execute()
         self.logs = getLogs.execute()
         self.dayNotes = []
         self.displayedMonth = Calendar.current.startOfDay(for: Date())
+        // Firebase'den gerçek zamanlı dinle.
+        observePeriod.execute { [weak self] in
+            guard let self else { return }
+            self.settings = self.getSettings.execute()
+            self.logs = self.getLogsUseCase.execute()
+            self.dayNotes = self.getNotesUseCase.execute()
+            self.rescheduleReminder()
+        }
     }
 
     private var calendar: Calendar { Calendar.current }
@@ -135,7 +149,8 @@ final class PeriodViewModel {
     }
 
     func note(for date: Date) -> DayNote? {
-        getNoteUseCase.execute(dayKey: DayKey.make(date))
+        // dayNotes üzerinden okuyoruz ki uzaktan değişince ekran yenilensin.
+        dayNotes.first { $0.dayKey == DayKey.make(date) }
     }
 
     func hasNote(on date: Date) -> Bool {
