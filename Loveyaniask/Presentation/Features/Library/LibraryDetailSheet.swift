@@ -19,7 +19,7 @@ struct LibraryDetailSheet: View {
             ScrollView {
                 if let item {
                     VStack(spacing: AppSpacing.lg) {
-                        PosterImage(url: item.posterURL, kind: item.kind, width: 150)
+                        PosterImage(url: item.posterURL, kind: item.kind, width: 185)
                             .padding(.top, AppSpacing.md)
 
                         Text(item.title)

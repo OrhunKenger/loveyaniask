@@ -120,22 +120,22 @@ struct LibraryView: View {
     }
 
     private func posterCard(_ item: LibraryItem) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            PosterImage(url: item.posterURL, kind: item.kind, width: 112)
+        VStack(alignment: .leading, spacing: 7) {
+            PosterImage(url: item.posterURL, kind: item.kind, width: 144)
 
             Text(item.title)
-                .font(.caption.weight(.medium))
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(AppColors.textPrimary)
                 .lineLimit(2)
-                .frame(width: 112, alignment: .leading)
+                .frame(width: 144, alignment: .leading)
 
             if item.averageRating > 0 {
                 HStack(spacing: 2) {
                     Image(systemName: "star.fill")
-                        .font(.system(size: 9))
+                        .font(.system(size: 10))
                         .foregroundStyle(.yellow)
                     Text(viewModel.ratingText(for: item))
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(AppColors.textSecondary)
                 }
             }
@@ -177,29 +177,47 @@ struct LibraryView: View {
 struct PosterImage: View {
     let url: String?
     let kind: LibraryKind
-    var width: CGFloat = 112
+    var width: CGFloat = 144
 
     var body: some View {
         let height = width * 1.5
+        let radius = max(8, width * 0.06)
         ZStack {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(AppColors.surface)
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [AppColors.surface, AppColors.primary.opacity(0.12)],
+                        startPoint: .top, endPoint: .bottom
+                    )
+                )
                 .overlay(
-                    Text(kind.emoji).font(.system(size: width * 0.3)).opacity(0.5)
+                    VStack(spacing: 4) {
+                        Text(kind.emoji).font(.system(size: width * 0.34))
+                        Text(kind.label)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(AppColors.textSecondary)
+                    }
+                    .opacity(0.6)
                 )
 
             if let url, let parsed = URL(string: url) {
                 AsyncImage(url: parsed) { phase in
                     if let image = phase.image {
                         image.resizable().scaledToFill()
-                    } else {
+                    } else if phase.error != nil {
                         Color.clear
+                    } else {
+                        ProgressView()
                     }
                 }
             }
         }
         .frame(width: width, height: height)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .shadow(color: .black.opacity(0.2), radius: 5, y: 3)
+        .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                .stroke(.black.opacity(0.12), lineWidth: 0.5)
+        )
+        .shadow(color: .black.opacity(0.28), radius: 8, x: 0, y: 6)
     }
 }
