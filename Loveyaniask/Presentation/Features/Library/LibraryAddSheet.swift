@@ -86,6 +86,8 @@ struct LibraryAddSheet: View {
             .background(AppColors.background)
             .navigationTitle("Kütüphaneye Ekle")
             .navigationBarTitleDisplayMode(.inline)
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Bitti") { dismiss() }
