@@ -57,13 +57,25 @@ struct PlacesView: View {
         }
     }
 
-    // Apple Haritalar tarzı zarif nokta: puana göre renkli, beyaz halkalı, küçük gölgeli.
+    // Apple Haritalar tarzı zarif nokta + altında mekan adı (yakın yerler ayrışsın diye).
     private func placePin(for place: Place) -> some View {
-        Circle()
-            .fill(viewModel.pinColor(for: place))
-            .frame(width: 15, height: 15)
-            .overlay(Circle().stroke(.white, lineWidth: 2))
-            .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
+        VStack(spacing: 3) {
+            Circle()
+                .fill(viewModel.pinColor(for: place))
+                .frame(width: 11, height: 11)
+                .overlay(Circle().stroke(.white, lineWidth: 1.8))
+                .shadow(color: .black.opacity(0.35), radius: 1.5, y: 1)
+
+            Text(place.name)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .frame(maxWidth: 100)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Capsule().fill(.black.opacity(0.55)))
+        }
+        .fixedSize()
     }
 
     private var titlePill: some View {
