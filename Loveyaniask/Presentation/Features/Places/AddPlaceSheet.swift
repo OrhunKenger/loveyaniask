@@ -90,7 +90,7 @@ struct AddPlaceSheet: View {
             }
             .navigationTitle(wishlist ? "Gitmek İstediğimiz Yer" : "Mekan Ekle")
             .navigationBarTitleDisplayMode(.inline)
-            .presentationDetents([.medium, .large])
+            .presentationDetents([.height(300), .large])
             .presentationDragIndicator(.visible)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
