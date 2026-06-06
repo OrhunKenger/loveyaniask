@@ -57,7 +57,7 @@ final class RemoteLibrarySearchService: LibrarySearch {
 
     private func books(query: String) async -> [LibrarySearchResult] {
         guard let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-              let url = URL(string: "https://www.googleapis.com/books/v1/volumes?q=\(encoded)&maxResults=20") else {
+              let url = URL(string: "https://www.googleapis.com/books/v1/volumes?q=\(encoded)&maxResults=20&country=TR") else {
             return []
         }
         do {
