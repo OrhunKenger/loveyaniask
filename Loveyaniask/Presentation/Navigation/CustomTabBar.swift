@@ -34,5 +34,18 @@ struct CustomTabBar: View {
                 .shadow(color: .black.opacity(0.06), radius: 8, y: -2)
                 .ignoresSafeArea(edges: .bottom)
         )
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 24)
+                .onEnded { value in
+                    let tabs = AppTab.allCases
+                    guard let index = tabs.firstIndex(of: selectedTab) else { return }
+                    if value.translation.width < -30, index < tabs.count - 1 {
+                        withAnimation(.snappy(duration: 0.25)) { selectedTab = tabs[index + 1] }
+                    } else if value.translation.width > 30, index > 0 {
+                        withAnimation(.snappy(duration: 0.25)) { selectedTab = tabs[index - 1] }
+                    }
+                }
+        )
     }
 }

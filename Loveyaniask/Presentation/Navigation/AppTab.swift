@@ -12,8 +12,8 @@ enum AppTab: Int, CaseIterable, Identifiable {
     case library
     case wishlist
     case home
-    case places
     case period
+    case places
 
     var id: Int { rawValue }
 

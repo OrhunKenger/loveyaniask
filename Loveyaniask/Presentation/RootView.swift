@@ -47,11 +47,11 @@ struct RootView: View {
                 HomeView(viewModel: homeViewModel, specialDaysViewModel: specialDaysViewModel, moodViewModel: moodViewModel, plansViewModel: plansViewModel, jarViewModel: jarViewModel)
                     .tag(AppTab.home)
 
-                PlacesView(viewModel: placesViewModel, isActive: selectedTab == .places)
-                    .tag(AppTab.places)
-
                 PeriodView(viewModel: periodViewModel, canEdit: canEditPeriod)
                     .tag(AppTab.period)
+
+                PlacesView(viewModel: placesViewModel, isActive: selectedTab == .places)
+                    .tag(AppTab.places)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
 

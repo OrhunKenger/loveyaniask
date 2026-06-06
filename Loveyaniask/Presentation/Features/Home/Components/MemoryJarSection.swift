@@ -13,7 +13,8 @@ struct MemoryJarSection: View {
     @Bindable var viewModel: JarViewModel
 
     @State private var center: CGPoint? = nil
-    @GestureState private var drag: CGSize = .zero
+    @State private var dragStart: CGPoint? = nil
+    @State private var isDragging = false
 
     private let posXKey = "jarPosX"
     private let posYKey = "jarPosY"
@@ -21,10 +22,10 @@ struct MemoryJarSection: View {
     var body: some View {
         GeometryReader { geo in
             jarContent
-                .scaleEffect(drag == .zero ? 1 : 1.08)
+                .scaleEffect(isDragging ? 1.08 : 1)
                 .position(center ?? defaultCenter(geo))
-                .offset(drag)
                 .gesture(dragGesture(geo))
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isDragging)
                 .onAppear {
                     if center == nil { center = loadCenter(geo) }
                 }
@@ -56,27 +57,41 @@ struct MemoryJarSection: View {
             MemoryJarView(count: viewModel.count, isReady: viewModel.isReady, scale: 0.6)
         }
         .contentShape(Rectangle())
-        .shadow(color: .black.opacity(drag == .zero ? 0 : 0.2), radius: 12, y: 8)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: drag)
+        .shadow(color: .black.opacity(isDragging ? 0.2 : 0), radius: 12, y: 8)
     }
 
     // MARK: - Sürükleme + dokunma
 
     private func dragGesture(_ geo: GeometryProxy) -> some Gesture {
         DragGesture(minimumDistance: 0)
-            .updating($drag) { value, state, _ in
-                state = value.translation
+            .onChanged { value in
+                if dragStart == nil {
+                    dragStart = center ?? defaultCenter(geo)
+                    isDragging = true
+                }
+                var c = dragStart ?? defaultCenter(geo)
+                c.x += value.translation.width
+                c.y += value.translation.height
+                center = clamp(c, in: geo.size)
             }
             .onEnded { value in
+                let start = dragStart ?? defaultCenter(geo)
                 let distance = hypot(value.translation.width, value.translation.height)
+                dragStart = nil
+                isDragging = false
+
                 if distance < 10 {
-                    primaryTap()   // kısa dokunuş
+                    center = start
+                    primaryTap()
                 } else {
-                    var c = center ?? defaultCenter(geo)
-                    c.x += value.translation.width
-                    c.y += value.translation.height
+                    // Momentum: parmağın hızıyla biraz daha kayıp yumuşakça dursun.
+                    var c = start
+                    c.x += value.predictedEndTranslation.width
+                    c.y += value.predictedEndTranslation.height
                     c = clamp(c, in: geo.size)
-                    center = c
+                    withAnimation(.spring(response: 0.55, dampingFraction: 0.72)) {
+                        center = c
+                    }
                     saveCenter(c)
                 }
             }
