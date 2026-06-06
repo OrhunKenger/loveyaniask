@@ -12,33 +12,41 @@ import CoreLocation
 
 struct PlacesView: View {
     @State private var viewModel: PlacesViewModel
+    /// Harita ancak bu sekme açıkken çizilsin (arka planda sürekli render = ısınma/kasma).
+    let isActive: Bool
 
-    init(viewModel: PlacesViewModel) {
+    init(viewModel: PlacesViewModel, isActive: Bool) {
         _viewModel = State(initialValue: viewModel)
+        self.isActive = isActive
     }
 
     var body: some View {
         @Bindable var viewModel = viewModel
 
         ZStack(alignment: .bottomTrailing) {
-            Map(initialViewport: .camera(
-                center: CLLocationCoordinate2D(latitude: 39.0, longitude: 35.0),
-                zoom: 4.2
-            )) {
-                ForEvery(viewModel.visitedPlaces) { place in
-                    MapViewAnnotation(coordinate: viewModel.coordinate(for: place)) {
-                        Button {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
-                                viewModel.selectedPlace = place
+            if isActive {
+                Map(initialViewport: .camera(
+                    center: CLLocationCoordinate2D(latitude: 39.0, longitude: 35.0),
+                    zoom: 4.2
+                )) {
+                    ForEvery(viewModel.visitedPlaces) { place in
+                        MapViewAnnotation(coordinate: viewModel.coordinate(for: place)) {
+                            Button {
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                                    viewModel.selectedPlace = place
+                                }
+                            } label: {
+                                placePin(for: place)
                             }
-                        } label: {
-                            placePin(for: place)
                         }
                     }
                 }
+                .mapStyle(MapStyle(uri: StyleURI(rawValue: "mapbox://styles/orhunkenger/cmpzrdoxo003701r2c0e17cpo")!))
+                .ignoresSafeArea(edges: .top)
+            } else {
+                AppColors.background
+                    .ignoresSafeArea()
             }
-            .mapStyle(MapStyle(uri: StyleURI(rawValue: "mapbox://styles/orhunkenger/cmpzrdoxo003701r2c0e17cpo")!))
-            .ignoresSafeArea(edges: .top)
 
             titlePill
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
