@@ -17,7 +17,7 @@ struct MoodHomeSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             HStack {
-                Text("Bugün Nasılsınız?")
+                Text("Bugün nasıl hissediyorsun?")
                     .font(.headline)
                     .foregroundStyle(AppColors.textPrimary)
                 Spacer()
