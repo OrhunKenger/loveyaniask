@@ -75,9 +75,6 @@ final class RemoteLibrarySearchService: LibrarySearch {
                     year: info.publishedDate.map { String($0.prefix(4)) }
                 )
             }
-        } catch {
-            return []
-        }
     }
 }
 
