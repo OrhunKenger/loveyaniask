@@ -32,7 +32,7 @@ struct PlacesView: View {
                                 viewModel.selectedPlace = place
                             }
                         } label: {
-                            heartPin(for: place)
+                            placePin(for: place)
                         }
                     }
                 }
@@ -57,23 +57,13 @@ struct PlacesView: View {
         }
     }
 
-    // İnce & tatlı kalp pin: küçük beyaz rozet + puana göre renkli kalp, minik kuyruklu.
-    private func heartPin(for place: Place) -> some View {
-        VStack(spacing: -2) {
-            ZStack {
-                Circle()
-                    .fill(.white)
-                    .frame(width: 28, height: 28)
-                    .shadow(color: .black.opacity(0.18), radius: 2.5, y: 1.5)
-                Image(systemName: "heart.fill")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(viewModel.pinColor(for: place))
-            }
-            PinTail()
-                .fill(.white)
-                .frame(width: 9, height: 6)
-                .shadow(color: .black.opacity(0.1), radius: 1, y: 1)
-        }
+    // Apple Haritalar tarzı zarif nokta: puana göre renkli, beyaz halkalı, küçük gölgeli.
+    private func placePin(for place: Place) -> some View {
+        Circle()
+            .fill(viewModel.pinColor(for: place))
+            .frame(width: 15, height: 15)
+            .overlay(Circle().stroke(.white, lineWidth: 2))
+            .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
     }
 
     private var titlePill: some View {
@@ -121,14 +111,3 @@ struct PlacesView: View {
     }
 }
 
-/// Pin'in altındaki küçük aşağı bakan kuyruk (üçgen).
-private struct PinTail: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
-        path.closeSubpath()
-        return path
-    }
-}
