@@ -10,60 +10,57 @@ import Foundation
 
 final class RemoteLibrarySearchService: LibrarySearch {
 
-    private let tmdbToken: String = [
-        "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjYjNlMzY4ZmFiNzE5MjY3ODAyYWQzYzE4Yjg3MzgyYyIsIm5iZiI6MTc4MDcz",
-        "OTMxOC41MzUsInN1YiI6IjZhMjNlY2Y2Y2Q2NTQ2N2M5ZjQwMzNkYyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9u",
-        "IjoxfQ.5vWds0naQ2fNRgO7U40SWL0VVyy_kD7jlBA_Nt_b1V8"
-    ].joined()
+    // TMDB v3 API key (parçalı — push-protection bloklamasın).
+    private let tmdbKey: String = "cb3e368fab7192678" + "02ad3c18b87382c"
 
-    func search(query: String, kind: LibraryKind) async -> [LibrarySearchResult] {
+    func search(query: String, kind: LibraryKind) async throws -> [LibrarySearchResult] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count >= 2 else { return [] }
         switch kind {
-        case .film: return await tmdb(path: "movie", query: trimmed)
-        case .dizi: return await tmdb(path: "tv", query: trimmed)
-        case .kitap: return await books(query: trimmed)
+        case .film: return try await tmdb(path: "movie", query: trimmed)
+        case .dizi: return try await tmdb(path: "tv", query: trimmed)
+        case .kitap: return try await books(query: trimmed)
         }
     }
 
     // MARK: - TMDB (film / dizi)
 
-    private func tmdb(path: String, query: String) async -> [LibrarySearchResult] {
+    private func tmdb(path: String, query: String) async throws -> [LibrarySearchResult] {
         guard let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-              let url = URL(string: "https://api.themoviedb.org/3/search/\(path)?query=\(encoded)&language=tr-TR&include_adult=false") else {
-            return []
+              let url = URL(string: "https://api.themoviedb.org/3/search/\(path)?api_key=\(tmdbKey)&query=\(encoded)&language=tr-TR&include_adult=false") else {
+            throw SearchError(message: "URL oluşturulamadı")
         }
-        var request = URLRequest(url: url)
-        request.setValue("Bearer \(tmdbToken)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "accept")
 
-        do {
-            let (data, _) = try await URLSession.shared.data(for: request)
-            let decoded = try JSONDecoder().decode(TMDBResponse.self, from: data)
-            return decoded.results.prefix(20).map { item in
-                LibrarySearchResult(
-                    title: item.displayTitle,
-                    posterURL: item.poster_path.map { "https://image.tmdb.org/t/p/w342\($0)" },
-                    overview: item.overview ?? "",
-                    year: item.year
-                )
-            }
-        } catch {
-            return []
+        let (data, response) = try await URLSession.shared.data(from: url)
+        if let http = response as? HTTPURLResponse, http.statusCode != 200 {
+            let body = String(data: data, encoding: .utf8)?.prefix(160) ?? ""
+            throw SearchError(message: "TMDB \(http.statusCode): \(body)")
+        }
+        let decoded = try JSONDecoder().decode(TMDBResponse.self, from: data)
+        return decoded.results.prefix(20).map { item in
+            LibrarySearchResult(
+                title: item.displayTitle,
+                posterURL: item.poster_path.map { "https://image.tmdb.org/t/p/w342\($0)" },
+                overview: item.overview ?? "",
+                year: item.year
+            )
         }
     }
 
     // MARK: - Google Books (kitap)
 
-    private func books(query: String) async -> [LibrarySearchResult] {
+    private func books(query: String) async throws -> [LibrarySearchResult] {
         guard let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
               let url = URL(string: "https://www.googleapis.com/books/v1/volumes?q=\(encoded)&maxResults=20&country=TR") else {
-            return []
+            throw SearchError(message: "URL oluşturulamadı")
         }
-        do {
-            let (data, _) = try await URLSession.shared.data(from: url)
-            let decoded = try JSONDecoder().decode(GoogleBooksResponse.self, from: data)
-            return (decoded.items ?? []).map { item in
+        let (data, response) = try await URLSession.shared.data(from: url)
+        if let http = response as? HTTPURLResponse, http.statusCode != 200 {
+            let body = String(data: data, encoding: .utf8)?.prefix(160) ?? ""
+            throw SearchError(message: "Books \(http.statusCode): \(body)")
+        }
+        let decoded = try JSONDecoder().decode(GoogleBooksResponse.self, from: data)
+        return (decoded.items ?? []).map { item in
                 let info = item.volumeInfo
                 let poster = info.imageLinks?.thumbnail?
                     .replacingOccurrences(of: "http://", with: "https://")

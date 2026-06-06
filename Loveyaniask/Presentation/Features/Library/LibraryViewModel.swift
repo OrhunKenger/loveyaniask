@@ -19,6 +19,7 @@ final class LibraryViewModel {
     var query = ""
     private(set) var searchResults: [LibrarySearchResult] = []
     private(set) var isSearching = false
+    private(set) var lastError: String?
 
     let currentUser: UserProfile
     private let observeUseCase: ObserveLibraryUseCase
@@ -68,10 +69,15 @@ final class LibraryViewModel {
             return
         }
         isSearching = true
-        let results = await searchService.search(query: q, kind: selectedKind)
-        // Yanıt geldiğinde sorgu hâlâ aynıysa göster.
-        if q == query {
-            searchResults = results
+        do {
+            let results = try await searchService.search(query: q, kind: selectedKind)
+            if q == query {
+                searchResults = results
+                lastError = nil
+            }
+        } catch {
+            searchResults = []
+            lastError = error.localizedDescription
         }
         isSearching = false
     }

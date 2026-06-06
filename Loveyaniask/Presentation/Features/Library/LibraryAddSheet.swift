@@ -10,6 +10,7 @@ import SwiftUI
 struct LibraryAddSheet: View {
     @Bindable var viewModel: LibraryViewModel
     @Environment(\.dismiss) private var dismiss
+    @State private var searchTask: Task<Void, Never>?
 
     var body: some View {
         NavigationStack {
@@ -31,7 +32,16 @@ struct LibraryAddSheet: View {
                     Image(systemName: "magnifyingglass").foregroundStyle(AppColors.textSecondary)
                     TextField(searchPlaceholder, text: $viewModel.query)
                         .submitLabel(.search)
+                        .autocorrectionDisabled()
                         .onSubmit { Task { await viewModel.runSearch() } }
+                        .onChange(of: viewModel.query) { _, _ in
+                            // Yazdıkça canlı ara (kısa gecikmeyle).
+                            searchTask?.cancel()
+                            searchTask = Task {
+                                try? await Task.sleep(nanoseconds: 400_000_000)
+                                if !Task.isCancelled { await viewModel.runSearch() }
+                            }
+                        }
                     if !viewModel.query.isEmpty {
                         Button { viewModel.clearSearch() } label: {
                             Image(systemName: "xmark.circle.fill").foregroundStyle(AppColors.textSecondary)
@@ -48,9 +58,18 @@ struct LibraryAddSheet: View {
                     Spacer()
                 } else if viewModel.searchResults.isEmpty {
                     Spacer()
-                    Text(viewModel.query.isEmpty ? "Aramak için bir şey yaz ✍️" : "Sonuç yok")
-                        .font(.subheadline)
-                        .foregroundStyle(AppColors.textSecondary)
+                    VStack(spacing: AppSpacing.sm) {
+                        Text(viewModel.query.isEmpty ? "Aramak için bir şey yaz ✍️" : "Sonuç yok")
+                            .font(.subheadline)
+                            .foregroundStyle(AppColors.textSecondary)
+                        if let error = viewModel.lastError {
+                            Text(error)
+                                .font(.caption2)
+                                .foregroundStyle(.red)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, AppSpacing.lg)
+                        }
+                    }
                     Spacer()
                 } else {
                     ScrollView {

@@ -16,5 +16,10 @@ struct LibrarySearchResult: Identifiable, Equatable {
 }
 
 protocol LibrarySearch {
-    func search(query: String, kind: LibraryKind) async -> [LibrarySearchResult]
+    func search(query: String, kind: LibraryKind) async throws -> [LibrarySearchResult]
+}
+
+struct SearchError: LocalizedError {
+    let message: String
+    var errorDescription: String? { message }
 }

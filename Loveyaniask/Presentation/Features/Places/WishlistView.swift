@@ -13,19 +13,13 @@ struct WishlistView: View {
     @State private var viewModel: PlacesViewModel
     @State private var showingAdd = false
 
-    @State private var center: CGPoint? = nil
-    @GestureState private var drag: CGSize = .zero
-
-    private let posXKey = "wishAddPosX"
-    private let posYKey = "wishAddPosY"
-
     init(viewModel: PlacesViewModel) {
         _viewModel = State(initialValue: viewModel)
     }
 
     var body: some View {
         NavigationStack {
-            ZStack {
+            ZStack(alignment: .bottomTrailing) {
                 Group {
                     if viewModel.wishlistPlaces.isEmpty {
                         emptyState
@@ -40,8 +34,10 @@ struct WishlistView: View {
                         }
                     }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                floatingAddButton
+                addButton
+                    .padding(AppSpacing.lg)
             }
             .background(AppColors.background)
             .navigationTitle("Gitmek İstediğimiz")
@@ -52,69 +48,20 @@ struct WishlistView: View {
         }
     }
 
-    // MARK: - Yüzen ekleme butonu
+    // MARK: - Yüzen ekleme butonu (sabit, sağ alt)
 
-    private var floatingAddButton: some View {
-        GeometryReader { geo in
+    private var addButton: some View {
+        Button {
+            showingAdd = true
+        } label: {
             Image(systemName: "plus")
                 .font(.title2.bold())
                 .foregroundStyle(.white)
                 .frame(width: 58, height: 58)
                 .background(AppColors.primary)
                 .clipShape(Circle())
-                .shadow(color: AppColors.primary.opacity(0.4), radius: drag == .zero ? 8 : 14, y: 6)
-                .scaleEffect(drag == .zero ? 1 : 1.1)
-                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: drag)
-                .position(center ?? defaultCenter(geo))
-                .offset(drag)
-                .gesture(dragGesture(geo))
-                .onAppear { if center == nil { center = loadCenter(geo) } }
+                .shadow(color: AppColors.primary.opacity(0.4), radius: 10, y: 6)
         }
-    }
-
-    private func dragGesture(_ geo: GeometryProxy) -> some Gesture {
-        DragGesture(minimumDistance: 0)
-            .updating($drag) { value, state, _ in
-                state = value.translation
-            }
-            .onEnded { value in
-                let distance = hypot(value.translation.width, value.translation.height)
-                if distance < 10 {
-                    showingAdd = true
-                } else {
-                    var c = center ?? defaultCenter(geo)
-                    c.x += value.translation.width
-                    c.y += value.translation.height
-                    c = clamp(c, in: geo.size)
-                    center = c
-                    saveCenter(c)
-                }
-            }
-    }
-
-    private func defaultCenter(_ geo: GeometryProxy) -> CGPoint {
-        CGPoint(x: geo.size.width - 50, y: geo.size.height - 60)
-    }
-
-    private func clamp(_ point: CGPoint, in size: CGSize) -> CGPoint {
-        let margin: CGFloat = 40
-        return CGPoint(
-            x: min(max(point.x, margin), size.width - margin),
-            y: min(max(point.y, margin), size.height - margin)
-        )
-    }
-
-    private func loadCenter(_ geo: GeometryProxy) -> CGPoint {
-        let d = UserDefaults.standard
-        guard d.object(forKey: posXKey) != nil, d.object(forKey: posYKey) != nil else {
-            return defaultCenter(geo)
-        }
-        return clamp(CGPoint(x: d.double(forKey: posXKey), y: d.double(forKey: posYKey)), in: geo.size)
-    }
-
-    private func saveCenter(_ point: CGPoint) {
-        UserDefaults.standard.set(Double(point.x), forKey: posXKey)
-        UserDefaults.standard.set(Double(point.y), forKey: posYKey)
     }
 
     // MARK: - Kart
