@@ -2,8 +2,8 @@
 //  LibraryView.swift
 //  Loveyaniask
 //
-//  Dijital Kütüphane: tür sekmesi (Film/Dizi/Kitap) + duruma göre poster rafları.
-//  Poster'a dokun → detay; sağ alttaki + → ara & ekle.
+//  Dijital Kütüphane: sinematik koyu vitrin. Tür sekmesi (Film/Dizi/Kitap) +
+//  duruma göre poster rafları. Poster'a dokun → detay; + → ara & ekle.
 //
 
 import SwiftUI
@@ -17,16 +17,16 @@ struct LibraryView: View {
 
     private let statusOrder: [LibraryStatus] = [.inProgress, .want, .done]
 
+    // Sinematik palet
+    private let accent = Color(hex: "FF6FA5")
+    private let textLight = Color.white
+    private let textDim = Color.white.opacity(0.6)
+
     var body: some View {
         @Bindable var viewModel = viewModel
 
         ZStack(alignment: .bottomTrailing) {
-            LinearGradient(
-                colors: [AppColors.primary.opacity(0.10), AppColors.background],
-                startPoint: .top,
-                endPoint: .center
-            )
-            .ignoresSafeArea()
+            cinematicBackground
 
             VStack(spacing: AppSpacing.md) {
                 header
@@ -46,7 +46,7 @@ struct LibraryView: View {
                         }
                     }
                     .padding(.vertical, AppSpacing.md)
-                    .padding(.bottom, 80)
+                    .padding(.bottom, 90)
                 }
             }
 
@@ -61,16 +61,41 @@ struct LibraryView: View {
         }
     }
 
+    // MARK: - Arka plan
+
+    private var cinematicBackground: some View {
+        ZStack {
+            LinearGradient(
+                colors: [Color(hex: "2A1B3D"), Color(hex: "140E22"), Color(hex: "08060F")],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            // Üstte yumuşak gül parıltısı
+            RadialGradient(
+                colors: [accent.opacity(0.30), .clear],
+                center: .top,
+                startRadius: 0,
+                endRadius: 320
+            )
+        }
+        .ignoresSafeArea()
+    }
+
     // MARK: - Başlık & tür
 
     private var header: some View {
-        HStack {
-            Text("Kütüphanemiz")
-                .font(.title2.bold())
-                .foregroundStyle(AppColors.textPrimary)
-            Spacer()
-            Image(systemName: "books.vertical.fill")
-                .foregroundStyle(AppColors.primary)
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                Text("Kütüphanemiz")
+                    .font(.title2.bold())
+                    .foregroundStyle(textLight)
+                Spacer()
+                Image(systemName: "popcorn.fill")
+                    .foregroundStyle(accent)
+            }
+            Text("izlediğimiz, okuduğumuz her şey 🎬📖")
+                .font(.caption)
+                .foregroundStyle(textDim)
         }
         .padding(.horizontal, AppSpacing.md)
         .padding(.top, AppSpacing.sm)
@@ -85,12 +110,16 @@ struct LibraryView: View {
                 } label: {
                     Text("\(kind.emoji) \(kind.label)")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(selected ? .white : AppColors.textPrimary)
+                        .foregroundStyle(selected ? .white : textLight.opacity(0.85))
                         .padding(.vertical, AppSpacing.sm)
                         .frame(maxWidth: .infinity)
-                        .background(selected ? AppColors.primary : AppColors.surface)
+                        .background(
+                            selected
+                            ? AnyShapeStyle(LinearGradient(colors: [accent, Color(hex: "B5479B")], startPoint: .leading, endPoint: .trailing))
+                            : AnyShapeStyle(Color.white.opacity(0.10))
+                        )
                         .clipShape(Capsule())
-                        .shadow(color: .black.opacity(selected ? 0.15 : 0.04), radius: 5, y: 2)
+                        .shadow(color: selected ? accent.opacity(0.4) : .clear, radius: 6, y: 3)
                 }
                 .buttonStyle(.plain)
             }
@@ -104,7 +133,7 @@ struct LibraryView: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text(title)
                 .font(.headline)
-                .foregroundStyle(AppColors.textPrimary)
+                .foregroundStyle(textLight)
                 .padding(.horizontal, AppSpacing.md)
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -115,6 +144,7 @@ struct LibraryView: View {
                     }
                 }
                 .padding(.horizontal, AppSpacing.md)
+                .padding(.bottom, 4)
             }
         }
     }
@@ -125,7 +155,7 @@ struct LibraryView: View {
 
             Text(item.title)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(AppColors.textPrimary)
+                .foregroundStyle(textLight)
                 .lineLimit(2)
                 .frame(width: 144, alignment: .leading)
 
@@ -136,7 +166,7 @@ struct LibraryView: View {
                         .foregroundStyle(.yellow)
                     Text(viewModel.ratingText(for: item))
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(AppColors.textSecondary)
+                        .foregroundStyle(textDim)
                 }
             }
         }
@@ -150,25 +180,27 @@ struct LibraryView: View {
                 .font(.title2.bold())
                 .foregroundStyle(.white)
                 .frame(width: 58, height: 58)
-                .background(AppColors.primary)
+                .background(
+                    LinearGradient(colors: [accent, Color(hex: "B5479B")], startPoint: .topLeading, endPoint: .bottomTrailing)
+                )
                 .clipShape(Circle())
-                .shadow(color: AppColors.primary.opacity(0.4), radius: 10, y: 6)
+                .shadow(color: accent.opacity(0.5), radius: 10, y: 6)
         }
     }
 
     private var emptyState: some View {
         VStack(spacing: AppSpacing.md) {
             Text(viewModel.selectedKind.emoji)
-                .font(.system(size: 54))
+                .font(.system(size: 56))
             Text("Henüz \(viewModel.selectedKind.label.lowercased()) yok")
                 .font(.headline)
-                .foregroundStyle(AppColors.textPrimary)
+                .foregroundStyle(textLight)
             Text("Sağ alttaki + ile arayıp ekleyin")
                 .font(.caption)
-                .foregroundStyle(AppColors.textSecondary)
+                .foregroundStyle(textDim)
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, 60)
+        .padding(.top, 70)
     }
 }
 
@@ -186,7 +218,7 @@ struct PosterImage: View {
             RoundedRectangle(cornerRadius: radius, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [AppColors.surface, AppColors.primary.opacity(0.12)],
+                        colors: [Color(hex: "3A2C52"), Color(hex: "211734")],
                         startPoint: .top, endPoint: .bottom
                     )
                 )
@@ -195,9 +227,8 @@ struct PosterImage: View {
                         Text(kind.emoji).font(.system(size: width * 0.34))
                         Text(kind.label)
                             .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(AppColors.textSecondary)
+                            .foregroundStyle(.white.opacity(0.6))
                     }
-                    .opacity(0.6)
                 )
 
             if let url, let parsed = URL(string: url) {
@@ -207,13 +238,13 @@ struct PosterImage: View {
                     } else if phase.error != nil {
                         Color.clear
                     } else {
-                        ProgressView()
+                        ProgressView().tint(.white)
                     }
                 }
             }
         }
         .frame(width: width, height: height)
         .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
-        .shadow(color: .black.opacity(0.22), radius: 9, x: 0, y: 6)
+        .shadow(color: .black.opacity(0.45), radius: 10, x: 0, y: 7)
     }
 }
