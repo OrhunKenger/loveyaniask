@@ -44,7 +44,7 @@ struct RootView: View {
                 WishlistView(viewModel: placesViewModel)
                     .tag(AppTab.wishlist)
 
-                HomeView(viewModel: homeViewModel, specialDaysViewModel: specialDaysViewModel, moodViewModel: moodViewModel, plansViewModel: plansViewModel, jarViewModel: jarViewModel)
+                HomeView(viewModel: homeViewModel, specialDaysViewModel: specialDaysViewModel, moodViewModel: moodViewModel, plansViewModel: plansViewModel, jarViewModel: jarViewModel, isActive: selectedTab == .home)
                     .tag(AppTab.home)
 
                 PeriodView(viewModel: periodViewModel, canEdit: canEditPeriod)

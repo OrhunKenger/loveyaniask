@@ -32,7 +32,7 @@ struct PlansSection: View {
                     .foregroundStyle(AppColors.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
-                VStack(spacing: AppSpacing.sm) {
+                LazyVStack(spacing: AppSpacing.sm) {
                     ForEach(viewModel.plans) { plan in
                         planRow(plan)
                     }

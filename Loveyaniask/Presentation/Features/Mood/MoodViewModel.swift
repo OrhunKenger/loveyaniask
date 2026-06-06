@@ -30,6 +30,20 @@ final class MoodViewModel {
 
     let weekdaySymbols = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"]
 
+    private let calendar = Calendar.current
+    private static let monthYearFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "tr_TR")
+        f.dateFormat = "LLLL yyyy"
+        return f
+    }()
+    private static let dayMonthWeekdayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "tr_TR")
+        f.dateFormat = "d MMMM EEEE"
+        return f
+    }()
+
     init(
         getEntries: GetMoodEntriesUseCase,
         observeEntries: ObserveMoodEntriesUseCase,
@@ -64,8 +78,6 @@ final class MoodViewModel {
     var meLabel: String { "Ben" }
     var partnerLabel: String { currentUser.partner.petName }
 
-    private var calendar: Calendar { Calendar.current }
-
     func reload() {
         entries = getEntries.execute()
     }
@@ -89,13 +101,13 @@ final class MoodViewModel {
     // MARK: - Aksiyonlar
 
     func setMood(date: Date, partner: Partner, mood: Mood) {
+        // Repository optimistik olarak önbelleği güncelleyip observer'ı tetikler;
+        // ayrıca reload() çağırmaya gerek yok (çift güncelleme olurdu).
         setMoodUseCase.execute(date: date, partner: partner, mood: mood)
-        reload()
     }
 
     func setPhoto(date: Date, partner: Partner, imageData: Data) {
         setPhotoUseCase.execute(date: date, partner: partner, imageData: imageData)
-        reload()
     }
 
     func select(_ date: Date) {
@@ -131,10 +143,7 @@ final class MoodViewModel {
     }
 
     var monthTitle: String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
-        formatter.dateFormat = "LLLL yyyy"
-        return formatter.string(from: displayedMonth).capitalized
+        Self.monthYearFormatter.string(from: displayedMonth).capitalized
     }
 
     func dayNumber(for date: Date) -> Int {
@@ -156,9 +165,6 @@ final class MoodViewModel {
     }
 
     func dayTitle(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
-        formatter.dateFormat = "d MMMM EEEE"
-        return formatter.string(from: date)
+        Self.dayMonthWeekdayFormatter.string(from: date)
     }
 }

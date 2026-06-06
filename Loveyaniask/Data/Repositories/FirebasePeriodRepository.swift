@@ -19,15 +19,27 @@ final class FirebasePeriodRepository: PeriodRepository {
     private var cachedNotes: [DayNote] = []
     private var onChange: (() -> Void)?
 
+    // Dinleyici handle'ları (deinit'te kaldırmak için).
+    private let settingsRef: DatabaseReference
+    private let logsRef: DatabaseReference
+    private let notesRef: DatabaseReference
+    private var settingsHandle: DatabaseHandle?
+    private var logsHandle: DatabaseHandle?
+    private var notesHandle: DatabaseHandle?
+
     init() {
-        root.child("settings").observe(.value) { [weak self] snapshot in
+        settingsRef = root.child("settings")
+        logsRef = root.child("logs")
+        notesRef = root.child("notes")
+
+        settingsHandle = settingsRef.observe(.value) { [weak self] snapshot in
             guard let self else { return }
             if let d = snapshot.value as? [String: Any] {
                 self.cachedSettings = Self.decodeSettings(d)
             }
             self.onChange?()
         }
-        root.child("logs").observe(.value) { [weak self] snapshot in
+        logsHandle = logsRef.observe(.value) { [weak self] snapshot in
             guard let self else { return }
             var logs: [PeriodLog] = []
             for case let child as DataSnapshot in snapshot.children {
@@ -40,7 +52,7 @@ final class FirebasePeriodRepository: PeriodRepository {
             self.cachedLogs = logs
             self.onChange?()
         }
-        root.child("notes").observe(.value) { [weak self] snapshot in
+        notesHandle = notesRef.observe(.value) { [weak self] snapshot in
             guard let self else { return }
             var notes: [DayNote] = []
             for case let child as DataSnapshot in snapshot.children {
@@ -52,6 +64,12 @@ final class FirebasePeriodRepository: PeriodRepository {
             self.cachedNotes = notes
             self.onChange?()
         }
+    }
+
+    deinit {
+        if let settingsHandle { settingsRef.removeObserver(withHandle: settingsHandle) }
+        if let logsHandle { logsRef.removeObserver(withHandle: logsHandle) }
+        if let notesHandle { notesRef.removeObserver(withHandle: notesHandle) }
     }
 
     func observe(_ onChange: @escaping () -> Void) {

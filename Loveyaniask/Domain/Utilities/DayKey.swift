@@ -9,8 +9,10 @@
 import Foundation
 
 enum DayKey {
+    // Sık çağrılır (takvim/lookup döngüleri); Calendar bir kez kurulur.
+    private static let calendar = Calendar(identifier: .gregorian)
+
     static func make(_ date: Date) -> String {
-        let calendar = Calendar(identifier: .gregorian)
         let c = calendar.dateComponents([.year, .month, .day], from: date)
         return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
     }

@@ -42,6 +42,10 @@ final class FirebaseSpecialDayRepository: SpecialDayRepository {
         }
     }
 
+    deinit {
+        if let handle { ref.removeObserver(withHandle: handle) }
+    }
+
     func all() -> [SpecialDay] { builtIn + custom }
 
     func observe(_ onChange: @escaping ([SpecialDay]) -> Void) {

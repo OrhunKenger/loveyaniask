@@ -13,13 +13,16 @@ struct HomeView: View {
     @State private var moodViewModel: MoodViewModel
     @State private var plansViewModel: PlansViewModel
     @State private var jarViewModel: JarViewModel
+    /// Home sekmesi seçili mi? Canlı sayaç sadece görünürken çalışsın diye.
+    var isActive: Bool = true
 
-    init(viewModel: HomeViewModel, specialDaysViewModel: SpecialDaysViewModel, moodViewModel: MoodViewModel, plansViewModel: PlansViewModel, jarViewModel: JarViewModel) {
+    init(viewModel: HomeViewModel, specialDaysViewModel: SpecialDaysViewModel, moodViewModel: MoodViewModel, plansViewModel: PlansViewModel, jarViewModel: JarViewModel, isActive: Bool = true) {
         _viewModel = State(initialValue: viewModel)
         _specialDaysViewModel = State(initialValue: specialDaysViewModel)
         _moodViewModel = State(initialValue: moodViewModel)
         _plansViewModel = State(initialValue: plansViewModel)
         _jarViewModel = State(initialValue: jarViewModel)
+        self.isActive = isActive
     }
 
     var body: some View {
@@ -29,7 +32,7 @@ struct HomeView: View {
 
             ScrollView {
                 VStack(spacing: AppSpacing.lg) {
-                    TimeTogetherCard(viewModel: viewModel)
+                    TimeTogetherCard(viewModel: viewModel, isActive: isActive)
 
                     SpecialDaysSection(viewModel: specialDaysViewModel)
 

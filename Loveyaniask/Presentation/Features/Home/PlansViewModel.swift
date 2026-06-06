@@ -19,6 +19,14 @@ final class PlansViewModel {
     private(set) var plans: [Plan] = []   // sadece yaklaşanlar, en yakın en üstte
     var formTarget: PlanFormTarget?
 
+    private let calendar = Calendar.current
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "tr_TR")
+        f.dateFormat = "d MMMM EEEE · HH:mm"
+        return f
+    }()
+
     private let currentUser: UserProfile
     private let observePlansUseCase: ObservePlansUseCase
     private let addPlanUseCase: AddPlanUseCase
@@ -81,7 +89,6 @@ final class PlansViewModel {
     // MARK: - Görüntü yardımcıları
 
     func countdownText(for plan: Plan) -> String {
-        let calendar = Calendar.current
         let days = calendar.dateComponents(
             [.day],
             from: calendar.startOfDay(for: Date()),
@@ -93,10 +100,7 @@ final class PlansViewModel {
     }
 
     func dateText(for plan: Plan) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
-        formatter.dateFormat = "d MMMM EEEE · HH:mm"
-        return formatter.string(from: plan.date)
+        Self.dateFormatter.string(from: plan.date)
     }
 
     func authorName(for plan: Plan) -> String {

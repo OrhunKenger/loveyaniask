@@ -28,6 +28,10 @@ final class FirebasePlaceRepository: PlaceRepository {
         }
     }
 
+    deinit {
+        if let handle { ref.removeObserver(withHandle: handle) }
+    }
+
     func observe(_ onChange: @escaping ([Place]) -> Void) {
         self.onChange = onChange
         onChange(cache)

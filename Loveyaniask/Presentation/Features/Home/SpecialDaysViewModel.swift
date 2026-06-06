@@ -27,6 +27,12 @@ final class SpecialDaysViewModel {
     private let updateDayUseCase: UpdateSpecialDayUseCase
     private let deleteDayUseCase: DeleteSpecialDayUseCase
     private let calculator = SpecialDayCalculator()
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "tr_TR")
+        f.dateFormat = "d MMMM yyyy"
+        return f
+    }()
 
     init(
         getDays: GetSpecialDaysUseCase,
@@ -82,10 +88,7 @@ final class SpecialDaysViewModel {
     }
 
     func nextDateText(for day: SpecialDay) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
-        formatter.dateFormat = "d MMMM yyyy"
-        return formatter.string(from: calculator.nextOccurrence(of: day))
+        Self.dateFormatter.string(from: calculator.nextOccurrence(of: day))
     }
 
     func select(_ day: SpecialDay) {

@@ -15,14 +15,31 @@ final class RemoteLibrarySearchService: LibrarySearch {
     // Google Books API key (parçalı).
     private let booksKey: String = "AIzaSyDOiOLzAegSG7" + "Vga2hc2MSbi64kSfUOZIg"
 
+    // JSONDecoder yeniden kullanılır (her istekte yeniden kurulmaz).
+    private static let decoder = JSONDecoder()
+
+    // Aynı sorgu tekrarlanınca ağa çıkmamak için basit bellek önbelleği.
+    private final class ResultsBox {
+        let results: [LibrarySearchResult]
+        init(_ results: [LibrarySearchResult]) { self.results = results }
+    }
+    private let cache = NSCache<NSString, ResultsBox>()
+
     func search(query: String, kind: LibraryKind) async throws -> [LibrarySearchResult] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count >= 2 else { return [] }
+
+        let cacheKey = "\(kind):\(trimmed.lowercased())" as NSString
+        if let cached = cache.object(forKey: cacheKey) { return cached.results }
+
+        let results: [LibrarySearchResult]
         switch kind {
-        case .film: return try await tmdb(path: "movie", query: trimmed)
-        case .dizi: return try await tmdb(path: "tv", query: trimmed)
-        case .kitap: return try await books(query: trimmed)
+        case .film: results = try await tmdb(path: "movie", query: trimmed)
+        case .dizi: results = try await tmdb(path: "tv", query: trimmed)
+        case .kitap: results = try await books(query: trimmed)
         }
+        cache.setObject(ResultsBox(results), forKey: cacheKey)
+        return results
     }
 
     // MARK: - TMDB (film / dizi)
@@ -38,7 +55,7 @@ final class RemoteLibrarySearchService: LibrarySearch {
             let body = String(data: data, encoding: .utf8)?.prefix(160) ?? ""
             throw SearchError(message: "TMDB \(http.statusCode): \(body)")
         }
-        let decoded = try JSONDecoder().decode(TMDBResponse.self, from: data)
+        let decoded = try Self.decoder.decode(TMDBResponse.self, from: data)
         return decoded.results.prefix(20).map { item in
             LibrarySearchResult(
                 title: item.displayTitle,
@@ -61,7 +78,7 @@ final class RemoteLibrarySearchService: LibrarySearch {
             let body = String(data: data, encoding: .utf8)?.prefix(160) ?? ""
             throw SearchError(message: "Books \(http.statusCode): \(body)")
         }
-        let decoded = try JSONDecoder().decode(GoogleBooksResponse.self, from: data)
+        let decoded = try Self.decoder.decode(GoogleBooksResponse.self, from: data)
         return (decoded.items ?? []).map { item in
                 let info = item.volumeInfo
                 let poster = info.imageLinks?.thumbnail?

@@ -113,11 +113,13 @@ struct LibraryView: View {
                         .foregroundStyle(selected ? .white : textLight.opacity(0.85))
                         .padding(.vertical, AppSpacing.sm)
                         .frame(maxWidth: .infinity)
-                        .background(
-                            selected
-                            ? AnyShapeStyle(LinearGradient(colors: [accent, Color(hex: "B5479B")], startPoint: .leading, endPoint: .trailing))
-                            : AnyShapeStyle(Color.white.opacity(0.10))
-                        )
+                        .background {
+                            if selected {
+                                LinearGradient(colors: [accent, Color(hex: "B5479B")], startPoint: .leading, endPoint: .trailing)
+                            } else {
+                                Color.white.opacity(0.10)
+                            }
+                        }
                         .clipShape(Capsule())
                         .shadow(color: selected ? accent.opacity(0.4) : .clear, radius: 6, y: 3)
                 }

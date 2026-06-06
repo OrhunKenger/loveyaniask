@@ -27,6 +27,10 @@ final class FirebaseLibraryRepository: LibraryRepository {
         }
     }
 
+    deinit {
+        if let handle { ref.removeObserver(withHandle: handle) }
+    }
+
     func observe(_ onChange: @escaping ([LibraryItem]) -> Void) {
         self.onChange = onChange
         onChange(cache)

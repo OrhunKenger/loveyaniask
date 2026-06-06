@@ -54,7 +54,8 @@ final class LibraryViewModel {
     }
 
     func items(status: LibraryStatus) -> [LibraryItem] {
-        itemsForSelectedKind.filter { $0.status == status }
+        // Tek geçişte filtrele (ara dizi oluşturmadan; raf döngüsünde 3 kez çağrılıyor).
+        items.filter { $0.kind == selectedKind && $0.status == status }
     }
 
     var isEmptyForSelectedKind: Bool { itemsForSelectedKind.isEmpty }

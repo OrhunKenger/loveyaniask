@@ -27,6 +27,10 @@ final class FirebasePlanRepository: PlanRepository {
         }
     }
 
+    deinit {
+        if let handle { ref.removeObserver(withHandle: handle) }
+    }
+
     func observe(_ onChange: @escaping ([Plan]) -> Void) {
         self.onChange = onChange
         onChange(cache)

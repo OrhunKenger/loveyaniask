@@ -16,6 +16,13 @@ final class HomeViewModel {
     private let getDaysTogether: GetDaysTogetherUseCase
     private let getTimeTogether: GetTimeTogetherUseCase
 
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "tr_TR")
+        f.dateFormat = "d MMMM yyyy"
+        return f
+    }()
+
     init(
         getDaysTogether: GetDaysTogetherUseCase,
         getTimeTogether: GetTimeTogetherUseCase
@@ -35,9 +42,6 @@ final class HomeViewModel {
 
     /// Başlangıç tarihinin Türkçe, okunabilir hâli (örn. "10 Mayıs 2026").
     var formattedStartDate: String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
-        formatter.dateFormat = "d MMMM yyyy"
-        return formatter.string(from: startDate)
+        Self.dateFormatter.string(from: startDate)
     }
 }

@@ -26,6 +26,13 @@ final class PlacesViewModel {
     private let setRatingUseCase: SetPlaceRatingUseCase
     private let setVisitedUseCase: SetPlaceVisitedUseCase
 
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "tr_TR")
+        f.dateFormat = "d MMMM yyyy"
+        return f
+    }()
+
     init(
         currentUser: UserProfile,
         getPlaces: GetPlacesUseCase,
@@ -77,23 +84,20 @@ final class PlacesViewModel {
             imageData: imageData,
             visited: visited
         )
-        reload()
+        // Repository optimistik güncelleyip observer'ı tetikler; reload() gereksiz.
     }
 
     /// "Gittik ✓" — hayal listesindeki mekanı gittiğimize taşır.
     func markVisited(_ place: Place) {
         setVisitedUseCase.execute(placeId: place.id, visited: true, dateVisited: Date())
-        reload()
     }
 
     func delete(_ place: Place) {
         deletePlaceUseCase.execute(id: place.id)
-        reload()
     }
 
     func setMyRating(_ place: Place, rating: Int) {
         setRatingUseCase.execute(placeId: place.id, userKey: currentUser.rawValue, rating: rating)
-        reload()
     }
 
     func myRating(for place: Place) -> Int {
@@ -129,10 +133,7 @@ final class PlacesViewModel {
     }
 
     func dateText(for place: Place) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
-        formatter.dateFormat = "d MMMM yyyy"
-        return formatter.string(from: place.dateVisited)
+        Self.dateFormatter.string(from: place.dateVisited)
     }
 
     var initialRegion: MKCoordinateRegion {

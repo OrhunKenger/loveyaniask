@@ -101,4 +101,8 @@ final class FirebaseJarRepository: JarRepository {
         capsuleHandle = nil
         notesHandle = nil
     }
+
+    deinit {
+        stop()
+    }
 }

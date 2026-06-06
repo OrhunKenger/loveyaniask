@@ -11,11 +11,26 @@ import Observation
 
 @Observable
 final class PeriodViewModel {
-    private(set) var settings: PeriodSettings
-    private(set) var logs: [PeriodLog]
+    private(set) var settings: PeriodSettings { didSet { cachedPredictor = nil } }
+    private(set) var logs: [PeriodLog] { didSet { cachedPredictor = nil } }
     private(set) var dayNotes: [DayNote]
     var displayedMonth: Date
     var selectedDay: CalendarDay?
+
+    // Pahalı DateFormatter'lar bir kez kurulur, yeniden kullanılır.
+    private static func makeFormatter(_ format: String) -> DateFormatter {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "tr_TR")
+        f.dateFormat = format
+        return f
+    }
+    private static let dayMonthFormatter = makeFormatter("d MMMM")
+    private static let monthYearFormatter = makeFormatter("LLLL yyyy")
+    private static let dayMonthWeekdayFormatter = makeFormatter("d MMMM EEEE")
+    private static let fullDateFormatter = makeFormatter("d MMMM yyyy")
+
+    // CyclePredictor yalnızca settings/logs değişince yeniden kurulur (gözlem dışı).
+    @ObservationIgnored private var cachedPredictor: CyclePredictor?
 
     private let getSettings: GetPeriodSettingsUseCase
     private let saveSettingsUseCase: SavePeriodSettingsUseCase
@@ -66,7 +81,7 @@ final class PeriodViewModel {
         }
     }
 
-    private var calendar: Calendar { Calendar.current }
+    private let calendar = Calendar.current
 
     /// Gerçek kayıtlar varsa onlara göre düzeltilmiş ayarlar.
     private var effectiveSettings: PeriodSettings {
@@ -94,7 +109,12 @@ final class PeriodViewModel {
         return min(max(average, 21), 40)
     }
 
-    private var predictor: CyclePredictor { CyclePredictor(settings: effectiveSettings) }
+    private var predictor: CyclePredictor {
+        if let cachedPredictor { return cachedPredictor }
+        let p = CyclePredictor(settings: effectiveSettings)
+        cachedPredictor = p
+        return p
+    }
 
     // MARK: - Durum özeti
 
@@ -109,10 +129,7 @@ final class PeriodViewModel {
     }
 
     var nextPeriodDateText: String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
-        formatter.dateFormat = "d MMMM"
-        return formatter.string(from: predictor.nextPeriodStart())
+        Self.dayMonthFormatter.string(from: predictor.nextPeriodStart())
     }
 
     // MARK: - Aksiyonlar
@@ -209,10 +226,7 @@ final class PeriodViewModel {
     }
 
     var monthTitle: String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
-        formatter.dateFormat = "LLLL yyyy"
-        return formatter.string(from: displayedMonth).capitalized
+        Self.monthYearFormatter.string(from: displayedMonth).capitalized
     }
 
     func kind(for date: Date) -> CycleDayKind {
@@ -237,16 +251,10 @@ final class PeriodViewModel {
     }
 
     func dayTitle(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
-        formatter.dateFormat = "d MMMM EEEE"
-        return formatter.string(from: date)
+        Self.dayMonthWeekdayFormatter.string(from: date)
     }
 
     func logDateText(_ log: PeriodLog) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "tr_TR")
-        formatter.dateFormat = "d MMMM yyyy"
-        return formatter.string(from: log.startDate)
+        Self.fullDateFormatter.string(from: log.startDate)
     }
 }

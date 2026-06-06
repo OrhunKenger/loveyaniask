@@ -10,10 +10,17 @@ import SwiftUI
 
 struct TimeTogetherCard: View {
     let viewModel: HomeViewModel
+    /// Home sekmesi görünür değilken saniyelik yeniden çizimi durdurur.
+    var isActive: Bool = true
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { context in
-            content(for: viewModel.timeTogether(at: context.date))
+        if isActive {
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                content(for: viewModel.timeTogether(at: context.date))
+            }
+        } else {
+            // Arka plandayken statik anlık görüntü (TimelineView tetiklenmez).
+            content(for: viewModel.timeTogether(at: Date()))
         }
     }
 

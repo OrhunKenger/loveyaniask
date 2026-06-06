@@ -42,6 +42,10 @@ final class FirebaseMoodRepository: MoodRepository {
         }
     }
 
+    deinit {
+        if let handle { ref.removeObserver(withHandle: handle) }
+    }
+
     func observe(_ onChange: @escaping ([MoodEntry]) -> Void) {
         self.onChange = onChange
         onChange(cache)
