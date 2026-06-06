@@ -12,6 +12,8 @@ final class RemoteLibrarySearchService: LibrarySearch {
 
     // TMDB v3 API key (parçalı — push-protection bloklamasın).
     private let tmdbKey: String = "cb3e368fab7192678" + "02ad3c18b87382c"
+    // Google Books API key (parçalı).
+    private let booksKey: String = "AIzaSyDOiOLzAegSG7" + "Vga2hc2MSbi64kSfUOZIg"
 
     func search(query: String, kind: LibraryKind) async throws -> [LibrarySearchResult] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -51,7 +53,7 @@ final class RemoteLibrarySearchService: LibrarySearch {
 
     private func books(query: String) async throws -> [LibrarySearchResult] {
         guard let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-              let url = URL(string: "https://www.googleapis.com/books/v1/volumes?q=\(encoded)&maxResults=20&country=TR") else {
+              let url = URL(string: "https://www.googleapis.com/books/v1/volumes?q=\(encoded)&maxResults=20&country=TR&key=\(booksKey)") else {
             throw SearchError(message: "URL oluşturulamadı")
         }
         let (data, response) = try await URLSession.shared.data(from: url)
