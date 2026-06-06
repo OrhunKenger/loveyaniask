@@ -181,7 +181,7 @@ struct PosterImage: View {
 
     var body: some View {
         let height = width * 1.5
-        let radius = max(8, width * 0.06)
+        let radius = max(16, width * 0.13)
         ZStack {
             RoundedRectangle(cornerRadius: radius, style: .continuous)
                 .fill(
@@ -214,10 +214,6 @@ struct PosterImage: View {
         }
         .frame(width: width, height: height)
         .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: radius, style: .continuous)
-                .stroke(.black.opacity(0.12), lineWidth: 0.5)
-        )
-        .shadow(color: .black.opacity(0.28), radius: 8, x: 0, y: 6)
+        .shadow(color: .black.opacity(0.22), radius: 9, x: 0, y: 6)
     }
 }
