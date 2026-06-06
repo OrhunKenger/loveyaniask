@@ -40,6 +40,19 @@ struct AppDependencies {
         )
     }
 
+    func makeLibraryViewModel(currentUser: UserProfile) -> LibraryViewModel {
+        let repository = FirebaseLibraryRepository()
+        let search = RemoteLibrarySearchService()
+        return LibraryViewModel(
+            currentUser: currentUser,
+            observe: ObserveLibraryUseCase(repository: repository),
+            add: AddLibraryItemUseCase(repository: repository),
+            update: UpdateLibraryItemUseCase(repository: repository),
+            delete: DeleteLibraryItemUseCase(repository: repository),
+            search: search
+        )
+    }
+
     func makePlansViewModel(currentUser: UserProfile) -> PlansViewModel {
         let repository = FirebasePlanRepository()
         let scheduler = LocalPlanReminderScheduler()

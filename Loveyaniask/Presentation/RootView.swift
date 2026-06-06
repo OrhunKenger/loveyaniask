@@ -16,6 +16,7 @@ struct RootView: View {
     @State private var moodViewModel: MoodViewModel
     @State private var periodViewModel: PeriodViewModel
     @State private var placesViewModel: PlacesViewModel
+    @State private var libraryViewModel: LibraryViewModel
     @State private var selectedTab: AppTab = .home
 
     private let canEditPeriod: Bool
@@ -28,6 +29,7 @@ struct RootView: View {
         _moodViewModel = State(initialValue: dependencies.makeMoodViewModel(currentUser: currentUser))
         _periodViewModel = State(initialValue: dependencies.makePeriodViewModel())
         _placesViewModel = State(initialValue: dependencies.makePlacesViewModel(currentUser: currentUser))
+        _libraryViewModel = State(initialValue: dependencies.makeLibraryViewModel(currentUser: currentUser))
         canEditPeriod = (currentUser == .sevval)
         // Siri kısayolu (App Intent) hangi kullanıcı adına ekleyeceğini bilsin diye sakla.
         UserDefaults.standard.set(currentUser.rawValue, forKey: "currentUserKey")
@@ -36,7 +38,7 @@ struct RootView: View {
     var body: some View {
         VStack(spacing: 0) {
             TabView(selection: $selectedTab) {
-                LibraryView()
+                LibraryView(viewModel: libraryViewModel)
                     .tag(AppTab.library)
 
                 WishlistView(viewModel: placesViewModel)
