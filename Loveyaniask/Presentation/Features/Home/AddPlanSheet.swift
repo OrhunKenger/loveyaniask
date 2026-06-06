@@ -49,6 +49,8 @@ struct AddPlanSheet: View {
             }
             .navigationTitle(editing == nil ? "Plan Ekle" : "Planı Düzenle")
             .navigationBarTitleDisplayMode(.inline)
+            .presentationDetents([.height(300), .large])
+            .presentationDragIndicator(.visible)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Vazgeç") { dismiss() }

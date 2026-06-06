@@ -85,6 +85,8 @@ struct MoodHomeSection: View {
                         }
                     }
             }
+            .presentationDetents([.large, .medium])
+            .presentationDragIndicator(.visible)
         }
     }
 }

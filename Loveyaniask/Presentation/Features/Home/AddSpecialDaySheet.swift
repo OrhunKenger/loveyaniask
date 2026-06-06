@@ -68,6 +68,8 @@ struct AddSpecialDaySheet: View {
             }
             .navigationTitle(editing == nil ? "Özel Gün Ekle" : "Özel Günü Düzenle")
             .navigationBarTitleDisplayMode(.inline)
+            .presentationDetents([.height(300), .large])
+            .presentationDragIndicator(.visible)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Vazgeç") { dismiss() }
