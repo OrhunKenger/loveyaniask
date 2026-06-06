@@ -9,33 +9,33 @@
 import Foundation
 
 enum AppTab: Int, CaseIterable, Identifiable {
+    case library
     case wishlist
-    case mood
     case home
-    case period
     case places
+    case period
 
     var id: Int { rawValue }
 
     /// Seçili değilken gösterilen ikon.
     var icon: String {
         switch self {
+        case .library: return "books.vertical"
         case .wishlist: return "signpost.right"
-        case .mood: return "face.smiling"
         case .home: return "house"
-        case .period: return "calendar"
         case .places: return "map"
+        case .period: return "calendar"
         }
     }
 
     /// Seçiliyken gösterilen (dolu) ikon.
     var selectedIcon: String {
         switch self {
+        case .library: return "books.vertical.fill"
         case .wishlist: return "signpost.right.fill"
-        case .mood: return "face.smiling.fill"
         case .home: return "house.fill"
-        case .period: return "calendar"
         case .places: return "map.fill"
+        case .period: return "calendar"
         }
     }
 }

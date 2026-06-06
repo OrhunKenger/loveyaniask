@@ -36,20 +36,20 @@ struct RootView: View {
     var body: some View {
         VStack(spacing: 0) {
             TabView(selection: $selectedTab) {
+                LibraryView()
+                    .tag(AppTab.library)
+
                 WishlistView(viewModel: placesViewModel)
                     .tag(AppTab.wishlist)
 
-                MoodView(viewModel: moodViewModel)
-                    .tag(AppTab.mood)
-
-                HomeView(viewModel: homeViewModel, specialDaysViewModel: specialDaysViewModel, plansViewModel: plansViewModel, jarViewModel: jarViewModel)
+                HomeView(viewModel: homeViewModel, specialDaysViewModel: specialDaysViewModel, moodViewModel: moodViewModel, plansViewModel: plansViewModel, jarViewModel: jarViewModel)
                     .tag(AppTab.home)
-
-                PeriodView(viewModel: periodViewModel, canEdit: canEditPeriod)
-                    .tag(AppTab.period)
 
                 PlacesView(viewModel: placesViewModel)
                     .tag(AppTab.places)
+
+                PeriodView(viewModel: periodViewModel, canEdit: canEditPeriod)
+                    .tag(AppTab.period)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
 

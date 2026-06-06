@@ -10,12 +10,14 @@ import SwiftUI
 struct HomeView: View {
     @State private var viewModel: HomeViewModel
     @State private var specialDaysViewModel: SpecialDaysViewModel
+    @State private var moodViewModel: MoodViewModel
     @State private var plansViewModel: PlansViewModel
     @State private var jarViewModel: JarViewModel
 
-    init(viewModel: HomeViewModel, specialDaysViewModel: SpecialDaysViewModel, plansViewModel: PlansViewModel, jarViewModel: JarViewModel) {
+    init(viewModel: HomeViewModel, specialDaysViewModel: SpecialDaysViewModel, moodViewModel: MoodViewModel, plansViewModel: PlansViewModel, jarViewModel: JarViewModel) {
         _viewModel = State(initialValue: viewModel)
         _specialDaysViewModel = State(initialValue: specialDaysViewModel)
+        _moodViewModel = State(initialValue: moodViewModel)
         _plansViewModel = State(initialValue: plansViewModel)
         _jarViewModel = State(initialValue: jarViewModel)
     }
@@ -30,6 +32,8 @@ struct HomeView: View {
                     TimeTogetherCard(viewModel: viewModel)
 
                     SpecialDaysSection(viewModel: specialDaysViewModel)
+
+                    MoodHomeSection(viewModel: moodViewModel)
 
                     PlansSection(viewModel: plansViewModel)
                 }
@@ -50,6 +54,7 @@ struct HomeView: View {
     return HomeView(
         viewModel: dependencies.makeHomeViewModel(),
         specialDaysViewModel: dependencies.makeSpecialDaysViewModel(),
+        moodViewModel: dependencies.makeMoodViewModel(currentUser: .orhun),
         plansViewModel: dependencies.makePlansViewModel(currentUser: .orhun),
         jarViewModel: dependencies.makeJarViewModel(currentUser: .orhun)
     )
