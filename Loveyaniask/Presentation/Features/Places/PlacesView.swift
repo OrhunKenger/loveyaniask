@@ -57,13 +57,12 @@ struct PlacesView: View {
         }
     }
 
-    // Apple Haritalar tarzı zarif nokta: puana göre renkli, ince beyaz halkalı.
+    // Apple Haritalar tarzı: dümdüz dolu renkli nokta (halkasız).
     private func placePin(for place: Place) -> some View {
         Circle()
             .fill(viewModel.pinColor(for: place))
             .frame(width: 13, height: 13)
-            .overlay(Circle().stroke(.white, lineWidth: 1.5))
-            .shadow(color: .black.opacity(0.25), radius: 1.5, y: 1)
+            .shadow(color: .black.opacity(0.3), radius: 1.5, y: 1)
     }
 
     private var titlePill: some View {
