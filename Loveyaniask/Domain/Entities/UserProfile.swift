@@ -13,6 +13,23 @@ enum UserProfile: String, CaseIterable, Identifiable, Codable {
 
     var id: String { rawValue }
 
+    /// Firebase Authentication için bu profile karşılık gelen sabit e-posta.
+    /// Bu iki hesap Firebase konsolundan (Email/Password) oluşturulur.
+    var authEmail: String {
+        switch self {
+        case .orhun: return "orhun@loveyaniask.app"
+        case .sevval: return "sevval@loveyaniask.app"
+        }
+    }
+
+    /// Firebase oturumu geri yüklenirken e-postadan profile geri eşleme.
+    init?(authEmail email: String) {
+        let lower = email.lowercased()
+        if lower == UserProfile.orhun.authEmail { self = .orhun }
+        else if lower == UserProfile.sevval.authEmail { self = .sevval }
+        else { return nil }
+    }
+
     var fullName: String {
         switch self {
         case .orhun: return "Orhun Sina"

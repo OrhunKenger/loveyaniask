@@ -21,7 +21,7 @@ struct AuthGateView: View {
     var body: some View {
         Group {
             if let user = auth.currentUser {
-                RootView(dependencies: dependencies, currentUser: user)
+                RootView(dependencies: dependencies, currentUser: user, onSignOut: { auth.signOut() })
             } else {
                 switch auth.stage {
                 case .splash:

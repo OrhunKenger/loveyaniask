@@ -2,7 +2,8 @@
 //  PasswordView.swift
 //  Loveyaniask
 //
-//  Şifre ekranı: ilk açılışta "oluştur", sonrasında "gir".
+//  Şifre ekranı: seçilen profil için Firebase'e giriş yapar.
+//  Başarılı girişten sonra oturum cihazda kalıcı kalır (bir daha sorulmaz).
 //
 
 import SwiftUI
@@ -12,9 +13,6 @@ struct PasswordView: View {
     let profile: UserProfile
 
     @State private var password = ""
-    @State private var confirm = ""
-
-    private var isCreating: Bool { viewModel.isCreatingPassword() }
 
     var body: some View {
         ZStack {
@@ -27,11 +25,8 @@ struct PasswordView: View {
                 VStack(spacing: AppSpacing.md) {
                     SecureField("Şifre", text: $password)
                         .textFieldStyle(.roundedBorder)
-
-                    if isCreating {
-                        SecureField("Şifre (tekrar)", text: $confirm)
-                            .textFieldStyle(.roundedBorder)
-                    }
+                        .submitLabel(.go)
+                        .onSubmit(submit)
 
                     if let error = viewModel.errorMessage {
                         Text(error)
@@ -42,15 +37,22 @@ struct PasswordView: View {
                 }
 
                 Button(action: submit) {
-                    Text(isCreating ? "Şifre Oluştur" : "Giriş Yap")
-                        .font(.headline)
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(AppColors.primary)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    Group {
+                        if viewModel.isSubmitting {
+                            ProgressView()
+                                .tint(.white)
+                        } else {
+                            Text("Giriş Yap")
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(AppColors.primary)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
-                .disabled(password.isEmpty)
+                .disabled(password.isEmpty || viewModel.isSubmitting)
 
                 Button("← Profil değiştir") {
                     viewModel.backToProfiles()
@@ -85,7 +87,7 @@ struct PasswordView: View {
                 .font(.title3.bold())
                 .foregroundStyle(AppColors.textPrimary)
 
-            Text(isCreating ? "İlk girişin — bir şifre belirle" : "Şifreni gir")
+            Text("Şifreni gir")
                 .font(.subheadline)
                 .foregroundStyle(AppColors.textSecondary)
         }
@@ -93,10 +95,7 @@ struct PasswordView: View {
     }
 
     private func submit() {
-        if isCreating {
-            viewModel.createPassword(password, confirm: confirm)
-        } else {
-            viewModel.submitPassword(password)
-        }
+        guard !password.isEmpty, !viewModel.isSubmitting else { return }
+        Task { await viewModel.submitPassword(password) }
     }
 }

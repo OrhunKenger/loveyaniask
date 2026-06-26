@@ -49,19 +49,36 @@ struct AddPlaceSheet: View {
                         TextField("Mekan ara (örn. Moda Sahili)", text: $search.query)
 
                         ForEach(search.results, id: \.self) { result in
+                            let added = viewModel.isAdded(name: result.title, wishlist: wishlist)
                             Button {
+                                guard !added else { return }
                                 select(result)
                             } label: {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(result.title)
-                                        .foregroundStyle(AppColors.textPrimary)
-                                    if !result.subtitle.isEmpty {
-                                        Text(result.subtitle)
-                                            .font(.caption)
-                                            .foregroundStyle(AppColors.textSecondary)
+                                HStack(alignment: .top) {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(result.title)
+                                            .foregroundStyle(AppColors.textPrimary)
+                                        if !result.subtitle.isEmpty {
+                                            Text(result.subtitle)
+                                                .font(.caption)
+                                                .foregroundStyle(AppColors.textSecondary)
+                                        }
+                                    }
+                                    // Ekli olan yer soluklaşıp hafifçe blur'lanır.
+                                    .opacity(added ? 0.5 : 1)
+                                    .blur(radius: added ? 1.3 : 0)
+
+                                    Spacer()
+
+                                    if added {
+                                        Label("Eklendi", systemImage: "checkmark.circle.fill")
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundStyle(.green)
                                     }
                                 }
+                                .contentShape(Rectangle())
                             }
+                            .disabled(added)
                         }
                     }
                 }
@@ -143,7 +160,8 @@ struct AddPlaceSheet: View {
     }
 
     private var canSave: Bool {
-        selectedTitle != nil && coordinate != nil
+        guard let selectedTitle, coordinate != nil else { return false }
+        return !viewModel.isAdded(name: selectedTitle, wishlist: wishlist)
     }
 
     private func select(_ result: MKLocalSearchCompletion) {

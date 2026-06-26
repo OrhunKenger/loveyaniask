@@ -11,12 +11,8 @@ import Foundation
 
 struct AppDependencies {
     func makeAuthViewModel() -> AuthViewModel {
-        let store = KeychainCredentialStore()
-        return AuthViewModel(
-            hasPassword: HasPasswordUseCase(store: store),
-            setPassword: SetPasswordUseCase(store: store),
-            verifyPassword: VerifyPasswordUseCase(store: store)
-        )
+        // Giriş artık Firebase Authentication üzerinden; oturum kalıcı.
+        AuthViewModel(auth: FirebaseAuthService())
     }
 
     func makeHomeViewModel() -> HomeViewModel {
@@ -26,6 +22,12 @@ struct AppDependencies {
             getDaysTogether: GetDaysTogetherUseCase(repository: repository),
             getTimeTogether: GetTimeTogetherUseCase(repository: repository)
         )
+    }
+
+    func makeQuickNotesViewModel(currentUser: UserProfile) -> QuickNotesViewModel {
+        // Hızlı notlar Firebase Realtime Database'de (gerçek zamanlı senkron).
+        let repository = FirebaseQuickNoteRepository()
+        return QuickNotesViewModel(currentUser: currentUser, repository: repository)
     }
 
     func makeSpecialDaysViewModel() -> SpecialDaysViewModel {

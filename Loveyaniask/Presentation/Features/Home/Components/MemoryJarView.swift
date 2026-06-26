@@ -13,8 +13,6 @@ struct MemoryJarView: View {
     var isReady: Bool = false
     var scale: CGFloat = 1
 
-    @State private var glow = false
-
     private var displayed: Int { min(count, 24) }
 
     private var glassFill: LinearGradient {
@@ -30,12 +28,6 @@ struct MemoryJarView: View {
             .scaleEffect(scale, anchor: .center)
             .frame(width: 160 * scale, height: 230 * scale)
             .background(readyGlow)
-            .onAppear {
-                guard isReady else { return }
-                withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) {
-                    glow = true
-                }
-            }
     }
 
     // MARK: - Kavanoz
@@ -109,11 +101,13 @@ struct MemoryJarView: View {
     @ViewBuilder
     private var readyGlow: some View {
         if isReady {
+            // Statik parıltı: bir kez çizilir, GPU boşta kalır (eskiden sonsuz
+            // animasyonlu 40pt blur idi → telefonu ısıtan ana sebepti).
             Circle()
                 .fill(Color(hex: "F4C95D"))
                 .frame(width: 140 * scale, height: 140 * scale)
                 .blur(radius: 40)
-                .opacity(glow ? 0.7 : 0.35)
+                .opacity(0.5)
                 .offset(y: 25 * scale)
         }
     }

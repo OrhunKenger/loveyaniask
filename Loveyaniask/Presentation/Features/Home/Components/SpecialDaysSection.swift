@@ -2,8 +2,9 @@
 //  SpecialDaysSection.swift
 //  Loveyaniask
 //
-//  Ana sayfada, süre kartının altında: özel günler animasyonlu baloncuklar.
+//  Ana sayfada, süre kartının altında: özel günler renkli baloncuklar.
 //  Baloncuğa dokununca küçük bir detay sheet'i açılır.
+//  (Performans: sürekli "yüzme" animasyonu kaldırıldı — GPU'yu boşta tutuyordu.)
 //
 
 import SwiftUI
@@ -29,12 +30,11 @@ struct SpecialDaysSection: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: AppSpacing.lg) {
-                    ForEach(Array(viewModel.days.enumerated()), id: \.element.id) { index, day in
+                    ForEach(viewModel.days) { day in
                         SpecialDayBubble(
                             emoji: day.emoji,
                             daysRemaining: viewModel.daysRemaining(for: day),
-                            title: day.title,
-                            index: index
+                            title: day.title
                         )
                         .onTapGesture { viewModel.select(day) }
                         .contextMenu {
@@ -74,9 +74,6 @@ private struct SpecialDayBubble: View {
     let emoji: String
     let daysRemaining: Int
     let title: String
-    let index: Int
-
-    @State private var floating = false
 
     var body: some View {
         VStack(spacing: AppSpacing.xs) {
@@ -105,13 +102,6 @@ private struct SpecialDayBubble: View {
                     }
                 }
             }
-            .offset(y: floating ? -5 : 5)
-            .animation(
-                .easeInOut(duration: 2.2)
-                    .repeatForever(autoreverses: true)
-                    .delay(Double(index) * 0.25),
-                value: floating
-            )
 
             Text(title)
                 .font(.caption2)
@@ -119,6 +109,5 @@ private struct SpecialDayBubble: View {
                 .lineLimit(1)
                 .frame(width: 92)
         }
-        .onAppear { floating = true }
     }
 }

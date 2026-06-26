@@ -2,7 +2,9 @@
 //  AuthViewModel.swift
 //  Loveyaniask
 //
-//  Giriş akışının mantığı: splash → profil seçimi → şifre (oluştur/gir) → giriş.
+//  Giriş akışının mantığı: splash → profil seçimi → şifre → Firebase girişi.
+//  Oturum Firebase'de kalıcı olduğundan, daha önce giriş yapılmış bir cihazda
+//  açılışta `currentUser` doğrudan dolu gelir ve giriş ekranları atlanır.
 //
 
 import Foundation
@@ -16,28 +18,27 @@ enum AuthStage: Equatable {
 
 @Observable
 final class AuthViewModel {
-    var stage: AuthStage = .splash
+    // Açılış splash'i artık LaunchContainer'da (logo büyüyerek açılır), bu yüzden
+    // doğrudan profil seçiminden başlıyoruz — eski uygulama-içi splash atlandı.
+    var stage: AuthStage = .selectProfile
     var selectedProfile: UserProfile?
     private(set) var currentUser: UserProfile?
     var errorMessage: String?
+    var isSubmitting = false
+
+    private let auth: any AuthService
+
+    init(auth: any AuthService) {
+        self.auth = auth
+        // Kalıcı oturum varsa açılışta doğrudan girili başla.
+        self.currentUser = auth.currentUser
+    }
 
     var isAuthenticated: Bool { currentUser != nil }
 
-    private let hasPassword: HasPasswordUseCase
-    private let setPassword: SetPasswordUseCase
-    private let verifyPassword: VerifyPasswordUseCase
-
-    init(
-        hasPassword: HasPasswordUseCase,
-        setPassword: SetPasswordUseCase,
-        verifyPassword: VerifyPasswordUseCase
-    ) {
-        self.hasPassword = hasPassword
-        self.setPassword = setPassword
-        self.verifyPassword = verifyPassword
-    }
-
     func finishSplash() {
+        // Splash bittiğinde oturum hâlâ açıksa (geç gelen durum) doğrudan gir.
+        if currentUser != nil { return }
         stage = .selectProfile
     }
 
@@ -47,34 +48,25 @@ final class AuthViewModel {
         stage = .password
     }
 
-    func isCreatingPassword() -> Bool {
-        guard let profile = selectedProfile else { return false }
-        return !hasPassword.execute(profile: profile)
-    }
-
-    func createPassword(_ password: String, confirm: String) {
+    func submitPassword(_ password: String) async {
         guard let profile = selectedProfile else { return }
-        guard password.count >= 4 else {
-            errorMessage = "Şifre en az 4 karakter olmalı"
-            return
-        }
-        guard password == confirm else {
-            errorMessage = "Şifreler eşleşmiyor"
-            return
-        }
-        setPassword.execute(password, profile: profile)
         errorMessage = nil
-        currentUser = profile
+        isSubmitting = true
+        defer { isSubmitting = false }
+        do {
+            try await auth.signIn(profile: profile, password: password)
+            currentUser = profile
+        } catch {
+            errorMessage = "Giriş yapılamadı. Şifreni kontrol et."
+        }
     }
 
-    func submitPassword(_ password: String) {
-        guard let profile = selectedProfile else { return }
-        if verifyPassword.execute(password, profile: profile) {
-            errorMessage = nil
-            currentUser = profile
-        } else {
-            errorMessage = "Şifre yanlış, tekrar dene"
-        }
+    func signOut() {
+        try? auth.signOut()
+        currentUser = nil
+        selectedProfile = nil
+        errorMessage = nil
+        stage = .selectProfile
     }
 
     func backToProfiles() {

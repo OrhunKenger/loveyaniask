@@ -27,8 +27,10 @@ struct LoveyaniaskApp: App {
 
     var body: some Scene {
         WindowGroup {
-            AuthGateView(dependencies: dependencies)
-                .preferredColorScheme(.light)
+            LaunchContainer {
+                AuthGateView(dependencies: dependencies)
+            }
+            .preferredColorScheme(.light)
         }
     }
 }

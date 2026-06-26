@@ -70,6 +70,17 @@ final class PlacesViewModel {
         places.first { $0.id == id }
     }
 
+    /// Bu mekan (ada göre) ilgili listede zaten ekli mi? Tekrar eklemeyi önlemek için.
+    /// wishlist = true → hayal listesi, false → gittiğimiz mekanlar.
+    func isAdded(name: String, wishlist: Bool) -> Bool {
+        let key = name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !key.isEmpty else { return false }
+        let list = wishlist ? wishlistPlaces : visitedPlaces
+        return list.contains {
+            $0.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == key
+        }
+    }
+
     // MARK: - Ekleme / silme / puan
 
     func add(name: String, latitude: Double, longitude: Double, rating: Int, note: String, dateVisited: Date, imageData: Data?, visited: Bool = true) {
