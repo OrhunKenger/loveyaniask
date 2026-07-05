@@ -41,26 +41,6 @@ struct HomeView: View {
             ScrollView {
                 VStack(spacing: AppSpacing.lg) {
                     HStack {
-                        Menu {
-                            Button {
-                                quickNotesViewModel.showingAdd = true
-                            } label: { Label("Hızlı Not", systemImage: "sparkles") }
-                            Button {
-                                plansViewModel.startNew()
-                            } label: { Label("Plan Ekle", systemImage: "calendar.badge.plus") }
-                            Button {
-                                specialDaysViewModel.startNew()
-                            } label: { Label("Özel Gün", systemImage: "heart.circle") }
-                        } label: {
-                            Image(systemName: "bolt.fill")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 36, height: 36)
-                                .background(AppColors.accentGradient)
-                                .clipShape(Circle())
-                                .shadow(color: AppColors.primary.opacity(0.4), radius: 8, y: 3)
-                        }
-
                         Spacer()
 
                         Button {
