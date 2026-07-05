@@ -18,11 +18,24 @@ final class ProfileViewModel {
 
     let currentUser: UserProfile
     private let repository: any ProfileRepository
+    private let auth: any AuthService
 
-    init(currentUser: UserProfile, repository: any ProfileRepository) {
+    init(currentUser: UserProfile, repository: any ProfileRepository, auth: any AuthService) {
         self.currentUser = currentUser
         self.repository = repository
+        self.auth = auth
         repository.observeProfiles { [weak self] in self?.profiles = $0 }
+    }
+
+    /// Girili kullanıcının şifresini değiştirir. Hata varsa mesajı döner, yoksa nil.
+    func changePassword(_ newPassword: String) async -> String? {
+        guard newPassword.count >= 6 else { return "Şifre en az 6 karakter olmalı" }
+        do {
+            try await auth.changePassword(to: newPassword)
+            return nil
+        } catch {
+            return "Şifre değiştirilemedi. Güvenlik için çıkıp tekrar giriş yapıp dene."
+        }
     }
 
     var partner: UserProfile { currentUser.partner }

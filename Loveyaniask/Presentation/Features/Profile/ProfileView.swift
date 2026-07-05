@@ -13,6 +13,7 @@ struct ProfileView: View {
     var onSignOut: () -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @State private var showingChangePassword = false
 
     var body: some View {
         NavigationStack {
@@ -23,6 +24,18 @@ struct ProfileView: View {
                     VStack(spacing: AppSpacing.lg) {
                         card(for: viewModel.currentUser, isMe: true)
                         card(for: viewModel.partner, isMe: false)
+
+                        Button {
+                            showingChangePassword = true
+                        } label: {
+                            Label("Şifre Değiştir", systemImage: "key.fill")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(AppColors.textPrimary)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, AppSpacing.md)
+                                .glassCard(cornerRadius: 16, padding: 0)
+                        }
+                        .padding(.top, AppSpacing.sm)
 
                         Button(role: .destructive) {
                             dismiss()
@@ -49,6 +62,9 @@ struct ProfileView: View {
             }
             .sheet(isPresented: $viewModel.showingEdit) {
                 EditProfileSheet(viewModel: viewModel)
+            }
+            .sheet(isPresented: $showingChangePassword) {
+                ChangePasswordSheet(viewModel: viewModel)
             }
         }
     }

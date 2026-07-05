@@ -16,6 +16,9 @@ protocol AuthService {
     /// Seçilen profil + şifre ile giriş yapar. Başarısızsa hata fırlatır.
     func signIn(profile: UserProfile, password: String) async throws
 
+    /// Girili kullanıcının şifresini değiştirir. Başarısızsa hata fırlatır.
+    func changePassword(to newPassword: String) async throws
+
     /// Oturumu kapatır (cihazdaki kalıcı oturumu siler).
     func signOut() throws
 }

@@ -17,8 +17,8 @@ enum UserProfile: String, CaseIterable, Identifiable, Codable {
     /// Bu iki hesap Firebase konsolundan (Email/Password) oluşturulur.
     var authEmail: String {
         switch self {
-        case .orhun: return "orhun@loveyaniask.app"
-        case .sevval: return "sevval@loveyaniask.app"
+        case .orhun: return "orhunkenger@loveyaniask.com"
+        case .sevval: return "sevvalkenger@loveyaniask.com"
         }
     }
 

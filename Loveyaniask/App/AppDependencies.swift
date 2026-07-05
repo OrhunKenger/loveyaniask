@@ -33,7 +33,7 @@ struct AppDependencies {
     func makeProfileViewModel(currentUser: UserProfile) -> ProfileViewModel {
         // Profiller Firebase Realtime Database'de (bio + küçültülmüş foto, senkron).
         let repository = FirebaseProfileRepository()
-        return ProfileViewModel(currentUser: currentUser, repository: repository)
+        return ProfileViewModel(currentUser: currentUser, repository: repository, auth: FirebaseAuthService())
     }
 
     func makeSpecialDaysViewModel() -> SpecialDaysViewModel {

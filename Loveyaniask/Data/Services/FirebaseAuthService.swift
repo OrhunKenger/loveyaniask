@@ -23,6 +23,14 @@ final class FirebaseAuthService: AuthService {
         try await Auth.auth().signIn(withEmail: profile.authEmail, password: password)
     }
 
+    func changePassword(to newPassword: String) async throws {
+        guard let user = Auth.auth().currentUser else {
+            throw NSError(domain: "loveyaniask.auth", code: 401,
+                          userInfo: [NSLocalizedDescriptionKey: "Oturum bulunamadı"])
+        }
+        try await user.updatePassword(to: newPassword)
+    }
+
     func signOut() throws {
         try Auth.auth().signOut()
     }
