@@ -57,7 +57,9 @@ final class AuthViewModel {
             try await auth.signIn(profile: profile, password: password)
             currentUser = profile
         } catch {
-            errorMessage = "Giriş yapılamadı. Şifreni kontrol et."
+            // Geçici teşhis: gerçek Firebase hatasını göster.
+            let ns = error as NSError
+            errorMessage = "\(error.localizedDescription) [\(ns.domain) \(ns.code)]"
         }
     }
 
