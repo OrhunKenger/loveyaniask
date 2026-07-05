@@ -63,9 +63,11 @@ struct CustomTabBar: View {
                 .onEnded { value in
                     let tabs = AppTab.allCases
                     guard let index = tabs.firstIndex(of: selectedTab) else { return }
-                    if value.translation.width < -30, index < tabs.count - 1 {
+                    // Parmağı nereye götürürsen o yöne geç (işaret mantığı):
+                    // sağa kaydır → sağdaki sekme, sola kaydır → soldaki sekme.
+                    if value.translation.width > 30, index < tabs.count - 1 {
                         withAnimation(switchAnimation) { selectedTab = tabs[index + 1] }
-                    } else if value.translation.width > 30, index > 0 {
+                    } else if value.translation.width < -30, index > 0 {
                         withAnimation(switchAnimation) { selectedTab = tabs[index - 1] }
                     }
                 }
