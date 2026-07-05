@@ -4,8 +4,7 @@
 //
 //  Ana sayfada (sayacın hemen altında) "Hızlı Not": aklınıza geleni hemen
 //  ekleyip unutmamak için ortak, serbest not listesi. En yeni üstte.
-//  Silmek için bir nota uzun bas → Sil (Planlar/Özel Günler ile aynı davranış;
-//  ana sayfa bir ScrollView olduğundan gerçek "kaydır-sil" List gerektirirdi).
+//  Silmek için bir nota uzun bas → Sil.
 //
 
 import SwiftUI
@@ -15,19 +14,7 @@ struct QuickNotesSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
-            HStack {
-                Text("Hızlı Not")
-                    .font(.headline)
-                    .foregroundStyle(AppColors.textPrimary)
-                Spacer()
-                Button {
-                    viewModel.showingAdd = true
-                } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.title3)
-                        .foregroundStyle(AppColors.primary)
-                }
-            }
+            SectionHeader(title: "Hızlı Not") { viewModel.showingAdd = true }
 
             if viewModel.notes.isEmpty {
                 Text("Aklınıza geleni hemen ekleyin — + ile not bırakın (unutmayın diye)")
@@ -49,7 +36,7 @@ struct QuickNotesSection: View {
 
     private func noteRow(_ note: QuickNote) -> some View {
         HStack(alignment: .top, spacing: AppSpacing.sm) {
-            Image(systemName: "note.text")
+            Image(systemName: "sparkles")
                 .font(.caption)
                 .foregroundStyle(AppColors.primary)
                 .padding(.top, 2)
@@ -66,11 +53,8 @@ struct QuickNotesSection: View {
 
             Spacer(minLength: 0)
         }
-        .padding(AppSpacing.sm)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .shadow(color: .black.opacity(0.05), radius: 8, y: 3)
+        .glassCard(cornerRadius: 16, padding: AppSpacing.sm)
         .contextMenu {
             Button(role: .destructive) {
                 viewModel.delete(note)

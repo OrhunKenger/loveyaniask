@@ -39,7 +39,7 @@ struct WishlistView: View {
                 addButton
                     .padding(AppSpacing.lg)
             }
-            .background(AppColors.background)
+            .background(GlowBackground())
             .navigationTitle("Gitmek İstediğimiz")
             .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $showingAdd) {
@@ -110,9 +110,7 @@ struct WishlistView: View {
         }
         .padding(AppSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .shadow(color: .black.opacity(0.05), radius: 8, y: 3)
+        .glassCard(cornerRadius: 18, padding: 0)
         .contextMenu {
             Button(role: .destructive) {
                 viewModel.delete(place)

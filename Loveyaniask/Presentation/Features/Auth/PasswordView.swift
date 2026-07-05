@@ -3,7 +3,7 @@
 //  Loveyaniask
 //
 //  Şifre ekranı: seçilen profil için Firebase'e giriş yapar.
-//  Başarılı girişten sonra oturum cihazda kalıcı kalır (bir daha sorulmaz).
+//  Koyu · romantik tema.
 //
 
 import SwiftUI
@@ -16,43 +16,39 @@ struct PasswordView: View {
 
     var body: some View {
         ZStack {
-            AppColors.background
-                .ignoresSafeArea()
+            GlowBackground()
 
             VStack(spacing: AppSpacing.lg) {
                 header
 
                 VStack(spacing: AppSpacing.md) {
                     SecureField("Şifre", text: $password)
-                        .textFieldStyle(.roundedBorder)
+                        .textFieldStyle(.plain)
+                        .foregroundStyle(AppColors.textPrimary)
                         .submitLabel(.go)
                         .onSubmit(submit)
+                        .padding(AppSpacing.md)
+                        .background(AppColors.glassFill)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .stroke(AppColors.glassStroke, lineWidth: 1)
+                        )
 
                     if let error = viewModel.errorMessage {
                         Text(error)
                             .font(.caption)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(AppColors.primary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
 
-                Button(action: submit) {
-                    Group {
-                        if viewModel.isSubmitting {
-                            ProgressView()
-                                .tint(.white)
-                        } else {
-                            Text("Giriş Yap")
-                                .font(.headline)
-                                .foregroundStyle(.white)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(AppColors.primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
-                .disabled(password.isEmpty || viewModel.isSubmitting)
+                PrimaryButton(
+                    title: "Giriş Yap",
+                    isLoading: viewModel.isSubmitting,
+                    isEnabled: !password.isEmpty,
+                    action: submit
+                )
 
                 Button("← Profil değiştir") {
                     viewModel.backToProfiles()
@@ -70,14 +66,9 @@ struct PasswordView: View {
         VStack(spacing: AppSpacing.sm) {
             ZStack {
                 Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [AppColors.secondary, AppColors.primary],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 72, height: 72)
+                    .fill(AppColors.accentGradient)
+                    .frame(width: 76, height: 76)
+                    .shadow(color: AppColors.primary.opacity(0.45), radius: 14, y: 5)
                 Text(profile.initials)
                     .font(.title2.bold())
                     .foregroundStyle(.white)

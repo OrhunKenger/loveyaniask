@@ -11,6 +11,7 @@ import SwiftUI
 struct RootView: View {
     @State private var homeViewModel: HomeViewModel
     @State private var quickNotesViewModel: QuickNotesViewModel
+    @State private var profileViewModel: ProfileViewModel
     @State private var specialDaysViewModel: SpecialDaysViewModel
     @State private var plansViewModel: PlansViewModel
     @State private var jarViewModel: JarViewModel
@@ -27,6 +28,7 @@ struct RootView: View {
         self.onSignOut = onSignOut
         _homeViewModel = State(initialValue: dependencies.makeHomeViewModel())
         _quickNotesViewModel = State(initialValue: dependencies.makeQuickNotesViewModel(currentUser: currentUser))
+        _profileViewModel = State(initialValue: dependencies.makeProfileViewModel(currentUser: currentUser))
         _specialDaysViewModel = State(initialValue: dependencies.makeSpecialDaysViewModel())
         _plansViewModel = State(initialValue: dependencies.makePlansViewModel(currentUser: currentUser))
         _jarViewModel = State(initialValue: dependencies.makeJarViewModel(currentUser: currentUser))
@@ -48,7 +50,7 @@ struct RootView: View {
                 WishlistView(viewModel: placesViewModel)
                     .tag(AppTab.wishlist)
 
-                HomeView(viewModel: homeViewModel, quickNotesViewModel: quickNotesViewModel, specialDaysViewModel: specialDaysViewModel, moodViewModel: moodViewModel, plansViewModel: plansViewModel, jarViewModel: jarViewModel, isActive: selectedTab == .home, onSignOut: onSignOut)
+                HomeView(viewModel: homeViewModel, quickNotesViewModel: quickNotesViewModel, profileViewModel: profileViewModel, specialDaysViewModel: specialDaysViewModel, moodViewModel: moodViewModel, plansViewModel: plansViewModel, jarViewModel: jarViewModel, isActive: selectedTab == .home, onSignOut: onSignOut)
                     .tag(AppTab.home)
 
                 PeriodView(viewModel: periodViewModel, canEdit: canEditPeriod)
@@ -61,7 +63,7 @@ struct RootView: View {
 
             CustomTabBar(selectedTab: $selectedTab)
         }
-        .background(AppColors.background)
+        .background(AppColors.background.ignoresSafeArea())
         .ignoresSafeArea(.keyboard, edges: .bottom)
     }
 }

@@ -25,8 +25,7 @@ struct PeriodView: View {
         @Bindable var viewModel = viewModel
 
         ZStack {
-            AppColors.background
-                .ignoresSafeArea()
+            GlowBackground()
 
             ScrollView {
                 VStack(spacing: AppSpacing.lg) {
@@ -120,9 +119,7 @@ struct PeriodView: View {
             }
         }
         .padding(AppSpacing.lg)
-        .background(AppColors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .shadow(color: .black.opacity(0.05), radius: 10, y: 4)
+        .glassCard(cornerRadius: 20, padding: 0)
     }
 
     private var monthNavigation: some View {

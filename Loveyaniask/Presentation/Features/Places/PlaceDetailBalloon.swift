@@ -98,9 +98,8 @@ struct PlaceDetailBalloon: View {
         }
         .padding(AppSpacing.lg)
         .frame(maxWidth: 320)
-        .background(AppColors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .shadow(color: .black.opacity(0.25), radius: 20, y: 10)
+        .glassCard(cornerRadius: 22, padding: 0)
+        .shadow(color: .black.opacity(0.45), radius: 24, y: 12)
     }
 
     private func starsRow(for rating: Int) -> some View {

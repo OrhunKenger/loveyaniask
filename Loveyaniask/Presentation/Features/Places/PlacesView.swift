@@ -79,9 +79,13 @@ struct PlacesView: View {
             .foregroundStyle(AppColors.textPrimary)
             .padding(.horizontal, AppSpacing.md)
             .padding(.vertical, AppSpacing.sm)
-            .background(.ultraThinMaterial)
+            .background(
+                Capsule()
+                    .fill(AppColors.surface.opacity(0.9))
+                    .overlay(Capsule().stroke(AppColors.glassStroke, lineWidth: 1))
+            )
             .clipShape(Capsule())
-            .shadow(color: .black.opacity(0.1), radius: 6, y: 3)
+            .shadow(color: .black.opacity(0.4), radius: 8, y: 4)
     }
 
     // Harita üstünde yüzen + butonu (sabit, sağ alt).

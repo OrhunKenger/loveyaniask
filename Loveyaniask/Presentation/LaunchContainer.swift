@@ -42,7 +42,7 @@ struct LaunchContainer<Content: View>: View {
 
     private var launchScreen: some View {
         ZStack {
-            AppColors.background
+            AppColors.backgroundGradient
 
             Image("LaunchLogo")
                 .resizable()

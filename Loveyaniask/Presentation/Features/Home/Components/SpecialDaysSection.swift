@@ -14,19 +14,7 @@ struct SpecialDaysSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            HStack {
-                Text("Özel Günlerimiz")
-                    .font(.headline)
-                    .foregroundStyle(AppColors.textPrimary)
-                Spacer()
-                Button {
-                    viewModel.startNew()
-                } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.title3)
-                        .foregroundStyle(AppColors.primary)
-                }
-            }
+            SectionHeader(title: "Özel Günlerimiz") { viewModel.startNew() }
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: AppSpacing.lg) {

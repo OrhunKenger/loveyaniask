@@ -12,19 +12,7 @@ struct PlansSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
-            HStack {
-                Text("Yaklaşan Planlar")
-                    .font(.headline)
-                    .foregroundStyle(AppColors.textPrimary)
-                Spacer()
-                Button {
-                    viewModel.startNew()
-                } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.title3)
-                        .foregroundStyle(AppColors.primary)
-                }
-            }
+            SectionHeader(title: "Yaklaşan Planlar") { viewModel.startNew() }
 
             if viewModel.plans.isEmpty {
                 Text("Henüz plan yok — + ile ekleyin (randevu, buluşma, etkinlik)")
@@ -84,10 +72,7 @@ struct PlansSection: View {
                     .foregroundStyle(AppColors.textSecondary)
             }
         }
-        .padding(AppSpacing.sm)
-        .background(AppColors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .shadow(color: .black.opacity(0.05), radius: 8, y: 3)
+        .glassCard(cornerRadius: 16, padding: AppSpacing.sm)
         .contextMenu {
             Button {
                 viewModel.startEdit(plan)

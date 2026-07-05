@@ -18,7 +18,7 @@ struct MoodHomeSection: View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             HStack {
                 Text("Bugün nasıl hissediyorsun?")
-                    .font(.headline)
+                    .font(AppTypography.cardTitle)
                     .foregroundStyle(AppColors.textPrimary)
                 Spacer()
                 Button {
@@ -37,12 +37,12 @@ struct MoodHomeSection: View {
                         let selected = viewModel.mood(for: today, partner: .me) == mood
                         Text(mood.emoji)
                             .font(.system(size: 28))
-                            .frame(width: 46, height: 46)
+                            .frame(width: 48, height: 48)
                             .background(
-                                Circle().fill(selected ? AppColors.primary.opacity(0.18) : AppColors.background)
+                                Circle().fill(selected ? AppColors.primary.opacity(0.22) : AppColors.glassFill)
                             )
                             .overlay(
-                                Circle().stroke(selected ? AppColors.primary : .clear, lineWidth: 2)
+                                Circle().stroke(selected ? AppColors.primary : AppColors.glassStroke, lineWidth: selected ? 2 : 1)
                             )
                             .onTapGesture {
                                 withAnimation(.snappy(duration: 0.2)) {
@@ -71,11 +71,7 @@ struct MoodHomeSection: View {
                 Spacer()
             }
         }
-        .padding(AppSpacing.lg)
-        .frame(maxWidth: .infinity)
-        .background(AppColors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .shadow(color: .black.opacity(0.05), radius: 10, y: 4)
+        .glassCard(cornerRadius: 20, padding: AppSpacing.lg)
         .sheet(isPresented: $showingCalendar) {
             NavigationStack {
                 MoodView(viewModel: viewModel)

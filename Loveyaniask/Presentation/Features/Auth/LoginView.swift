@@ -3,6 +3,7 @@
 //  Loveyaniask
 //
 //  Profil seçim ekranı: Orhun ya da Şevval. Seçilen kişi "Ben" olur.
+//  Koyu · romantik tema: gül parıltılı zemin + cam profil kartları.
 //
 
 import SwiftUI
@@ -12,16 +13,16 @@ struct LoginView: View {
 
     var body: some View {
         ZStack {
-            AppColors.background
-                .ignoresSafeArea()
+            GlowBackground()
 
             VStack(spacing: AppSpacing.xl) {
-                VStack(spacing: AppSpacing.xs) {
+                VStack(spacing: AppSpacing.sm) {
                     Image(systemName: "heart.fill")
-                        .font(.system(size: 44))
-                        .foregroundStyle(AppColors.primary)
+                        .font(.system(size: 46))
+                        .foregroundStyle(AppColors.accentGradient)
+                        .shadow(color: AppColors.primary.opacity(0.5), radius: 16, y: 4)
                     Text("Kim giriş yapıyor?")
-                        .font(.title2.bold())
+                        .font(AppTypography.screenTitle)
                         .foregroundStyle(AppColors.textPrimary)
                 }
 
@@ -44,16 +45,9 @@ struct LoginView: View {
         HStack(spacing: AppSpacing.md) {
             ZStack {
                 Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: profile == .sevval
-                                ? [AppColors.primary, AppColors.secondary]
-                                : [AppColors.secondary, AppColors.primary],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .fill(AppColors.accentGradient)
                     .frame(width: 56, height: 56)
+                    .shadow(color: AppColors.primary.opacity(0.4), radius: 10, y: 4)
                 Text(profile.initials)
                     .font(.headline)
                     .foregroundStyle(.white)
@@ -73,9 +67,6 @@ struct LoginView: View {
             Image(systemName: "chevron.right")
                 .foregroundStyle(AppColors.textSecondary)
         }
-        .padding(AppSpacing.md)
-        .background(AppColors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .shadow(color: .black.opacity(0.06), radius: 10, y: 4)
+        .glassCard()
     }
 }

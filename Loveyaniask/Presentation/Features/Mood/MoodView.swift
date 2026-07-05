@@ -21,8 +21,7 @@ struct MoodView: View {
         @Bindable var viewModel = viewModel
 
         ZStack {
-            AppColors.background
-                .ignoresSafeArea()
+            GlowBackground()
 
             ScrollView {
                 VStack(spacing: AppSpacing.lg) {
@@ -76,9 +75,7 @@ struct MoodView: View {
             }
         }
         .padding(AppSpacing.md)
-        .background(AppColors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .shadow(color: .black.opacity(0.05), radius: 10, y: 4)
+        .glassCard(cornerRadius: 20, padding: 0)
     }
 
     private var monthNavigation: some View {
@@ -130,7 +127,7 @@ struct MoodView: View {
         .frame(height: 60)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(isToday ? AppColors.primary.opacity(0.10) : Color.black.opacity(0.02))
+                .fill(isToday ? AppColors.primary.opacity(0.16) : AppColors.glassFill)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)

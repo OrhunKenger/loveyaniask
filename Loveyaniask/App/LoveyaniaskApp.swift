@@ -30,7 +30,7 @@ struct LoveyaniaskApp: App {
             LaunchContainer {
                 AuthGateView(dependencies: dependencies)
             }
-            .preferredColorScheme(.light)
+            .preferredColorScheme(.dark)
         }
     }
 }

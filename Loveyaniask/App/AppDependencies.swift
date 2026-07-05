@@ -30,6 +30,12 @@ struct AppDependencies {
         return QuickNotesViewModel(currentUser: currentUser, repository: repository)
     }
 
+    func makeProfileViewModel(currentUser: UserProfile) -> ProfileViewModel {
+        // Profiller Firebase Realtime Database'de (bio + küçültülmüş foto, senkron).
+        let repository = FirebaseProfileRepository()
+        return ProfileViewModel(currentUser: currentUser, repository: repository)
+    }
+
     func makeSpecialDaysViewModel() -> SpecialDaysViewModel {
         // Özel günler artık Firebase'de (sabit günler + eklenenler, senkron).
         let repository = FirebaseSpecialDayRepository()
