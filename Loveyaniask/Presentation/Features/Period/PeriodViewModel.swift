@@ -177,7 +177,7 @@ final class PeriodViewModel {
                 let this = calendar.startOfDay(for: log.startDate)
                 length = calendar.dateComponents([.day], from: this, to: newer).day
             }
-            history.append(CycleHistoryItem(id: log.id, startDate: log.startDate, cycleLength: length))
+            history.append(CycleHistoryItem(id: log.id.uuidString, startDate: log.startDate, cycleLength: length))
         }
 
         return CycleStats(

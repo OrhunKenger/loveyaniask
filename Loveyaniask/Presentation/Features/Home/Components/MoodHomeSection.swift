@@ -14,6 +14,11 @@ struct MoodHomeSection: View {
     @Bindable var viewModel: MoodViewModel
     @State private var showingCalendar = false
 
+    /// Çip ızgarasının kendi içinde kaydırıldığı en fazla yükseklik (yaklaşık 4 satır).
+    private let maxGridHeight: CGFloat = 170
+    /// Izgaranın doğal yüksekliği (az duyguda boşuna yer kaplamamak için).
+    @State private var gridHeight: CGFloat = 0
+
     private var today: Date { Date() }
 
     var body: some View {
@@ -32,18 +37,29 @@ struct MoodHomeSection: View {
                 }
             }
 
-            // Emoji + isimli çipler — sarmalı ızgara, tek dokunuşla seç
-            FlowLayout(spacing: AppSpacing.sm, lineSpacing: AppSpacing.sm) {
-                ForEach(Mood.displayOrder) { mood in
-                    let selected = viewModel.mood(for: today, partner: .me) == mood
-                    moodChip(mood, selected: selected)
-                        .onTapGesture {
-                            withAnimation(.snappy(duration: 0.2)) {
-                                viewModel.setMood(date: today, partner: .me, mood: mood)
+            // Emoji + isimli çipler — sarmalı ızgara, kendi içinde kaydırılır
+            ScrollView(.vertical, showsIndicators: true) {
+                FlowLayout(spacing: AppSpacing.sm, lineSpacing: AppSpacing.sm) {
+                    ForEach(Mood.displayOrder) { mood in
+                        let selected = viewModel.mood(for: today, partner: .me) == mood
+                        moodChip(mood, selected: selected)
+                            .onTapGesture {
+                                withAnimation(.snappy(duration: 0.2)) {
+                                    viewModel.setMood(date: today, partner: .me, mood: mood)
+                                }
                             }
-                        }
+                    }
                 }
+                .background(
+                    GeometryReader { proxy in
+                        Color.clear
+                            .preference(key: MoodGridHeightKey.self, value: proxy.size.height)
+                    }
+                )
             }
+            .frame(height: min(gridHeight, maxGridHeight))
+            .scrollDisabled(gridHeight <= maxGridHeight)
+            .onPreferenceChange(MoodGridHeightKey.self) { gridHeight = $0 }
 
             // Partnerin bugünü
             HStack(spacing: 8) {
@@ -94,6 +110,14 @@ struct MoodHomeSection: View {
             Capsule().stroke(selected ? AppColors.primary : AppColors.glassStroke, lineWidth: selected ? 2 : 1)
         )
         .contentShape(Capsule())
+    }
+}
+
+/// Mood çip ızgarasının doğal yüksekliğini ölçmek için.
+private struct MoodGridHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
 
