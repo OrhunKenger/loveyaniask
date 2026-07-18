@@ -82,7 +82,7 @@ private struct PartnerMoodCard: View {
 
     private var moodMenu: some View {
         Menu {
-            ForEach(Mood.allCases) { mood in
+            ForEach(Mood.displayOrder) { mood in
                 Button {
                     viewModel.setMood(date: date, partner: partner, mood: mood)
                 } label: {

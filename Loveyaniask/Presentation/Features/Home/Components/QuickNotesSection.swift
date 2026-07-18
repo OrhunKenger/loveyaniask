@@ -12,6 +12,14 @@ import SwiftUI
 struct QuickNotesSection: View {
     @Bindable var viewModel: QuickNotesViewModel
 
+    /// Bölümün alabileceği en fazla yükseklik. Bunu aşınca ana sayfa uzamaz;
+    /// notlar bu alanın içinde kendi kendine kaydırılır (yeni üstte, eski aşağıda).
+    private let maxHeight: CGFloat = 280
+
+    /// İçindeki not listesinin gerçek (doğal) yüksekliği. Az notta boşuna yer
+    /// kaplamamak için yüksekliği min(içerik, tavan) olarak veriyoruz.
+    @State private var contentHeight: CGFloat = 0
+
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             SectionHeader(title: "Hızlı Not") { viewModel.showingAdd = true }
@@ -22,11 +30,22 @@ struct QuickNotesSection: View {
                     .foregroundStyle(AppColors.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
-                LazyVStack(spacing: AppSpacing.sm) {
-                    ForEach(viewModel.notes) { note in
-                        noteRow(note)
+                ScrollView(.vertical, showsIndicators: true) {
+                    VStack(spacing: AppSpacing.sm) {
+                        ForEach(viewModel.notes) { note in
+                            noteRow(note)
+                        }
                     }
+                    .background(
+                        GeometryReader { proxy in
+                            Color.clear
+                                .preference(key: QuickNotesHeightKey.self, value: proxy.size.height)
+                        }
+                    )
                 }
+                .frame(height: min(contentHeight, maxHeight))
+                .scrollDisabled(contentHeight <= maxHeight)
+                .onPreferenceChange(QuickNotesHeightKey.self) { contentHeight = $0 }
             }
         }
         .sheet(isPresented: $viewModel.showingAdd) {
@@ -62,5 +81,13 @@ struct QuickNotesSection: View {
                 Label("Sil", systemImage: "trash")
             }
         }
+    }
+}
+
+/// Hızlı notlar listesinin doğal yüksekliğini ölçmek için kullanılır.
+private struct QuickNotesHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }

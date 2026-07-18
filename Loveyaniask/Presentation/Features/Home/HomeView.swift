@@ -40,9 +40,13 @@ struct HomeView: View {
 
             ScrollView {
                 VStack(spacing: AppSpacing.lg) {
-                    HStack {
+                    HStack(spacing: AppSpacing.sm) {
+                        // Küçük canlı sayaç — sola yaslı
+                        TimeTogetherCompact(viewModel: viewModel, isActive: isActive)
+
                         Spacer()
 
+                        // Profil butonu — sağa yaslı
                         Button {
                             showingProfile = true
                         } label: {
@@ -51,13 +55,11 @@ struct HomeView: View {
                         .buttonStyle(.plain)
                     }
 
-                    TimeTogetherCard(viewModel: viewModel, isActive: isActive)
-
-                    QuickNotesSection(viewModel: quickNotesViewModel)
+                    MoodHomeSection(viewModel: moodViewModel)
 
                     SpecialDaysSection(viewModel: specialDaysViewModel)
 
-                    MoodHomeSection(viewModel: moodViewModel)
+                    QuickNotesSection(viewModel: quickNotesViewModel)
 
                     PlansSection(viewModel: plansViewModel)
                 }

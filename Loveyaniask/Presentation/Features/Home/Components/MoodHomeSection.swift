@@ -2,8 +2,10 @@
 //  MoodHomeSection.swift
 //  Loveyaniask
 //
-//  Ana sayfada bugünün ruh hali kartı: emojilere TEK DOKUNUŞLA kendi halini seç,
-//  partnerinkini gör. Takvim ikonuna dokununca tam aylık takvim açılır.
+//  Ana sayfada bugünün ruh hali kartı: emoji + isimli çiplere TEK DOKUNUŞLA
+//  kendi halini seç, partnerinkini gör. Çipler sarmalı ızgarada dizilir;
+//  hepsi tek bakışta görünür, ismi okumak için ekstra menü/sheet gerekmez.
+//  Takvim ikonuna dokununca tam aylık takvim açılır.
 //
 
 import SwiftUI
@@ -30,28 +32,17 @@ struct MoodHomeSection: View {
                 }
             }
 
-            // Hızlı seçim — emojilere tek dokunuş
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: AppSpacing.sm) {
-                    ForEach(Mood.allCases) { mood in
-                        let selected = viewModel.mood(for: today, partner: .me) == mood
-                        Text(mood.emoji)
-                            .font(.system(size: 28))
-                            .frame(width: 48, height: 48)
-                            .background(
-                                Circle().fill(selected ? AppColors.primary.opacity(0.22) : AppColors.glassFill)
-                            )
-                            .overlay(
-                                Circle().stroke(selected ? AppColors.primary : AppColors.glassStroke, lineWidth: selected ? 2 : 1)
-                            )
-                            .onTapGesture {
-                                withAnimation(.snappy(duration: 0.2)) {
-                                    viewModel.setMood(date: today, partner: .me, mood: mood)
-                                }
+            // Emoji + isimli çipler — sarmalı ızgara, tek dokunuşla seç
+            FlowLayout(spacing: AppSpacing.sm, lineSpacing: AppSpacing.sm) {
+                ForEach(Mood.displayOrder) { mood in
+                    let selected = viewModel.mood(for: today, partner: .me) == mood
+                    moodChip(mood, selected: selected)
+                        .onTapGesture {
+                            withAnimation(.snappy(duration: 0.2)) {
+                                viewModel.setMood(date: today, partner: .me, mood: mood)
                             }
-                    }
+                        }
                 }
-                .padding(.horizontal, 2)
             }
 
             // Partnerin bugünü
@@ -83,6 +74,75 @@ struct MoodHomeSection: View {
             }
             .presentationDetents([.large, .medium])
             .presentationDragIndicator(.visible)
+        }
+    }
+
+    private func moodChip(_ mood: Mood, selected: Bool) -> some View {
+        HStack(spacing: 5) {
+            Text(mood.emoji)
+                .font(.system(size: 17))
+            Text(mood.label)
+                .font(.subheadline.weight(selected ? .semibold : .regular))
+                .foregroundStyle(selected ? AppColors.textPrimary : AppColors.textSecondary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            Capsule().fill(selected ? AppColors.primary.opacity(0.22) : AppColors.glassFill)
+        )
+        .overlay(
+            Capsule().stroke(selected ? AppColors.primary : AppColors.glassStroke, lineWidth: selected ? 2 : 1)
+        )
+        .contentShape(Capsule())
+    }
+}
+
+/// Basit sarmalı (flow) yerleşim: çipler satıra sığmayınca alt satıra sarar.
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+    var lineSpacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout Void) -> CGSize {
+        let maxWidth = proposal.width ?? .infinity
+        var rows: [[LayoutSubviews.Element]] = [[]]
+        var rowWidth: CGFloat = 0
+        var totalHeight: CGFloat = 0
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            let needed = rowWidth == 0 ? size.width : rowWidth + spacing + size.width
+            if needed > maxWidth, rowWidth > 0 {
+                totalHeight += rowHeight + lineSpacing
+                rows.append([subview])
+                rowWidth = size.width
+                rowHeight = size.height
+            } else {
+                rows[rows.count - 1].append(subview)
+                rowWidth = needed
+                rowHeight = max(rowHeight, size.height)
+            }
+        }
+        totalHeight += rowHeight
+        return CGSize(width: maxWidth == .infinity ? rowWidth : maxWidth, height: totalHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout Void) {
+        let maxWidth = bounds.width
+        var x = bounds.minX
+        var y = bounds.minY
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > bounds.minX + maxWidth, x > bounds.minX {
+                x = bounds.minX
+                y += rowHeight + lineSpacing
+                rowHeight = 0
+            }
+            subview.place(at: CGPoint(x: x, y: y), anchor: .topLeading, proposal: ProposedViewSize(size))
+            x += size.width + spacing
+            rowHeight = max(rowHeight, size.height)
         }
     }
 }

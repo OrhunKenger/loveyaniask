@@ -79,3 +79,39 @@ struct TimeTogetherCard: View {
             .frame(width: 1, height: 34)
     }
 }
+
+/// Üst satırda, profil butonunun solundaki küçük canlı sayaç.
+/// Tek satır: ♥ 123g 04:15:32 — saniye saniye işler.
+struct TimeTogetherCompact: View {
+    let viewModel: HomeViewModel
+    var isActive: Bool = true
+
+    var body: some View {
+        if isActive {
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                content(for: viewModel.timeTogether(at: context.date))
+            }
+        } else {
+            content(for: viewModel.timeTogether(at: Date()))
+        }
+    }
+
+    private func content(for time: TimeTogether) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: "heart.fill")
+                .font(.caption2)
+                .foregroundStyle(AppColors.primary)
+            Text("\(time.days)g")
+                .foregroundStyle(AppColors.textPrimary)
+            Text(String(format: "%02d:%02d:%02d", time.hours, time.minutes, time.seconds))
+                .foregroundStyle(AppColors.textSecondary)
+                .monospacedDigit()
+                .contentTransition(.numericText())
+        }
+        .font(.footnote.weight(.semibold))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Capsule().fill(AppColors.glassFill))
+        .overlay(Capsule().stroke(AppColors.glassStroke, lineWidth: 1))
+    }
+}

@@ -40,6 +40,46 @@ struct CyclePredictor {
         return .none
     }
 
+    /// Faz sınırları (0 tabanlı pozisyonlar), döngü uzunluğuna göre.
+    private struct Bounds {
+        let period: Int
+        let ovulationDay: Int
+        let fertileStart: Int
+        let fertileEnd: Int
+        let pmsStart: Int
+    }
+
+    private func bounds() -> Bounds {
+        let cycle = max(settings.cycleLength, 1)
+        let period = min(max(settings.periodLength, 1), cycle)
+        let ovulationDay = max(period, cycle - 14)
+        let fertileStart = ovulationDay - 4
+        let fertileEnd = ovulationDay + 1
+        let pmsStart = max(fertileEnd + 1, cycle - 4)
+        return Bounds(period: period, ovulationDay: ovulationDay, fertileStart: fertileStart, fertileEnd: fertileEnd, pmsStart: pmsStart)
+    }
+
+    /// Günün 6 fazlı döngü fazı. Sınırlar döngü uzunluğuna göre hesaplanır.
+    func phase(for date: Date) -> CyclePhase {
+        let pos = position(of: date)
+        let b = bounds()
+
+        if pos < b.period { return .menstrual }
+        if pos == b.ovulationDay { return .ovulation }
+        if pos >= b.fertileStart && pos <= b.fertileEnd { return .fertile }
+        if pos >= b.pmsStart { return .pms }
+        if pos < b.fertileStart { return .follicular }
+        return .luteal
+    }
+
+    /// PMS penceresine kaç gün kaldı? PMS zaten başladıysa 0.
+    func daysUntilPMS(from date: Date = Date()) -> Int {
+        let pos = position(of: date)
+        let start = bounds().pmsStart
+        if pos >= start { return 0 }
+        return start - pos
+    }
+
     func currentCycleDay(on date: Date = Date()) -> Int {
         position(of: date) + 1
     }
@@ -62,24 +102,10 @@ struct CyclePredictor {
     // MARK: - Durum metni (bugünün durumu kartı için)
 
     func statusText(on date: Date = Date()) -> String {
-        switch kind(for: date) {
-        case .period:
-            return "Regl dönemindesin"
-        case .ovulation:
-            return "Yumurtlama günü"
-        case .fertile:
-            return "Doğurgan dönem"
-        case .none:
-            return "Regle \(daysUntilNextPeriod(from: date)) gün var"
-        }
+        phase(for: date).statusText
     }
 
     func statusEmoji(on date: Date = Date()) -> String {
-        switch kind(for: date) {
-        case .period: return "🩸"
-        case .ovulation: return "🥚"
-        case .fertile: return "🌱"
-        case .none: return "🌸"
-        }
+        phase(for: date).emoji
     }
 }

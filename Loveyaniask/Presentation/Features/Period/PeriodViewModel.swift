@@ -123,6 +123,74 @@ final class PeriodViewModel {
     var currentCycleDay: Int { predictor.currentCycleDay() }
     var daysUntilNextPeriod: Int { predictor.daysUntilNextPeriod() }
 
+    /// Bugünün 6 fazlı döngü fazı (içerik motoru için).
+    var currentPhase: CyclePhase { predictor.phase(for: Date()) }
+
+    func phase(for date: Date) -> CyclePhase { predictor.phase(for: date) }
+
+    /// Bugünün akıllı içeriği: Şevval'e mesaj + ipucu, Orhun'a ipucu.
+    var todayContent: PhaseContent { CycleContentEngine.content(for: currentPhase) }
+
+    // MARK: - PMS penceresi uyarısı
+
+    var isPMSActive: Bool { currentPhase == .pms }
+    var daysUntilPMS: Int { predictor.daysUntilPMS() }
+    /// Uyarı ne zaman görünsün: PMS aktifse ya da 1-3 gün içinde başlıyorsa.
+    var showsPMSWarning: Bool { isPMSActive || (1...3).contains(daysUntilPMS) }
+
+    // MARK: - Döngü istatistikleri
+
+    var cycleStats: CycleStats {
+        let starts = logs.map { calendar.startOfDay(for: $0.startDate) }.sorted()
+
+        // Ardışık başlangıçlar arası boşluklar = döngü uzunlukları.
+        var gaps: [Int] = []
+        if starts.count >= 2 {
+            for index in 1..<starts.count {
+                if let gap = calendar.dateComponents([.day], from: starts[index - 1], to: starts[index]).day {
+                    gaps.append(gap)
+                }
+            }
+        }
+
+        let average = gaps.isEmpty ? nil : gaps.reduce(0, +) / gaps.count
+
+        let regularity: CycleRegularity
+        if gaps.count < 2 {
+            regularity = .unknown
+        } else if let mn = gaps.min(), let mx = gaps.max(), mx - mn <= 4 {
+            regularity = .regular
+        } else {
+            regularity = .irregular
+        }
+
+        // Geçmiş: yeni → eski. Her kaydın döngü uzunluğu = bir sonraki (daha yeni)
+        // kayda kadar geçen gün; en yeni kayıt sürüyor (nil).
+        let sortedLogs = logs.sorted { $0.startDate > $1.startDate }
+        var history: [CycleHistoryItem] = []
+        for (index, log) in sortedLogs.enumerated() {
+            let length: Int?
+            if index == 0 {
+                length = nil
+            } else {
+                let newer = calendar.startOfDay(for: sortedLogs[index - 1].startDate)
+                let this = calendar.startOfDay(for: log.startDate)
+                length = calendar.dateComponents([.day], from: this, to: newer).day
+            }
+            history.append(CycleHistoryItem(id: log.id, startDate: log.startDate, cycleLength: length))
+        }
+
+        return CycleStats(
+            loggedCount: logs.count,
+            averageCycle: average,
+            shortestCycle: gaps.min(),
+            longestCycle: gaps.max(),
+            periodLength: settings.periodLength,
+            regularity: regularity,
+            history: history
+        )
+    }
+
     var cycleProgress: Double {
         let cycle = max(effectiveSettings.cycleLength, 1)
         return min(1, Double(currentCycleDay) / Double(cycle))
@@ -130,6 +198,26 @@ final class PeriodViewModel {
 
     var nextPeriodDateText: String {
         Self.dayMonthFormatter.string(from: predictor.nextPeriodStart())
+    }
+
+    // MARK: - Döngü çubuğu (bölgeli)
+
+    /// Etkin döngü uzunluğu (gün).
+    var cycleLength: Int { max(effectiveSettings.cycleLength, 1) }
+
+    /// Bir tam döngünün her gününün türü (index = döngüdeki pozisyon).
+    /// Döngü periyodik olduğu için tek bir kanonik döngü tüm döngüleri temsil eder.
+    func cycleDayKinds() -> [CycleDayKind] {
+        let start = calendar.startOfDay(for: effectiveSettings.lastPeriodStart)
+        return (0..<cycleLength).map { offset in
+            let date = calendar.date(byAdding: .day, value: offset, to: start) ?? start
+            return predictor.kind(for: date)
+        }
+    }
+
+    /// Bugünün döngü çubuğundaki konumu (0 tabanlı).
+    var currentCycleIndex: Int {
+        max(0, min(currentCycleDay - 1, cycleLength - 1))
     }
 
     // MARK: - Aksiyonlar
@@ -233,6 +321,29 @@ final class PeriodViewModel {
         predictor.kind(for: date)
     }
 
+    /// Bu gün GERÇEK bir regl günü mü? (Şevval'in "başladı" kaydıyla doğrulanmış
+    /// bir regl aralığına düşüyorsa gerçek; sadece tahminse değil.)
+    func isRealPeriodDay(_ date: Date) -> Bool {
+        let day = calendar.startOfDay(for: date)
+        let length = max(effectiveSettings.periodLength, 1)
+        for log in logs {
+            let start = calendar.startOfDay(for: log.startDate)
+            guard let end = calendar.date(byAdding: .day, value: length, to: start) else { continue }
+            if day >= start && day < end { return true }
+        }
+        return false
+    }
+
+    /// Takvimde bantları birleştirmek için günün ait olduğu grup:
+    /// 0 = normal, 1 = regl, 2 = doğurgan/yumurtlama.
+    func bandGroup(for date: Date) -> Int {
+        switch predictor.kind(for: date) {
+        case .period: return 1
+        case .fertile, .ovulation: return 2
+        case .none: return 0
+        }
+    }
+
     func phaseText(for date: Date) -> String {
         switch predictor.kind(for: date) {
         case .period: return "Regl günü 🩸"
@@ -256,5 +367,10 @@ final class PeriodViewModel {
 
     func logDateText(_ log: PeriodLog) -> String {
         Self.fullDateFormatter.string(from: log.startDate)
+    }
+
+    /// İstatistik geçmişi için kısa tarih ("2 Ağustos").
+    func statDateText(_ date: Date) -> String {
+        Self.dayMonthFormatter.string(from: date)
     }
 }
