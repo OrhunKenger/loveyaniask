@@ -36,7 +36,6 @@ enum Mood: String, CaseIterable, Codable, Identifiable {
     case stressed
     case irritated
     case resentful
-    case excitedNervous
     case nervous
     case relieved
     case melting
@@ -47,7 +46,7 @@ enum Mood: String, CaseIterable, Codable, Identifiable {
     static var displayOrder: [Mood] {
         [
             .happy, .loved, .romantic, .melting, .affectionate,
-            .calm, .relieved, .excited, .excitedNervous, .motivated,
+            .calm, .relieved, .excited, .motivated,
             .proud, .longing, .shy, .surprised, .unsure,
             .confused, .neutral, .bored, .tired, .sad,
             .tearful, .nervous, .stressed, .anxious, .angry,
@@ -81,7 +80,6 @@ enum Mood: String, CaseIterable, Codable, Identifiable {
         case .stressed: return "😩"
         case .irritated: return "😤"
         case .resentful: return "😒"
-        case .excitedNervous: return "🫨"
         case .nervous: return "😬"
         case .relieved: return "😮‍💨"
         case .melting: return "🫠"
@@ -114,7 +112,6 @@ enum Mood: String, CaseIterable, Codable, Identifiable {
         case .stressed: return "Stresli"
         case .irritated: return "Sinirli"
         case .resentful: return "Küskün"
-        case .excitedNervous: return "Heyecandan"
         case .nervous: return "Gergin"
         case .relieved: return "Rahatlamış"
         case .melting: return "Eriyorum"
