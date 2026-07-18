@@ -103,7 +103,7 @@ struct TimeTogetherCompact: View {
                 .foregroundStyle(AppColors.primary)
             Text("\(time.days)g")
                 .foregroundStyle(AppColors.textPrimary)
-            Text(String(format: "%02d:%02d:%02d", time.hours, time.minutes, time.seconds))
+            Text("\(time.hours)sa \(time.minutes)dk \(time.seconds)sn")
                 .foregroundStyle(AppColors.textSecondary)
                 .monospacedDigit()
                 .contentTransition(.numericText())
