@@ -15,6 +15,7 @@ struct HomeView: View {
     @State private var moodViewModel: MoodViewModel
     @State private var plansViewModel: PlansViewModel
     @State private var jarViewModel: JarViewModel
+    let kenCompanion: KenCompanion
     /// Home sekmesi seçili mi? Canlı sayaç sadece görünürken çalışsın diye.
     var isActive: Bool = true
     /// Çıkış yap (oturumu kapat) aksiyonu.
@@ -22,7 +23,7 @@ struct HomeView: View {
 
     @State private var showingProfile = false
 
-    init(viewModel: HomeViewModel, quickNotesViewModel: QuickNotesViewModel, profileViewModel: ProfileViewModel, specialDaysViewModel: SpecialDaysViewModel, moodViewModel: MoodViewModel, plansViewModel: PlansViewModel, jarViewModel: JarViewModel, isActive: Bool = true, onSignOut: @escaping () -> Void = {}) {
+    init(viewModel: HomeViewModel, quickNotesViewModel: QuickNotesViewModel, profileViewModel: ProfileViewModel, specialDaysViewModel: SpecialDaysViewModel, moodViewModel: MoodViewModel, plansViewModel: PlansViewModel, jarViewModel: JarViewModel, kenCompanion: KenCompanion, isActive: Bool = true, onSignOut: @escaping () -> Void = {}) {
         _viewModel = State(initialValue: viewModel)
         _quickNotesViewModel = State(initialValue: quickNotesViewModel)
         _profileViewModel = State(initialValue: profileViewModel)
@@ -30,6 +31,7 @@ struct HomeView: View {
         _moodViewModel = State(initialValue: moodViewModel)
         _plansViewModel = State(initialValue: plansViewModel)
         _jarViewModel = State(initialValue: jarViewModel)
+        self.kenCompanion = kenCompanion
         self.isActive = isActive
         self.onSignOut = onSignOut
     }
@@ -57,7 +59,7 @@ struct HomeView: View {
 
                     SpecialDaysSection(viewModel: specialDaysViewModel)
 
-                    QuickNotesSection(viewModel: quickNotesViewModel)
+                    QuickNotesSection(viewModel: quickNotesViewModel, kenCompanion: kenCompanion)
 
                     MoodHomeSection(viewModel: moodViewModel)
 
@@ -104,6 +106,7 @@ struct HomeView: View {
         specialDaysViewModel: dependencies.makeSpecialDaysViewModel(),
         moodViewModel: dependencies.makeMoodViewModel(currentUser: .orhun),
         plansViewModel: dependencies.makePlansViewModel(currentUser: .orhun),
-        jarViewModel: dependencies.makeJarViewModel(currentUser: .orhun)
+        jarViewModel: dependencies.makeJarViewModel(currentUser: .orhun),
+        kenCompanion: dependencies.kenCompanion
     )
 }

@@ -28,6 +28,7 @@ final class LibraryViewModel {
     private let deleteUseCase: DeleteLibraryItemUseCase
     private let searchService: LibrarySearch
     private let pushSender: PushNotificationSender
+    private let kenCompanion: KenCompanion
 
     init(
         currentUser: UserProfile,
@@ -36,7 +37,8 @@ final class LibraryViewModel {
         update: UpdateLibraryItemUseCase,
         delete: DeleteLibraryItemUseCase,
         search: LibrarySearch,
-        pushSender: PushNotificationSender
+        pushSender: PushNotificationSender,
+        kenCompanion: KenCompanion
     ) {
         self.currentUser = currentUser
         self.observeUseCase = observe
@@ -45,6 +47,7 @@ final class LibraryViewModel {
         self.deleteUseCase = delete
         self.searchService = search
         self.pushSender = pushSender
+        self.kenCompanion = kenCompanion
         observe.execute { [weak self] items in
             self?.items = items.sorted { $0.addedAt > $1.addedAt }
         }
@@ -118,8 +121,10 @@ final class LibraryViewModel {
         pushSender.send(
             to: currentUser.partner,
             title: "\(currentUser.firstName) bir şey puanladı",
-            body: "\(item.title) — sen de puanla"
+            body: "\(item.title) — sen de puanla",
+            dedupeKey: "rating.library.\(currentUser.rawValue)"
         )
+        kenCompanion.trigger(.bounce)
     }
 
     func delete(_ item: LibraryItem) {

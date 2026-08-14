@@ -167,9 +167,9 @@ struct MoodView: View {
     private var analysisCard: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             HStack(spacing: 6) {
-                Image(systemName: "sparkles")
-                    .foregroundStyle(AppColors.primary)
-                Text("Ruh Hali Analizi")
+                Text("🐾")
+                    .font(.subheadline)
+                Text("Ken'in Notu")
                     .font(.headline)
                     .foregroundStyle(AppColors.textPrimary)
             }
@@ -182,7 +182,7 @@ struct MoodView: View {
                     .font(.caption2)
                     .foregroundStyle(AppColors.textSecondary)
             } else {
-                Text("Henüz analiz yok. Ruh haliniz değiştikçe burada otomatik bir değerlendirme belirecek.")
+                Text("Ken henüz bir şey yazmadı — ruh haliniz değiştikçe burada bir notu belirecek.")
                     .font(.subheadline)
                     .foregroundStyle(AppColors.textSecondary)
             }

@@ -28,4 +28,9 @@ final class MomentMediaCache {
     func isCached(forStoragePath path: String) -> Bool {
         fileManager.fileExists(atPath: localURL(forStoragePath: path).path)
     }
+
+    /// Bir an silindiğinde yerel kopyasını da temizler.
+    func remove(forStoragePath path: String) {
+        try? fileManager.removeItem(at: localURL(forStoragePath: path))
+    }
 }

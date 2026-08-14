@@ -26,6 +26,7 @@ final class PlacesViewModel {
     private let setRatingUseCase: SetPlaceRatingUseCase
     private let setVisitedUseCase: SetPlaceVisitedUseCase
     private let pushSender: PushNotificationSender
+    private let kenCompanion: KenCompanion
 
     private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -43,7 +44,8 @@ final class PlacesViewModel {
         getPhoto: GetPlacePhotoUseCase,
         setRating: SetPlaceRatingUseCase,
         setVisited: SetPlaceVisitedUseCase,
-        pushSender: PushNotificationSender
+        pushSender: PushNotificationSender,
+        kenCompanion: KenCompanion
     ) {
         self.currentUser = currentUser
         self.getPlaces = getPlaces
@@ -54,6 +56,7 @@ final class PlacesViewModel {
         self.setRatingUseCase = setRating
         self.setVisitedUseCase = setVisited
         self.pushSender = pushSender
+        self.kenCompanion = kenCompanion
         // Firebase'den gerçek zamanlı dinle.
         observePlaces.execute { [weak self] places in
             self?.places = places.sorted { $0.dateVisited > $1.dateVisited }
@@ -115,8 +118,10 @@ final class PlacesViewModel {
         pushSender.send(
             to: currentUser.partner,
             title: "\(currentUser.firstName) bir yeri puanladı",
-            body: "\(place.name) — sen de puanla"
+            body: "\(place.name) — sen de puanla",
+            dedupeKey: "rating.place.\(currentUser.rawValue)"
         )
+        kenCompanion.trigger(.bounce)
     }
 
     func myRating(for place: Place) -> Int {

@@ -24,9 +24,11 @@ struct RootView: View {
 
     private let canEditPeriod: Bool
     private let onSignOut: () -> Void
+    private let kenCompanion: KenCompanion
 
     init(dependencies: AppDependencies, currentUser: UserProfile, onSignOut: @escaping () -> Void) {
         self.onSignOut = onSignOut
+        self.kenCompanion = dependencies.kenCompanion
         _homeViewModel = State(initialValue: dependencies.makeHomeViewModel())
         _quickNotesViewModel = State(initialValue: dependencies.makeQuickNotesViewModel(currentUser: currentUser))
         _profileViewModel = State(initialValue: dependencies.makeProfileViewModel(currentUser: currentUser))
@@ -44,28 +46,32 @@ struct RootView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            TabView(selection: $selectedTab) {
-                LibraryView(viewModel: libraryViewModel)
-                    .tag(AppTab.library)
+        ZStack {
+            VStack(spacing: 0) {
+                TabView(selection: $selectedTab) {
+                    LibraryView(viewModel: libraryViewModel)
+                        .tag(AppTab.library)
 
-                AkisView(viewModel: akisViewModel)
-                    .tag(AppTab.akis)
+                    AkisView(viewModel: akisViewModel)
+                        .tag(AppTab.akis)
 
-                HomeView(viewModel: homeViewModel, quickNotesViewModel: quickNotesViewModel, profileViewModel: profileViewModel, specialDaysViewModel: specialDaysViewModel, moodViewModel: moodViewModel, plansViewModel: plansViewModel, jarViewModel: jarViewModel, isActive: selectedTab == .home, onSignOut: onSignOut)
-                    .tag(AppTab.home)
+                    HomeView(viewModel: homeViewModel, quickNotesViewModel: quickNotesViewModel, profileViewModel: profileViewModel, specialDaysViewModel: specialDaysViewModel, moodViewModel: moodViewModel, plansViewModel: plansViewModel, jarViewModel: jarViewModel, kenCompanion: kenCompanion, isActive: selectedTab == .home, onSignOut: onSignOut)
+                        .tag(AppTab.home)
 
-                PeriodView(viewModel: periodViewModel, canEdit: canEditPeriod)
-                    .tag(AppTab.period)
+                    PeriodView(viewModel: periodViewModel, canEdit: canEditPeriod)
+                        .tag(AppTab.period)
 
-                PlacesView(viewModel: placesViewModel, isActive: selectedTab == .places)
-                    .tag(AppTab.places)
+                    PlacesView(viewModel: placesViewModel, isActive: selectedTab == .places)
+                        .tag(AppTab.places)
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+
+                CustomTabBar(selectedTab: $selectedTab)
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
+            .background(AppColors.background.ignoresSafeArea())
+            .ignoresSafeArea(.keyboard, edges: .bottom)
 
-            CustomTabBar(selectedTab: $selectedTab)
+            KenCompanionView(companion: kenCompanion)
         }
-        .background(AppColors.background.ignoresSafeArea())
-        .ignoresSafeArea(.keyboard, edges: .bottom)
     }
 }

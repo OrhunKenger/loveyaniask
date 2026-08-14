@@ -15,17 +15,30 @@ struct LibraryAddSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: AppSpacing.md) {
-                // Tür seçimi
-                Picker("Tür", selection: $viewModel.selectedKind) {
+                // Tür seçimi (segmented Picker özel SVG ikonları güvenilir göstermediği
+                // için yerine aynı stildeki kendi buton satırımızı kullanıyoruz).
+                HStack(spacing: AppSpacing.sm) {
                     ForEach(LibraryKind.allCases) { kind in
-                        Text("\(kind.emoji) \(kind.label)").tag(kind)
+                        let selected = viewModel.selectedKind == kind
+                        Button {
+                            viewModel.selectedKind = kind
+                            Task { await viewModel.runSearch() }
+                        } label: {
+                            HStack(spacing: 5) {
+                                EmojiIcon(emoji: kind.emoji, size: 15)
+                                Text(kind.label)
+                            }
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(selected ? .white : AppColors.textPrimary)
+                            .padding(.vertical, AppSpacing.sm)
+                            .frame(maxWidth: .infinity)
+                            .background(selected ? AppColors.primary : AppColors.surface)
+                            .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
-                .pickerStyle(.segmented)
                 .padding(.horizontal, AppSpacing.md)
-                .onChange(of: viewModel.selectedKind) { _, _ in
-                    Task { await viewModel.runSearch() }
-                }
 
                 // Arama kutusu
                 HStack {

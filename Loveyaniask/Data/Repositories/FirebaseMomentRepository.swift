@@ -22,9 +22,13 @@ final class FirebaseMomentRepository: MomentRepository {
     private var onChange: (([Moment]) -> Void)?
     private var handle: DatabaseHandle?
 
+    /// Tek seferde çekilen en fazla an sayısı — akış yıllar içinde binlerce
+    /// ana ulaşabileceği için sınırsız çekmek performans/maliyet riski olurdu.
+    private static let fetchLimit: UInt = 500
+
     init(currentUser: UserProfile) {
         self.currentUser = currentUser
-        handle = ref.observe(.value) { [weak self] snapshot in
+        handle = ref.queryLimited(toLast: Self.fetchLimit).observe(.value) { [weak self] snapshot in
             guard let self else { return }
             var moments: [Moment] = []
             for case let child as DataSnapshot in snapshot.children {
@@ -47,7 +51,8 @@ final class FirebaseMomentRepository: MomentRepository {
                     storagePath: storagePath,
                     createdAt: createdAt,
                     dayKey: DayKey.make(createdAt),
-                    resurfaceAt: resurfaceAtMillis.map { Date(timeIntervalSince1970: $0 / 1000) }
+                    resurfaceAt: resurfaceAtMillis.map { Date(timeIntervalSince1970: $0 / 1000) },
+                    kenComment: d["kenComment"] as? String
                 ))
             }
             self.items = moments.sorted { $0.createdAt > $1.createdAt }
@@ -99,6 +104,7 @@ final class FirebaseMomentRepository: MomentRepository {
     func delete(_ moment: Moment) {
         ref.child(moment.id).removeValue()
         storageRoot.child(moment.storagePath).delete(completion: nil)
+        cache.remove(forStoragePath: moment.storagePath)
     }
 
     func setResurface(_ moment: Moment, date: Date?) {

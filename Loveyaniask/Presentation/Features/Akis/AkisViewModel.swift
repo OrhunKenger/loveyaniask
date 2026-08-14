@@ -20,6 +20,7 @@ final class AkisViewModel {
     private(set) var moments: [Moment] = []
     var selectedMoment: Moment?
     var isUploading = false
+    var uploadError: String?
 
     private let observeUseCase: ObserveMomentsUseCase
     private let uploadUseCase: UploadMomentUseCase
@@ -28,6 +29,7 @@ final class AkisViewModel {
     private let loadMediaUseCase: LoadMomentMediaUseCase
     private let onThisDayScheduler: OnThisDayReminderScheduler
     private let pushSender: PushNotificationSender
+    private let kenCompanion: KenCompanion
     private let currentUser: UserProfile
 
     init(
@@ -38,6 +40,7 @@ final class AkisViewModel {
         loadMediaUseCase: LoadMomentMediaUseCase,
         onThisDayScheduler: OnThisDayReminderScheduler,
         pushSender: PushNotificationSender,
+        kenCompanion: KenCompanion,
         currentUser: UserProfile
     ) {
         self.observeUseCase = observeUseCase
@@ -47,6 +50,7 @@ final class AkisViewModel {
         self.loadMediaUseCase = loadMediaUseCase
         self.onThisDayScheduler = onThisDayScheduler
         self.pushSender = pushSender
+        self.kenCompanion = kenCompanion
         self.currentUser = currentUser
         onThisDayScheduler.requestAuthorization()
         observeUseCase.execute { [weak self] moments in
@@ -75,6 +79,7 @@ final class AkisViewModel {
 
     func upload(mediaType: MomentMediaType, fileURL: URL) {
         isUploading = true
+        uploadError = nil
         uploadUseCase.execute(mediaType: mediaType, fileURL: fileURL) { [weak self] success in
             guard let self else { return }
             self.isUploading = false
@@ -82,8 +87,12 @@ final class AkisViewModel {
                 self.pushSender.send(
                     to: self.currentUser.partner,
                     title: "\(self.currentUser.firstName) Akış'ta bir an paylaştı",
-                    body: "Hemen bak 👀"
+                    body: "Hemen bak 👀",
+                    dedupeKey: "moment.\(self.currentUser.rawValue)"
                 )
+                self.kenCompanion.trigger(.bounce)
+            } else {
+                self.uploadError = "An paylaşılamadı. İnternet bağlantını kontrol edip tekrar dener misin?"
             }
         }
     }

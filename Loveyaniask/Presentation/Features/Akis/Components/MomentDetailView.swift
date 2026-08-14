@@ -45,6 +45,9 @@ struct MomentDetailView: View {
             VStack {
                 header
                 Spacer()
+                if let comment = moment.kenComment {
+                    kenCommentCard(comment)
+                }
                 footer
             }
         }
@@ -93,6 +96,35 @@ struct MomentDetailView: View {
         }
         .padding()
         .padding(.top, AppSpacing.md)
+    }
+
+    private func kenCommentCard(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: AppSpacing.sm) {
+            Text("🐾")
+                .font(.subheadline)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Ken bunu hatırlattı")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(AppColors.primary)
+                Text(text)
+                    .font(.subheadline)
+                    .foregroundStyle(.white)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(AppSpacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(.black.opacity(0.35))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(AppColors.glassStroke, lineWidth: 1)
+                )
+        )
+        .padding(.horizontal)
+        .padding(.bottom, AppSpacing.sm)
     }
 
     private var footer: some View {

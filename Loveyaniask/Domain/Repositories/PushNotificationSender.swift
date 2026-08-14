@@ -10,5 +10,8 @@
 import Foundation
 
 protocol PushNotificationSender {
-    func send(to targetUser: UserProfile, title: String, body: String)
+    /// dedupeKey: aynı türden bildirimlerin art arda spam olmasını önler
+    /// (örn. "mood.orhun", "moment.sevval", "rating.place"). Aynı key için
+    /// son gönderimden kısa süre geçtiyse yeni istek sessizce atlanır.
+    func send(to targetUser: UserProfile, title: String, body: String, dedupeKey: String)
 }

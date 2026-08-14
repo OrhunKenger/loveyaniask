@@ -63,6 +63,17 @@ struct AkisView: View {
                 viewModel.selectedMoment = nil
             }
         }
+        .alert(
+            "Bir şeyler ters gitti",
+            isPresented: Binding(
+                get: { viewModel.uploadError != nil },
+                set: { if !$0 { viewModel.uploadError = nil } }
+            )
+        ) {
+            Button("Tamam", role: .cancel) {}
+        } message: {
+            Text(viewModel.uploadError ?? "")
+        }
     }
 
     private var header: some View {

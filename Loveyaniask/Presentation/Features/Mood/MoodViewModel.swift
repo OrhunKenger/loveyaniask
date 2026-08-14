@@ -118,7 +118,8 @@ final class MoodViewModel {
             pushSender.send(
                 to: currentUser.partner,
                 title: "\(currentUser.firstName) ruh halini paylaştı",
-                body: "\(mood.emoji) \(mood.label)"
+                body: "\(mood.emoji) \(mood.label)",
+                dedupeKey: "mood.\(currentUser.rawValue)"
             )
         }
     }

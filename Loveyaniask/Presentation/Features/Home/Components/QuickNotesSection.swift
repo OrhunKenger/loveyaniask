@@ -13,6 +13,7 @@ import SwiftUI
 
 struct QuickNotesSection: View {
     @Bindable var viewModel: QuickNotesViewModel
+    let kenCompanion: KenCompanion
 
     /// Bölümün alabileceği en fazla yükseklik. Bunu aşınca ana sayfa uzamaz;
     /// kartlar bu alanın içinde kendi kendine kaydırılır. Yazma kartı + 2 not
@@ -48,6 +49,10 @@ struct QuickNotesSection: View {
             .frame(height: min(contentHeight, maxHeight))
             .scrollDisabled(contentHeight <= maxHeight)
             .onPreferenceChange(QuickNotesHeightKey.self) { contentHeight = $0 }
+        }
+        .onChange(of: composeFocused) { _, focused in
+            // Yazarken Ken araya girmesin diye dolaşmasını geçici durdur.
+            if focused { kenCompanion.pause() } else { kenCompanion.resume() }
         }
     }
 

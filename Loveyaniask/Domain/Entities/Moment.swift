@@ -21,4 +21,6 @@ struct Moment: Identifiable, Equatable {
     let dayKey: String
     /// Partner tepki verip "bunu şu tarihte tekrar göster" dediyse dolu.
     var resurfaceAt: Date?
+    /// Ken bu anı kendiliğinden tekrar gösterdiyse bıraktığı kısa yorum.
+    var kenComment: String?
 }

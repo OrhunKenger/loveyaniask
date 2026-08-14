@@ -10,6 +10,13 @@
 import Foundation
 
 struct AppDependencies {
+    /// Ken'in paylaşılan kontrolcüsü — tek örnek, RootView'daki görsel katman
+    /// ve olay tetikleyen ViewModel'ler (Akış, Places, Library) arasında ortak.
+    let kenCompanion = KenCompanion(
+        roamingLinesRepository: FirebaseKenRoamingLinesRepository(),
+        moodToneRepository: FirebaseKenMoodToneRepository()
+    )
+
     func makeAuthViewModel() -> AuthViewModel {
         // Giriş artık Firebase Authentication üzerinden; oturum kalıcı.
         AuthViewModel(auth: FirebaseAuthService())
@@ -59,7 +66,8 @@ struct AppDependencies {
             update: UpdateLibraryItemUseCase(repository: repository),
             delete: DeleteLibraryItemUseCase(repository: repository),
             search: search,
-            pushSender: FirebasePushNotificationSender()
+            pushSender: FirebasePushNotificationSender(),
+            kenCompanion: kenCompanion
         )
     }
 
@@ -95,7 +103,8 @@ struct AppDependencies {
             getPhoto: GetPlacePhotoUseCase(photoStore: photoStore),
             setRating: SetPlaceRatingUseCase(repository: repository),
             setVisited: SetPlaceVisitedUseCase(repository: repository),
-            pushSender: FirebasePushNotificationSender()
+            pushSender: FirebasePushNotificationSender(),
+            kenCompanion: kenCompanion
         )
     }
 
@@ -127,6 +136,7 @@ struct AppDependencies {
             loadMediaUseCase: LoadMomentMediaUseCase(repository: repository),
             onThisDayScheduler: LocalOnThisDayReminderScheduler(),
             pushSender: FirebasePushNotificationSender(),
+            kenCompanion: kenCompanion,
             currentUser: currentUser
         )
     }
