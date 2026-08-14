@@ -6,6 +6,14 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		A32BF1612FD45649007AC701 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = A32BF1602FD45649007AC701 /* FirebaseCore */; };
+		A32BF1632FD45649007AC701 /* FirebaseDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = A32BF1622FD45649007AC701 /* FirebaseDatabase */; };
+		A32BF1652FD45649007AC701 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = A32BF1642FD45649007AC701 /* FirebaseFirestore */; };
+		A32BF1682FD4569D007AC701 /* MapboxMaps in Frameworks */ = {isa = PBXBuildFile; productRef = A32BF1672FD4569D007AC701 /* MapboxMaps */; };
+		A32C2D242FEE990500747DF7 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = A32C2D232FEE990500747DF7 /* FirebaseAuth */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		A3F0EAD52FCB89EE00B1B0DC /* Loveyaniask.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Loveyaniask.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,16 +31,29 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A32BF1632FD45649007AC701 /* FirebaseDatabase in Frameworks */,
+				A32C2D242FEE990500747DF7 /* FirebaseAuth in Frameworks */,
+				A32BF1612FD45649007AC701 /* FirebaseCore in Frameworks */,
+				A32BF1682FD4569D007AC701 /* MapboxMaps in Frameworks */,
+				A32BF1652FD45649007AC701 /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A32C2D222FEE990500747DF7 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		A3F0EACC2FCB89EE00B1B0DC = {
 			isa = PBXGroup;
 			children = (
 				A3F0EAD72FCB89EE00B1B0DC /* Loveyaniask */,
+				A32C2D222FEE990500747DF7 /* Frameworks */,
 				A3F0EAD62FCB89EE00B1B0DC /* Products */,
 			);
 			sourceTree = "<group>";
@@ -65,6 +86,11 @@
 			);
 			name = Loveyaniask;
 			packageProductDependencies = (
+				A32BF1602FD45649007AC701 /* FirebaseCore */,
+				A32BF1622FD45649007AC701 /* FirebaseDatabase */,
+				A32BF1642FD45649007AC701 /* FirebaseFirestore */,
+				A32BF1672FD4569D007AC701 /* MapboxMaps */,
+				A32C2D232FEE990500747DF7 /* FirebaseAuth */,
 			);
 			productName = Loveyaniask;
 			productReference = A3F0EAD52FCB89EE00B1B0DC /* Loveyaniask.app */;
@@ -94,6 +120,10 @@
 			);
 			mainGroup = A3F0EACC2FCB89EE00B1B0DC;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A32BF15F2FD45649007AC701 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				A32BF1662FD4569D007AC701 /* XCRemoteSwiftPackageReference "mapbox-maps-ios" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A3F0EAD62FCB89EE00B1B0DC /* Products */;
 			projectDirPath = "";
@@ -252,6 +282,7 @@
 				CODE_SIGN_ENTITLEMENTS = Loveyaniask/Loveyaniask.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = 332G8N8PQ9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Akış'ta bir an paylaşmak için kameraya ihtiyacımız var.";
@@ -288,6 +319,7 @@
 				CODE_SIGN_ENTITLEMENTS = Loveyaniask/Loveyaniask.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = 332G8N8PQ9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Akış'ta bir an paylaşmak için kameraya ihtiyacımız var.";
@@ -338,6 +370,53 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A32BF15F2FD45649007AC701 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.14.0;
+			};
+		};
+		A32BF1662FD4569D007AC701 /* XCRemoteSwiftPackageReference "mapbox-maps-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mapbox/mapbox-maps-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A32BF1602FD45649007AC701 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A32BF15F2FD45649007AC701 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		A32BF1622FD45649007AC701 /* FirebaseDatabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A32BF15F2FD45649007AC701 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseDatabase;
+		};
+		A32BF1642FD45649007AC701 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A32BF15F2FD45649007AC701 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		A32BF1672FD4569D007AC701 /* MapboxMaps */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A32BF1662FD4569D007AC701 /* XCRemoteSwiftPackageReference "mapbox-maps-ios" */;
+			productName = MapboxMaps;
+		};
+		A32C2D232FEE990500747DF7 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A32BF15F2FD45649007AC701 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A3F0EACD2FCB89EE00B1B0DC /* Project object */;
 }
