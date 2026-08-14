@@ -142,7 +142,7 @@ struct KenCompanionView: View {
     /// Uyurken başının üstünde yükselen "z"ler. Zamanın fonksiyonu olarak
     /// çiziliyor, böylece ayrı bir animasyon durumu tutmaya gerek kalmıyor.
     private var zzzLayer: some View {
-        TimelineView(.animation) { context in
+        TimelineView(.animation(minimumInterval: 1.0 / 20.0)) { context in
             let t = context.date.timeIntervalSinceReferenceDate
             ZStack {
                 ForEach(0..<3, id: \.self) { index in
@@ -159,7 +159,7 @@ struct KenCompanionView: View {
 
     /// Kutlarken etrafa saçılan minik kalpler.
     private var heartsLayer: some View {
-        TimelineView(.animation) { context in
+        TimelineView(.animation(minimumInterval: 1.0 / 20.0)) { context in
             let t = context.date.timeIntervalSinceReferenceDate
             ZStack {
                 ForEach(0..<6, id: \.self) { index in

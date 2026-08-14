@@ -11,14 +11,21 @@
 //  üretiliyor (bkz. KenMotion): TimelineView her karede o anki KenFrame'i
 //  hesaplıyor. Davranış değiştiğinde view sıfırlanmıyor — eski ve yeni davranışın
 //  kareleri yarım saniye boyunca harmanlanıyor, böylece geçiş yumuşak akıyor.
-//  Tüm çizim GeometryReader'ın verdiği boyuta göre orantılı (0...1) hesaplanır.
+//
+//  PERFORMANS: Tüm çizim TEK bir Canvas içinde yapılıyor. Önce ayrı ayrı
+//  Shape/Ellipse view'ları vardı; her karede ~15 katmanlık view ağacı yeniden
+//  kuruluyor, gradyan stroke'lar + drop shadow + blur ekstra offscreen render
+//  geçişlerine yol açıyordu ve uygulama gözle görülür şekilde kasıyordu.
+//  Canvas'ta hepsi tek geçişte çiziliyor; blur/gölge filtresi kullanılmıyor.
+//  Bu yüzden buraya .shadow/.blur eklemeyin — kasmanın sebebi tam olarak oydu.
 //
 
 import SwiftUI
 
-/// Gövdenin yumuşak, yuvarlak siluetini çizen özel Shape.
-private struct KenBodyShape: Shape {
-    func path(in rect: CGRect) -> Path {
+/// Ken'in parçalarının yol (Path) tanımları. Hepsi 0...1 oranlı, yani view
+/// hangi boyutta olursa olsun aynı siluet çıkıyor.
+private enum KenPath {
+    static func body(in rect: CGRect) -> Path {
         func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
             CGPoint(x: rect.minX + x * rect.width, y: rect.minY + y * rect.height)
         }
@@ -31,31 +38,20 @@ private struct KenBodyShape: Shape {
         path.closeSubpath()
         return path
     }
-}
 
-/// Bir kol, bacak ya da kaş: sabit bir noktadan (anchor), verilen açıda uzanan,
-/// yuvarlak uçlu tek bir çizgi.
-private struct KenLimbShape: Shape {
-    var angle: Angle
-    let anchor: CGPoint
-    let length: CGFloat
-
-    func path(in rect: CGRect) -> Path {
-        let rad = angle.radians
-        let end = CGPoint(x: anchor.x + sin(rad) * length, y: anchor.y + cos(rad) * length)
+    /// Bir kol, bacak ya da kaş: sabit bir noktadan verilen açıda uzanan tek çizgi.
+    /// Açı 0 = aşağı, 90 = sağa, -90 = sola, 180 = yukarı.
+    static func limb(anchor: CGPoint, degrees: Double, length: CGFloat) -> Path {
+        let rad = Angle.degrees(degrees).radians
         var path = Path()
         path.move(to: anchor)
-        path.addLine(to: end)
+        path.addLine(to: CGPoint(x: anchor.x + sin(rad) * length, y: anchor.y + cos(rad) * length))
         return path
     }
-}
 
-/// Gövdenin arkasından çıkan kuyruk. `curl` yukarı kalkıklığı belirler:
-/// keyifliyken yukarı kıvrılıp sallanır, uykuluyken aşağı sarkar.
-private struct KenTailShape: Shape {
-    var curl: CGFloat
-
-    func path(in rect: CGRect) -> Path {
+    /// Gövdenin arkasından çıkan kuyruk. `curl` yukarı kalkıklığı belirler:
+    /// keyifliyken yukarı kıvrılıp sallanır, uykuluyken aşağı sarkar.
+    static func tail(in rect: CGRect, curl: CGFloat) -> Path {
         func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
             CGPoint(x: rect.minX + x * rect.width, y: rect.minY + y * rect.height)
         }
@@ -64,22 +60,21 @@ private struct KenTailShape: Shape {
         path.addQuadCurve(to: p(0.90, 0.56 - 0.13 * curl), control: p(0.93, 0.74 - 0.09 * curl))
         return path
     }
-}
 
-/// Ağız: `curve` pozitifse gülümseme (orta nokta aşağı bükülür), negatifse
-/// somurtma (orta nokta yukarı bükülür).
-private struct KenMouthShape: Shape {
-    var curve: CGFloat
-
-    func path(in rect: CGRect) -> Path {
+    /// Ağız: `curve` pozitifse gülümseme, negatifse somurtma.
+    static func mouth(in rect: CGRect, curve: CGFloat) -> Path {
         let left = CGPoint(x: rect.minX + 0.42 * rect.width, y: rect.minY + 0.665 * rect.height)
         let right = CGPoint(x: rect.minX + 0.58 * rect.width, y: rect.minY + 0.665 * rect.height)
-        let controlY = left.y + curve * 0.07 * rect.height
-        let control = CGPoint(x: rect.minX + 0.5 * rect.width, y: controlY)
+        let control = CGPoint(x: rect.minX + 0.5 * rect.width, y: left.y + curve * 0.07 * rect.height)
         var path = Path()
         path.move(to: left)
         path.addQuadCurve(to: right, control: control)
         return path
+    }
+
+    /// Merkezi verilen elips (göz, yanak, parıltı).
+    static func ellipse(center: CGPoint, width: CGFloat, height: CGFloat) -> Path {
+        Path(ellipseIn: CGRect(x: center.x - width / 2, y: center.y - height / 2, width: width, height: height))
     }
 }
 
@@ -180,8 +175,8 @@ struct KenCharacterView: View {
     /// Görünmezken hareket motoru duruyor — boşuna kare üretmesin diye.
     var isVisible: Bool = true
     /// Saniyedeki kare sayısı. Ana sayfadaki minik Ken sürekli ekranda durduğu
-    /// için daha düşük bir hızla çiziliyor.
-    var fps: Double = 60
+    /// için çok daha düşük bir hızla çiziliyor.
+    var fps: Double = 30
 
     @State private var previousBehavior: KenBehavior = .peek
     @State private var currentBehavior: KenBehavior = .peek
@@ -194,27 +189,12 @@ struct KenCharacterView: View {
     private static let warmSecondary = (r: 181.0, g: 71.0, b: 155.0)  // AppColors.secondary B5479B
     private static let coolPrimary = (r: 127.0, g: 160.0, b: 216.0)   // AppColors.fertile 7FA0D8
     private static let coolSecondary = (r: 126.0, g: 107.0, b: 240.0) // AppColors.ovulation 7E6BF0
+    private static let ink = Color(hex: "2B1C22").opacity(0.8)
 
     var body: some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            let h = geo.size.height
-            let gradient = bodyGradient
-
-            TimelineView(.animation(minimumInterval: 1.0 / fps, paused: !isVisible)) { context in
-                let now = context.date
-                let frame = resolvedFrame(at: now)
-                let face = resolvedFace(at: now)
-                let blink = KenMotion.blink(at: now.timeIntervalSinceReferenceDate)
-
-                ZStack {
-                    groundShadow(w: w, h: h, lift: frame.lift)
-
-                    character(w: w, h: h, frame: frame, face: face, blink: blink, gradient: gradient)
-                        .offset(y: frame.lift * h)
-                        .scaleEffect(x: 1 + frame.squash * 0.5, y: 1 - frame.squash, anchor: .bottom)
-                        .rotationEffect(.degrees(frame.lean), anchor: .bottom)
-                }
+        TimelineView(.animation(minimumInterval: 1.0 / fps, paused: !isVisible)) { timeline in
+            Canvas(rendersAsynchronously: false) { context, size in
+                draw(in: &context, size: size, at: timeline.date)
             }
         }
         .onAppear {
@@ -234,6 +214,123 @@ struct KenCharacterView: View {
         }
         .onChange(of: annoyed) { _, _ in
             annoyedChangedAt = Date()
+        }
+    }
+
+    // MARK: - Çizim
+
+    private func draw(in context: inout GraphicsContext, size: CGSize, at now: Date) {
+        let w = size.width
+        let h = size.height
+        let rect = CGRect(origin: .zero, size: size)
+        let frame = resolvedFrame(at: now)
+        let face = resolvedFace(at: now)
+        let blink = KenMotion.blink(at: now.timeIntervalSinceReferenceDate)
+
+        // Yer gölgesi: gövde dönüşümlerinden ETKİLENMEMELİ, o yüzden önce ve
+        // dönüşümler uygulanmadan çiziliyor. Zıpladıkça küçülüp soluyor —
+        // Ken'in bir zemine bastığı hissini veren en ucuz numara.
+        let air = min(max(-frame.lift, 0) / 0.3, 1)
+        let k = 1 - 0.55 * air
+        context.fill(
+            KenPath.ellipse(center: CGPoint(x: 0.5 * w, y: 0.975 * h), width: 0.42 * w * k, height: 0.055 * h * k),
+            with: .color(.black.opacity(0.26 * Double(k)))
+        )
+
+        // Gövde dönüşümleri (yükselme + çömelme + eğim), taban ortasına göre.
+        context.translateBy(x: 0, y: frame.lift * h)
+        context.translateBy(x: 0.5 * w, y: h)
+        context.rotate(by: .degrees(frame.lean))
+        context.scaleBy(x: 1 + frame.squash * 0.5, y: 1 - frame.squash)
+        context.translateBy(x: -0.5 * w, y: -h)
+
+        let shading = bodyShading(w: w, h: h)
+        let inkShading = GraphicsContext.Shading.color(Self.ink)
+
+        context.stroke(
+            KenPath.tail(in: rect, curl: CGFloat(frame.tail)),
+            with: shading,
+            style: StrokeStyle(lineWidth: 0.055 * w, lineCap: .round)
+        )
+
+        let legStyle = StrokeStyle(lineWidth: 0.085 * w, lineCap: .round)
+        let armStyle = StrokeStyle(lineWidth: 0.075 * w, lineCap: .round)
+        context.stroke(KenPath.limb(anchor: CGPoint(x: 0.38 * w, y: 0.79 * h), degrees: frame.legLeft, length: 0.22 * h), with: shading, style: legStyle)
+        context.stroke(KenPath.limb(anchor: CGPoint(x: 0.62 * w, y: 0.79 * h), degrees: frame.legRight, length: 0.22 * h), with: shading, style: legStyle)
+        context.stroke(KenPath.limb(anchor: CGPoint(x: 0.24 * w, y: 0.50 * h), degrees: frame.armLeft, length: 0.20 * h), with: shading, style: armStyle)
+
+        context.fill(KenPath.body(in: rect), with: shading)
+
+        drawFace(in: &context, w: w, h: h, rect: rect, frame: frame, face: face, blink: blink, ink: inkShading)
+
+        context.stroke(KenPath.limb(anchor: CGPoint(x: 0.76 * w, y: 0.50 * h), degrees: frame.armRight, length: 0.20 * h), with: shading, style: armStyle)
+    }
+
+    private func drawFace(in context: inout GraphicsContext, w: CGFloat, h: CGFloat, rect: CGRect, frame: KenFrame, face: KenFace, blink: CGFloat, ink: GraphicsContext.Shading) {
+        // Gövde üstündeki ışık lekesi + yanaklar (gülümseme arttıkça belirginleşir).
+        context.fill(
+            KenPath.ellipse(center: CGPoint(x: 0.40 * w, y: 0.36 * h), width: 0.18 * w, height: 0.11 * h),
+            with: .color(.white.opacity(0.3))
+        )
+        let blush = 0.16 + 0.16 * Double(max(0, face.mouthCurve))
+        context.fill(
+            KenPath.ellipse(center: CGPoint(x: 0.32 * w, y: 0.62 * h), width: 0.12 * w, height: 0.06 * h),
+            with: .color(.white.opacity(blush))
+        )
+        context.fill(
+            KenPath.ellipse(center: CGPoint(x: 0.68 * w, y: 0.62 * h), width: 0.12 * w, height: 0.06 * h),
+            with: .color(.white.opacity(blush))
+        )
+
+        // Kaşlar — dış uçtan iç uca uzanır; pozitif tilt iç ucu aşağı çekip
+        // çatık (gıcık), negatif değer yukarı kaldırıp yumuşatır.
+        let browStyle = StrokeStyle(lineWidth: 0.018 * w, lineCap: .round)
+        context.stroke(KenPath.limb(anchor: CGPoint(x: 0.32 * w, y: 0.45 * h), degrees: 90 - face.browTilt, length: 0.12 * w), with: ink, style: browStyle)
+        context.stroke(KenPath.limb(anchor: CGPoint(x: 0.68 * w, y: 0.45 * h), degrees: -90 + face.browTilt, length: 0.12 * w), with: ink, style: browStyle)
+
+        // Gözler: kapak açıklığı ifadeden ve göz kırpmadan geliyor, ikisi çarpılıyor.
+        let eyeOpen = max(0.04, (1 - face.eyeSquint) * frame.eyeOpen * (1 - blink))
+        let eyeSize = 0.07 * w
+        let eyeY = 0.52 * h + frame.gazeY * 0.018 * h
+        for eyeX in [0.42 * w, 0.60 * w] {
+            let center = CGPoint(x: eyeX + frame.gazeX * 0.022 * w, y: eyeY)
+            context.fill(
+                KenPath.ellipse(center: center, width: eyeSize, height: eyeSize * eyeOpen),
+                with: ink
+            )
+            if eyeOpen > 0.45 {
+                context.fill(
+                    KenPath.ellipse(
+                        center: CGPoint(x: center.x - eyeSize * 0.18, y: center.y - eyeSize * 0.2 * eyeOpen),
+                        width: eyeSize * 0.3,
+                        height: eyeSize * 0.3 * eyeOpen
+                    ),
+                    with: .color(.white.opacity(0.85))
+                )
+            }
+        }
+
+        // Ağız: kapalıyken eğri çizgi, açılınca dolu elips — ikisi arasında geçiş.
+        if frame.mouthOpen < 0.98 {
+            var closed = context
+            closed.opacity = 1 - Double(frame.mouthOpen)
+            closed.stroke(
+                KenPath.mouth(in: rect, curve: face.mouthCurve),
+                with: ink,
+                style: StrokeStyle(lineWidth: 0.02 * w, lineCap: .round)
+            )
+        }
+        if frame.mouthOpen > 0.02 {
+            var open = context
+            open.opacity = Double(frame.mouthOpen)
+            open.fill(
+                KenPath.ellipse(
+                    center: CGPoint(x: 0.5 * w, y: 0.675 * h),
+                    width: 0.10 * w + 0.035 * w * frame.mouthOpen,
+                    height: 0.012 * h + 0.055 * h * frame.mouthOpen
+                ),
+                with: ink
+            )
         }
     }
 
@@ -263,42 +360,9 @@ struct KenCharacterView: View {
         return KenFace.blend(base, KenExpression.annoyed.face, amount)
     }
 
-    // MARK: - Çizim
-
-    /// Zıpladıkça küçülüp solan yer gölgesi — Ken'in bir zemine bastığı hissini
-    /// veren en ucuz numara.
-    private func groundShadow(w: CGFloat, h: CGFloat, lift: CGFloat) -> some View {
-        let air = min(max(-lift, 0) / 0.3, 1)
-        let k = 1 - 0.55 * air
-        return Ellipse()
-            .fill(Color.black.opacity(0.3 * Double(k)))
-            .frame(width: 0.44 * w * k, height: 0.065 * h * k)
-            .position(x: 0.5 * w, y: 0.975 * h)
-            .blur(radius: 3)
-    }
-
-    private func character(w: CGFloat, h: CGFloat, frame: KenFrame, face: KenFace, blink: CGFloat, gradient: LinearGradient) -> some View {
-        ZStack {
-            KenTailShape(curl: CGFloat(frame.tail))
-                .stroke(gradient, style: StrokeStyle(lineWidth: 0.055 * w, lineCap: .round))
-
-            limb(frame.legLeft, anchor: CGPoint(x: 0.38 * w, y: 0.79 * h), length: 0.22 * h, width: 0.085 * w, gradient: gradient)
-            limb(frame.legRight, anchor: CGPoint(x: 0.62 * w, y: 0.79 * h), length: 0.22 * h, width: 0.085 * w, gradient: gradient)
-            limb(frame.armLeft, anchor: CGPoint(x: 0.24 * w, y: 0.50 * h), length: 0.20 * h, width: 0.075 * w, gradient: gradient)
-
-            KenBodyShape()
-                .fill(gradient)
-                .shadow(color: AppColors.primary.opacity(0.45), radius: 8, y: 3)
-                .overlay(faceLayer(w: w, h: h, frame: frame, face: face, blink: blink))
-
-            limb(frame.armRight, anchor: CGPoint(x: 0.76 * w, y: 0.50 * h), length: 0.20 * h, width: 0.075 * w, gradient: gradient)
-        }
-    }
-
     /// Marka renginden (sıcak) mood-tonuna göre soğuğa kayan gövde/uzuv gradyanı.
-    private var bodyGradient: LinearGradient {
-        guard let tone else { return AppColors.accentGradient }
-        let t = min(max(tone, 0), 1)
+    private func bodyShading(w: CGFloat, h: CGFloat) -> GraphicsContext.Shading {
+        let t = min(max(tone ?? 0, 0), 1)
         func mix(_ warm: (r: Double, g: Double, b: Double), _ cool: (r: Double, g: Double, b: Double)) -> Color {
             Color(
                 .sRGB,
@@ -308,77 +372,10 @@ struct KenCharacterView: View {
                 opacity: 1
             )
         }
-        return LinearGradient(
-            colors: [mix(Self.warmPrimary, Self.coolPrimary), mix(Self.warmSecondary, Self.coolSecondary)],
-            startPoint: .topLeading, endPoint: .bottomTrailing
+        return .linearGradient(
+            Gradient(colors: [mix(Self.warmPrimary, Self.coolPrimary), mix(Self.warmSecondary, Self.coolSecondary)]),
+            startPoint: .zero,
+            endPoint: CGPoint(x: w, y: h)
         )
-    }
-
-    private func limb(_ degrees: Double, anchor: CGPoint, length: CGFloat, width: CGFloat, gradient: LinearGradient) -> some View {
-        KenLimbShape(angle: .degrees(degrees), anchor: anchor, length: length)
-            .stroke(gradient, style: StrokeStyle(lineWidth: width, lineCap: .round))
-    }
-
-    private func faceLayer(w: CGFloat, h: CGFloat, frame: KenFrame, face: KenFace, blink: CGFloat) -> some View {
-        let inkColor = Color(hex: "2B1C22").opacity(0.8)
-        let browAngle = face.browTilt
-        // Gülümseme arttıkça yanaklar da belirginleşiyor.
-        let blushOpacity = 0.16 + 0.16 * Double(max(0, face.mouthCurve))
-        let eyeOpen = max(0.04, (1 - face.eyeSquint) * frame.eyeOpen * (1 - blink))
-        let eyeSize = 0.07 * w
-
-        return ZStack {
-            Ellipse()
-                .fill(.white.opacity(0.32))
-                .frame(width: 0.18 * w, height: 0.11 * h)
-                .position(x: 0.40 * w, y: 0.36 * h)
-            Ellipse()
-                .fill(.white.opacity(blushOpacity))
-                .frame(width: 0.12 * w, height: 0.06 * h)
-                .position(x: 0.32 * w, y: 0.62 * h)
-            Ellipse()
-                .fill(.white.opacity(blushOpacity))
-                .frame(width: 0.12 * w, height: 0.06 * h)
-                .position(x: 0.68 * w, y: 0.62 * h)
-
-            // Kaşlar — dış uçtan (anchor) iç uca uzanır; pozitif `browAngle` iç ucu
-            // aşağı çekip çatık (sinirli/gıcık), negatif değer yukarı kaldırıp
-            // yumuşatır (tatlı/mutlu/özlemiş).
-            KenLimbShape(angle: .degrees(90 - browAngle), anchor: CGPoint(x: 0.32 * w, y: 0.45 * h), length: 0.12 * w)
-                .stroke(inkColor, style: StrokeStyle(lineWidth: 0.018 * w, lineCap: .round))
-            KenLimbShape(angle: .degrees(-90 + browAngle), anchor: CGPoint(x: 0.68 * w, y: 0.45 * h), length: 0.12 * w)
-                .stroke(inkColor, style: StrokeStyle(lineWidth: 0.018 * w, lineCap: .round))
-
-            eye(size: eyeSize, open: eyeOpen, ink: inkColor)
-                .position(x: 0.42 * w + frame.gazeX * 0.022 * w, y: 0.52 * h + frame.gazeY * 0.018 * h)
-            eye(size: eyeSize, open: eyeOpen, ink: inkColor)
-                .position(x: 0.60 * w + frame.gazeX * 0.022 * w, y: 0.52 * h + frame.gazeY * 0.018 * h)
-
-            KenMouthShape(curve: face.mouthCurve)
-                .stroke(inkColor, style: StrokeStyle(lineWidth: 0.02 * w, lineCap: .round))
-                .frame(width: w, height: h)
-                .opacity(1 - Double(frame.mouthOpen))
-
-            Ellipse()
-                .fill(inkColor)
-                .frame(width: 0.10 * w + 0.035 * w * frame.mouthOpen, height: 0.012 * h + 0.055 * h * frame.mouthOpen)
-                .position(x: 0.5 * w, y: 0.675 * h)
-                .opacity(Double(frame.mouthOpen))
-        }
-    }
-
-    /// Göz: koyu bebek + küçük beyaz parıltı. `open` hem ifadeden hem göz
-    /// kırpmadan gelir, ikisi çarpılarak tek bir kapak açıklığına dönüşür.
-    private func eye(size: CGFloat, open: CGFloat, ink: Color) -> some View {
-        ZStack {
-            Circle()
-                .fill(ink)
-            Circle()
-                .fill(.white.opacity(0.85))
-                .frame(width: size * 0.3, height: size * 0.3)
-                .offset(x: -size * 0.18, y: -size * 0.2)
-        }
-        .frame(width: size, height: size)
-        .scaleEffect(y: open, anchor: .center)
     }
 }

@@ -25,7 +25,9 @@ struct KenHomeNoteCard: View {
 
     private func content(_ note: KenNote) -> some View {
         HStack(alignment: .top, spacing: AppSpacing.md) {
-            KenCharacterView(behavior: .sit, tone: companion.moodTone, isVisible: isActive, fps: 30)
+            // Sürekli ekranda durduğu için düşük kare hızı: sadece nefes alıp
+            // göz kırpıyor, 20 fps bunun için fazlasıyla yeterli.
+            KenCharacterView(behavior: .sit, tone: companion.moodTone, isVisible: isActive, fps: 20)
                 .frame(width: 42, height: 48)
 
             VStack(alignment: .leading, spacing: 4) {
