@@ -7,15 +7,18 @@
 //
 
 import SwiftUI
+import FirebaseCore
 import MapboxMaps
 
 @main
 struct LoveyaniaskApp: App {
-    // Firebase artık AppDelegate.didFinishLaunching içinde başlatılıyor —
-    // FCM/APNs kurulumunun Firebase'den önce çalışmaması garanti olsun diye
-    // (Apple'ın @UIApplicationDelegateAdaptor + Firebase önerdiği sıralama budur).
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    private let dependencies = AppDependencies()
+    // DİKKAT: `= AppDependencies()` şeklinde varsayılan değer VERİLMEMELİ.
+    // AppDependencies kurulurken Ken'in Firebase repository'lerini hemen
+    // yaratıyor (Database.database() çağrılıyor); varsayılan değerler init
+    // gövdesinden ÖNCE hesaplandığı için Firebase daha yapılandırılmamış olur
+    // ve uygulama "FIRAppNotConfigured" ile açılışta çöker.
+    private let dependencies: AppDependencies
 
     init() {
         // Mapbox public token'ı tanıt (harita için).
@@ -24,6 +27,14 @@ struct LoveyaniaskApp: App {
                                      "ZXIiLCJhIjoiY21wem1lNXUz",
                                      "MDZpMjJwcGZ5bHk1amc3biJ9.",
                                      "gKaB5kdlNARlypdyhaQ8Ag"].joined()
+
+        // Firebase, bağımlılıklar kurulmadan önce hazır olmalı. AppDelegate'in
+        // didFinishLaunching'i bu init'ten SONRA çalıştığı için yapılandırmayı
+        // burada yapıyoruz; AppDelegate tarafı ikinci kez çağırmıyor.
+        if FirebaseApp.app() == nil {
+            FirebaseApp.configure()
+        }
+        dependencies = AppDependencies()
     }
 
     var body: some Scene {

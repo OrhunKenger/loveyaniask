@@ -20,7 +20,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        FirebaseApp.configure()
+        // Normalde LoveyaniaskApp.init() içinde yapılandırılmış oluyor (bağımlılıklar
+        // Firebase'e daha erken dokunduğu için); burası sadece emniyet kemeri.
+        if FirebaseApp.app() == nil {
+            FirebaseApp.configure()
+        }
         Messaging.messaging().delegate = self
         UNUserNotificationCenter.current().delegate = self
         application.registerForRemoteNotifications()
