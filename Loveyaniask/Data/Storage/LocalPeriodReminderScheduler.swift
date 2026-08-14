@@ -15,7 +15,7 @@ final class LocalPeriodReminderScheduler: PeriodReminderScheduler {
         (5, "5 gün kaldı"),
         (1, "Yarın başlıyor"),
     ]
-    private let identifiers = Self.stages.map { "period.reminder.\($0.daysBefore)" }
+    private let identifiers = LocalPeriodReminderScheduler.stages.map { "period.reminder.\($0.daysBefore)" }
 
     func requestAuthorization() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
