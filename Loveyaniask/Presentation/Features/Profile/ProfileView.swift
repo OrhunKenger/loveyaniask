@@ -10,6 +10,7 @@ import SwiftUI
 
 struct ProfileView: View {
     @Bindable var viewModel: ProfileViewModel
+    let kenCompanion: KenCompanion
     var onSignOut: () -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -24,6 +25,8 @@ struct ProfileView: View {
                     VStack(spacing: AppSpacing.lg) {
                         card(for: viewModel.currentUser, isMe: true)
                         card(for: viewModel.partner, isMe: false)
+
+                        KenSettingsCard(companion: kenCompanion)
 
                         Button {
                             showingChangePassword = true

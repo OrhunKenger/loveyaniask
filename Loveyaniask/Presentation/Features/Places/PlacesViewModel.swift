@@ -121,7 +121,7 @@ final class PlacesViewModel {
             body: "\(place.name) — sen de puanla",
             dedupeKey: "rating.place.\(currentUser.rawValue)"
         )
-        kenCompanion.trigger(.bounce)
+        kenCompanion.celebrateEvent()
     }
 
     func myRating(for place: Place) -> Int {

@@ -90,7 +90,7 @@ final class AkisViewModel {
                     body: "Hemen bak 👀",
                     dedupeKey: "moment.\(self.currentUser.rawValue)"
                 )
-                self.kenCompanion.trigger(.bounce)
+                self.kenCompanion.celebrateEvent()
             } else {
                 self.uploadError = "An paylaşılamadı. İnternet bağlantını kontrol edip tekrar dener misin?"
             }

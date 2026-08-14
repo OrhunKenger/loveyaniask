@@ -4,8 +4,9 @@
 //
 //  Ken'in tüm ekranların üstünde dolaşan görünmez-dokunma katmanı.
 //  RootView'da TabView'ın üstüne, tek bir kez bindirilir. Karakter view'ı
-//  hiç kaldırılıp yeniden kurulmaz (structural remove animasyonu bozar) —
-//  onun yerine hep ekranda durur, sadece opacity/pozisyon ile görünür/gizlenir.
+//  hiç kaldırılıp yeniden kurulmaz (ve artık .id ile de sıfırlanmaz —
+//  davranış geçişini kendi içinde harmanlıyor, bkz. KenMotion) — hep ekranda
+//  durur, sadece opacity/pozisyon ile görünür/gizlenir.
 //
 
 import SwiftUI
@@ -23,22 +24,20 @@ struct KenCompanionView: View {
     @State private var tapLineOpacity: Double = 0
     @State private var tapFadeTask: Task<Void, Never>?
     @State private var tapSquish: CGFloat = 1
-    @State private var lastTapLine: String?
+    /// Davranış geçişinden hemen sonra söylenecek cümle (bkz. handleTap → uyanma).
+    @State private var pendingLine: String?
 
     @State private var recentTapTimestamps: [Date] = []
     @State private var isAnnoyed = false
     @State private var annoyedResetTask: Task<Void, Never>?
 
+    /// Dokunuş titreşimini tetiklemek için sayaç (her dokunuşta artar).
+    @State private var tapTick = 0
+    @State private var annoyedTick = 0
+
     private let size: CGFloat = 56
 
     private static let introText = "Merhaba, ben Ken 🐾\nArtık ailenizin yeni üyesiyim — evcil dijital dostunuzum diyebilirsiniz.\nSevincinizle sevinir, üzüntünüzle üzülürüm. Arada bir köşeden çıkarsam şaşırma 💗"
-
-    /// Dokunma balonu için üç kaynağın birleşimi: sabit kategorili havuz
-    /// (KenTapLines), gün-sayacı bazlı dinamik satırlar, ve bulut routine'inin
-    /// o an için ürettiği taze satırlar (companion.cloudLines).
-    private var tapLinePool: [String] {
-        KenTapLines.all + KenTapLines.dynamic(daysTogether: daysTogether) + companion.cloudLines
-    }
 
     private var daysTogether: Int {
         let start = UserDefaultsCoupleDataSource().loadStartDate()
@@ -51,8 +50,26 @@ struct KenCompanionView: View {
         return max(0, elapsed)
     }
 
+    /// Cümle seçimini besleyen o anki durum (saat, ruh hali, yaklaşan özel gün,
+    /// dönüm günü, bulut satırları).
+    private var lineContext: KenLineContext {
+        KenLineContext(
+            daysTogether: daysTogether,
+            moodTone: companion.moodTone,
+            hour: Calendar.current.component(.hour, from: Date()),
+            upcoming: companion.upcomingSpecialDay,
+            milestone: companion.celebratingDays,
+            missedDays: companion.missedDays,
+            cloudLines: companion.cloudLines
+        )
+    }
+
     private var currentSize: CGFloat {
-        activeBehavior == .introduce ? size * 1.7 : size
+        switch activeBehavior {
+        case .introduce: size * 1.7
+        case .celebrate: size * 1.15
+        default: size
+        }
     }
 
     var body: some View {
@@ -63,6 +80,18 @@ struct KenCompanionView: View {
                         .fill(.white.opacity(0.16))
                         .frame(width: 1.5, height: 44)
                         .position(x: position.x, y: max(0, position.y - size * 0.75))
+                        .opacity(opacity)
+                }
+
+                if activeBehavior == .snooze {
+                    zzzLayer
+                        .position(x: position.x + currentSize * 0.42, y: position.y - currentSize * 0.5)
+                        .opacity(opacity)
+                }
+
+                if activeBehavior == .celebrate {
+                    heartsLayer
+                        .position(x: position.x, y: position.y - currentSize * 0.3)
                         .opacity(opacity)
                 }
 
@@ -78,21 +107,25 @@ struct KenCompanionView: View {
                         .opacity(tapLineOpacity)
                 }
 
-                KenCharacterView(behavior: activeBehavior, tone: companion.moodTone, annoyed: isAnnoyed)
-                    .id(activeBehavior)
-                    .frame(width: currentSize, height: currentSize * 1.15)
-                    .position(position)
-                    .opacity(opacity)
-                    .scaleEffect(scale * tapSquish)
-                    .allowsHitTesting(true)
-                    .onTapGesture { handleTap() }
+                KenCharacterView(
+                    behavior: activeBehavior,
+                    tone: companion.moodTone,
+                    annoyed: isAnnoyed,
+                    isVisible: opacity > 0.01
+                )
+                .frame(width: currentSize, height: currentSize * 1.15)
+                .position(position)
+                .opacity(opacity)
+                .scaleEffect(scale * tapSquish)
+                .allowsHitTesting(true)
+                .onTapGesture { handleTap() }
             }
             .allowsHitTesting(false)
             .ignoresSafeArea()
             .onAppear {
                 companion.startIdleLoop()
                 if !companion.triggerIntroductionIfNeeded() {
-                    companion.markAppOpenedIfNeeded()
+                    companion.markAppOpenedIfNeeded(daysTogether: daysTogether)
                 }
             }
             .onChange(of: companion.currentBehavior) { _, newValue in
@@ -100,6 +133,50 @@ struct KenCompanionView: View {
             }
         }
         .allowsHitTesting(false)
+        .sensoryFeedback(.impact(weight: .light, intensity: 0.6), trigger: tapTick)
+        .sensoryFeedback(.impact(weight: .medium, intensity: 0.9), trigger: annoyedTick)
+    }
+
+    // MARK: - Süsler
+
+    /// Uyurken başının üstünde yükselen "z"ler. Zamanın fonksiyonu olarak
+    /// çiziliyor, böylece ayrı bir animasyon durumu tutmaya gerek kalmıyor.
+    private var zzzLayer: some View {
+        TimelineView(.animation) { context in
+            let t = context.date.timeIntervalSinceReferenceDate
+            ZStack {
+                ForEach(0..<3, id: \.self) { index in
+                    let u = ((t / 2.4) + Double(index) / 3).truncatingRemainder(dividingBy: 1)
+                    Text("z")
+                        .font(.system(size: 11 + CGFloat(index) * 3, weight: .semibold, design: .rounded))
+                        .foregroundStyle(AppColors.textSecondary.opacity(0.9 * (1 - u)))
+                        .offset(x: CGFloat(u) * 16, y: -CGFloat(u) * 34)
+                }
+            }
+        }
+        .frame(width: 40, height: 40)
+    }
+
+    /// Kutlarken etrafa saçılan minik kalpler.
+    private var heartsLayer: some View {
+        TimelineView(.animation) { context in
+            let t = context.date.timeIntervalSinceReferenceDate
+            ZStack {
+                ForEach(0..<6, id: \.self) { index in
+                    let seed = Double(index) * 0.37
+                    let u = ((t / 1.7) + seed).truncatingRemainder(dividingBy: 1)
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 9 + CGFloat(index % 3) * 3))
+                        .foregroundStyle(AppColors.primary.opacity(0.85 * (1 - u)))
+                        .offset(
+                            x: CGFloat(index - 3) * 9 + CGFloat(sin((u + seed) * .pi * 2) * 10),
+                            y: -CGFloat(u) * 74
+                        )
+                        .scaleEffect(0.55 + 0.5 * CGFloat(1 - u))
+                }
+            }
+        }
+        .frame(width: 120, height: 100)
     }
 
     private func speechBubble(_ text: String, width: CGFloat) -> some View {
@@ -122,13 +199,16 @@ struct KenCompanionView: View {
             )
     }
 
-    /// Ken'e dokununca: her zaman minik bir "tık" tepkisi, ama sadece bazen
-    /// (yaklaşık %40) sabit cümle havuzundan bir şey söyler — sürekli
-    /// konuşmuyor, nadiren ve sürpriz olduğu için tatlı kalıyor. 3 saniye
-    /// içinde 4+ kez dokunulursa "gıcık oldum" tepkisine geçer (garanti, ifade değişir).
+    // MARK: - Dokunma
+
+    /// Ken'e dokununca: her zaman minik bir "tık" tepkisi + hafif titreşim, ama
+    /// sadece bazen (yaklaşık %40) bir şey söyler — nadir olduğu için tatlı
+    /// kalıyor. Uyurken dokunmak onu uyandırıp gerinmesine yol açar. 3 saniye
+    /// içinde 4+ kez dokunulursa "gıcık oldum" tepkisine geçer (garanti).
     private func handleTap() {
         guard companion.currentBehavior != nil else { return }
 
+        tapTick += 1
         withAnimation(.easeOut(duration: 0.12)) { tapSquish = 0.85 }
         withAnimation(.spring(response: 0.3, dampingFraction: 0.4).delay(0.12)) { tapSquish = 1 }
 
@@ -142,39 +222,41 @@ struct KenCompanionView: View {
             return
         }
 
+        // Uyurken dürtülünce uyanıp gerinir. Davranış değişimi balonu
+        // temizlediği için cümleyi geçişten sonra söylesin diye bekletiyoruz.
+        if activeBehavior == .snooze {
+            pendingLine = KenLineSelector.line(from: KenTapLines.sleepy)
+            companion.trigger(.stretch)
+            return
+        }
+
         guard Double.random(in: 0...1) < 0.4 else { return }
-        showLine(from: tapLinePool)
+        speak(KenLineSelector.line(for: activeBehavior, context: lineContext))
     }
 
     private func triggerAnnoyed() {
-        withAnimation(.easeInOut(duration: 0.2)) { isAnnoyed = true }
+        annoyedTick += 1
+        isAnnoyed = true
         companion.keepAlive(extra: 2.6)
-        showLine(from: KenTapLines.annoyed, guaranteed: true)
+        speak(KenLineSelector.line(from: KenTapLines.annoyed), keepAlive: false)
 
         annoyedResetTask?.cancel()
         annoyedResetTask = Task {
             try? await Task.sleep(nanoseconds: 2_600_000_000)
             guard !Task.isCancelled else { return }
-            await MainActor.run {
-                withAnimation(.easeInOut(duration: 0.3)) { isAnnoyed = false }
-            }
+            await MainActor.run { isAnnoyed = false }
         }
     }
 
-    private func showLine(from pool: [String], guaranteed: Bool = false) {
-        var candidates = pool
-        if let lastTapLine, candidates.count > 1 {
-            candidates.removeAll { $0 == lastTapLine }
-        }
-        guard let line = candidates.randomElement() else { return }
-        lastTapLine = line
+    private func speak(_ line: String?, keepAlive: Bool = true) {
+        guard let line else { return }
         tapLine = line
-        if !guaranteed { companion.keepAlive() }
+        if keepAlive { companion.keepAlive() }
 
         tapFadeTask?.cancel()
         withAnimation(.easeOut(duration: 0.25)) { tapLineOpacity = 1 }
         tapFadeTask = Task {
-            try? await Task.sleep(nanoseconds: 2_200_000_000)
+            try? await Task.sleep(nanoseconds: 2_600_000_000)
             guard !Task.isCancelled else { return }
             await MainActor.run {
                 withAnimation(.easeIn(duration: 0.35)) { tapLineOpacity = 0 }
@@ -185,18 +267,11 @@ struct KenCompanionView: View {
         }
     }
 
+    // MARK: - Giriş / çıkış
+
     private func handleChange(_ behavior: KenBehavior?, screen: CGSize) {
         guard let behavior else {
-            if activeBehavior == .introduce {
-                // Tanıtım bitince sessizce solmak yerine yukarı-sağa doğru uçup kaçar.
-                withAnimation(.easeIn(duration: 0.6)) {
-                    opacity = 0
-                    position.x += 70
-                    position.y -= 50
-                }
-            } else {
-                withAnimation(.easeIn(duration: 0.45)) { opacity = 0 }
-            }
+            playExit(from: activeBehavior)
             return
         }
 
@@ -216,7 +291,7 @@ struct KenCompanionView: View {
         opacity = 0
         scale = 0.6
 
-        withAnimation(.easeOut(duration: 0.5)) {
+        withAnimation(entrance(for: behavior)) {
             position = targetPosition(for: behavior, in: screen)
             opacity = 1
             scale = 1
@@ -227,6 +302,63 @@ struct KenCompanionView: View {
                 position = CGPoint(x: screen.width + 40, y: screen.height * 0.55)
             }
         }
+
+        // Kutlama ve özlem balonsuz eksik kalır; selam ise arada bir konuşsun.
+        if let line = pendingLine {
+            pendingLine = nil
+            speak(line, keepAlive: false)
+        } else if behavior.alwaysSpeaks, behavior != .introduce {
+            speak(KenLineSelector.line(for: behavior, context: lineContext), keepAlive: false)
+        } else if behavior == .greet, Double.random(in: 0...1) < 0.6 {
+            speak(KenLineSelector.line(for: behavior, context: lineContext), keepAlive: false)
+        }
+    }
+
+    /// Kayboluş da davranışa göre: kimi kenardan sıvışır, kimi yukarı çekilir,
+    /// uyuyan ise ağır ağır solar.
+    private func playExit(from behavior: KenBehavior) {
+        switch behavior {
+        case .introduce:
+            withAnimation(.easeIn(duration: 0.6)) {
+                opacity = 0
+                position.x += 70
+                position.y -= 50
+            }
+        case .peek:
+            withAnimation(.easeIn(duration: 0.5)) {
+                opacity = 0
+                position.x += 70
+            }
+        case .dangle:
+            withAnimation(.easeIn(duration: 0.55)) {
+                opacity = 0
+                position.y -= 90
+            }
+        case .snooze:
+            withAnimation(.easeInOut(duration: 1.0)) { opacity = 0 }
+        case .celebrate:
+            withAnimation(.easeIn(duration: 0.5)) {
+                opacity = 0
+                position.y -= 60
+                scale = 1.15
+            }
+        case .miss:
+            withAnimation(.easeInOut(duration: 0.7)) {
+                opacity = 0
+                scale = 0.85
+            }
+        default:
+            withAnimation(.easeIn(duration: 0.45)) { opacity = 0 }
+        }
+    }
+
+    /// Canlı davranışlar yaylı, sakin olanlar yumuşak girsin.
+    private func entrance(for behavior: KenBehavior) -> Animation {
+        switch behavior {
+        case .bounce, .celebrate, .greet: .spring(response: 0.45, dampingFraction: 0.6)
+        case .snooze, .miss: .easeOut(duration: 0.9)
+        default: .easeOut(duration: 0.5)
+        }
     }
 
     private func targetPosition(for behavior: KenBehavior, in screen: CGSize) -> CGPoint {
@@ -235,8 +367,12 @@ struct KenCompanionView: View {
         case .dangle: CGPoint(x: screen.width * dangleX, y: 96)
         case .wander: CGPoint(x: screen.width * 0.5, y: screen.height * 0.55)
         case .sit: CGPoint(x: screen.width * 0.5, y: screen.height * 0.62)
+        case .stretch: CGPoint(x: screen.width * 0.28, y: screen.height * 0.6)
+        case .snooze: CGPoint(x: screen.width - 62, y: screen.height - 165)
         case .bounce: CGPoint(x: screen.width - 64, y: screen.height - 190)
+        case .celebrate: CGPoint(x: screen.width * 0.5, y: screen.height * 0.44)
         case .greet: CGPoint(x: screen.width * 0.5, y: screen.height * 0.28)
+        case .miss: CGPoint(x: screen.width * 0.34, y: screen.height * 0.58)
         case .introduce: CGPoint(x: screen.width * 0.5, y: screen.height * 0.46)
         }
     }
@@ -246,7 +382,9 @@ struct KenCompanionView: View {
         case .peek: CGPoint(x: screen.width + 40, y: screen.height - 100)
         case .dangle: CGPoint(x: screen.width * dangleX, y: -60)
         case .wander: CGPoint(x: -40, y: screen.height * 0.55)
-        case .sit, .bounce, .greet: targetPosition(for: behavior, in: screen)
+        case .celebrate: CGPoint(x: screen.width * 0.5, y: screen.height * 0.44 + 80)
+        case .miss: CGPoint(x: -50, y: screen.height * 0.58)
+        case .sit, .stretch, .snooze, .bounce, .greet: targetPosition(for: behavior, in: screen)
         case .introduce: CGPoint(x: -60, y: screen.height * 0.46)
         }
     }

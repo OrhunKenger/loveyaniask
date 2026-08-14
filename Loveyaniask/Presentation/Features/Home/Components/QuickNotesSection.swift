@@ -67,6 +67,7 @@ struct QuickNotesSection: View {
                 viewModel.add(draftText)
                 draftText = ""
                 composeFocused = false
+                kenCompanion.celebrateEvent()
             }
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(AppColors.primary)

@@ -111,6 +111,9 @@ final class LibraryViewModel {
         updated.status = status
         updateUseCase.execute(updated)
         if selectedItem?.id == item.id { selectedItem = updated }
+        if status == .done, item.status != .done {
+            kenCompanion.celebrateEvent()
+        }
     }
 
     func setMyRating(_ item: LibraryItem, rating: Int) {
@@ -124,7 +127,7 @@ final class LibraryViewModel {
             body: "\(item.title) — sen de puanla",
             dedupeKey: "rating.library.\(currentUser.rawValue)"
         )
-        kenCompanion.trigger(.bounce)
+        kenCompanion.celebrateEvent()
     }
 
     func delete(_ item: LibraryItem) {

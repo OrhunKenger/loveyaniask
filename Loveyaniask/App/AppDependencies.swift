@@ -14,7 +14,8 @@ struct AppDependencies {
     /// ve olay tetikleyen ViewModel'ler (Akış, Places, Library) arasında ortak.
     let kenCompanion = KenCompanion(
         roamingLinesRepository: FirebaseKenRoamingLinesRepository(),
-        moodToneRepository: FirebaseKenMoodToneRepository()
+        moodToneRepository: FirebaseKenMoodToneRepository(),
+        homeNoteRepository: FirebaseKenHomeNoteRepository()
     )
 
     func makeAuthViewModel() -> AuthViewModel {

@@ -12,6 +12,7 @@ import SwiftUI
 
 struct MoodHomeSection: View {
     @Bindable var viewModel: MoodViewModel
+    let kenCompanion: KenCompanion
     @State private var showingCalendar = false
 
     /// Çip ızgarasının kendi içinde kaydırıldığı en fazla yükseklik (yaklaşık 4 satır).
@@ -47,6 +48,9 @@ struct MoodHomeSection: View {
                                 withAnimation(.snappy(duration: 0.2)) {
                                     viewModel.setMood(date: today, partner: .me, mood: mood)
                                 }
+                                // Ken hissi paylaşıldığında yanıt versin: iyi bir
+                                // his sevinç, zor bir his sessiz bir eşlik getirir.
+                                kenCompanion.reactIfIdle(Self.kenReaction(to: mood))
                             }
                     }
                 }
@@ -112,6 +116,16 @@ struct MoodHomeSection: View {
             Capsule().stroke(tint.opacity(selected ? 1 : 0.4), lineWidth: selected ? 2 : 1)
         )
         .contentShape(Capsule())
+    }
+
+    /// Seçilen duyguya Ken'in vereceği tepki. Zor tarafa yakın bir his
+    /// seçildiğinde coşkulu zıplama yerine sakin bir eşlik — Ken bu veriden
+    /// dolayı ASLA sinirlenmez, sadece sesini kısar.
+    private static func kenReaction(to mood: Mood) -> KenBehavior {
+        let order = Mood.displayOrder
+        guard let index = order.firstIndex(of: mood), order.count > 1 else { return .bounce }
+        let t = Double(index) / Double(order.count - 1)
+        return t > 0.55 ? .sit : .bounce
     }
 
     /// Duyguyu, akış sırasındaki konumuna göre sıcaktan (mutlu) soğuğa (zor)

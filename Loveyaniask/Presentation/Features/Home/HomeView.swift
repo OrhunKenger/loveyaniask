@@ -57,11 +57,13 @@ struct HomeView: View {
                         .buttonStyle(.plain)
                     }
 
+                    KenHomeNoteCard(companion: kenCompanion, isActive: isActive)
+
                     SpecialDaysSection(viewModel: specialDaysViewModel)
 
                     QuickNotesSection(viewModel: quickNotesViewModel, kenCompanion: kenCompanion)
 
-                    MoodHomeSection(viewModel: moodViewModel)
+                    MoodHomeSection(viewModel: moodViewModel, kenCompanion: kenCompanion)
 
                     PlansSection(viewModel: plansViewModel)
                 }
@@ -73,10 +75,27 @@ struct HomeView: View {
         }
         .onAppear {
             viewModel.onAppear()
+            updateKenUpcomingDay()
+        }
+        .onChange(of: specialDaysViewModel.days) { _, _ in
+            updateKenUpcomingDay()
         }
         .sheet(isPresented: $showingProfile) {
-            ProfileView(viewModel: profileViewModel, onSignOut: onSignOut)
+            ProfileView(viewModel: profileViewModel, kenCompanion: kenCompanion, onSignOut: onSignOut)
         }
+    }
+
+    /// En yakın özel gün birkaç gün içindeyse Ken'in bundan haberi olsun —
+    /// dokununca kendiliğinden hatırlatabilsin diye (bkz. KenLineSelector).
+    private func updateKenUpcomingDay() {
+        guard let next = specialDaysViewModel.days.first else {
+            kenCompanion.upcomingSpecialDay = nil
+            return
+        }
+        let remaining = specialDaysViewModel.daysRemaining(for: next)
+        kenCompanion.upcomingSpecialDay = remaining <= 5
+            ? KenUpcomingDay(title: next.title, daysRemaining: remaining)
+            : nil
     }
 
     private var profileButtonLabel: some View {
