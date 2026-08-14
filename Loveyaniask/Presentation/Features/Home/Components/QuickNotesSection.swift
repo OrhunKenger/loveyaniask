@@ -4,7 +4,9 @@
 //
 //  Ana sayfada (sayacın hemen altında) "Hızlı Not": aklınıza geleni hemen
 //  ekleyip unutmamak için ortak, serbest not listesi. En yeni üstte.
-//  Silmek için bir nota uzun bas → Sil.
+//  Listenin ilk kartı hep yazma kartı — diğer not kartlarıyla aynı görünümde,
+//  ayrı bir kutu/sheet değil, sadece 3 kart slotundan biri. Silmek için bir
+//  nota uzun bas → Sil.
 //
 
 import SwiftUI
@@ -13,44 +15,60 @@ struct QuickNotesSection: View {
     @Bindable var viewModel: QuickNotesViewModel
 
     /// Bölümün alabileceği en fazla yükseklik. Bunu aşınca ana sayfa uzamaz;
-    /// notlar bu alanın içinde kendi kendine kaydırılır (yeni üstte, eski aşağıda).
-    private let maxHeight: CGFloat = 280
+    /// kartlar bu alanın içinde kendi kendine kaydırılır. Yazma kartı + 2 not
+    /// kartı olmak üzere toplam ~3 kart sığacak şekilde ayarlı.
+    private let maxHeight: CGFloat = 170
 
-    /// İçindeki not listesinin gerçek (doğal) yüksekliği. Az notta boşuna yer
+    /// İçindeki listenin gerçek (doğal) yüksekliği. Az kartta boşuna yer
     /// kaplamamak için yüksekliği min(içerik, tavan) olarak veriyoruz.
     @State private var contentHeight: CGFloat = 0
 
+    @State private var draftText = ""
+    @FocusState private var composeFocused: Bool
+
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
-            SectionHeader(title: "Hızlı Not") { viewModel.showingAdd = true }
+            SectionHeader(title: "Hızlı Not")
 
-            if viewModel.notes.isEmpty {
-                Text("Aklınıza geleni hemen ekleyin — + ile not bırakın (unutmayın diye)")
-                    .font(.caption)
-                    .foregroundStyle(AppColors.textSecondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-                ScrollView(.vertical, showsIndicators: true) {
-                    VStack(spacing: AppSpacing.sm) {
-                        ForEach(viewModel.notes) { note in
-                            noteRow(note)
-                        }
+            ScrollView(.vertical, showsIndicators: true) {
+                VStack(spacing: AppSpacing.sm) {
+                    composeCard
+
+                    ForEach(viewModel.notes) { note in
+                        noteRow(note)
                     }
-                    .background(
-                        GeometryReader { proxy in
-                            Color.clear
-                                .preference(key: QuickNotesHeightKey.self, value: proxy.size.height)
-                        }
-                    )
                 }
-                .frame(height: min(contentHeight, maxHeight))
-                .scrollDisabled(contentHeight <= maxHeight)
-                .onPreferenceChange(QuickNotesHeightKey.self) { contentHeight = $0 }
+                .background(
+                    GeometryReader { proxy in
+                        Color.clear
+                            .preference(key: QuickNotesHeightKey.self, value: proxy.size.height)
+                    }
+                )
             }
+            .frame(height: min(contentHeight, maxHeight))
+            .scrollDisabled(contentHeight <= maxHeight)
+            .onPreferenceChange(QuickNotesHeightKey.self) { contentHeight = $0 }
         }
-        .sheet(isPresented: $viewModel.showingAdd) {
-            AddQuickNoteSheet(viewModel: viewModel)
+    }
+
+    private var composeCard: some View {
+        HStack(spacing: AppSpacing.sm) {
+            TextField("Aklındaki...", text: $draftText, axis: .vertical)
+                .focused($composeFocused)
+                .lineLimit(1...3)
+                .foregroundStyle(AppColors.textPrimary)
+
+            Button("Ekle") {
+                viewModel.add(draftText)
+                draftText = ""
+                composeFocused = false
+            }
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(AppColors.primary)
+            .disabled(draftText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassCard(cornerRadius: 16, padding: AppSpacing.sm)
     }
 
     private func noteRow(_ note: QuickNote) -> some View {

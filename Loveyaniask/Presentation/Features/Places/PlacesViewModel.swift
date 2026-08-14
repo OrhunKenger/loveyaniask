@@ -25,6 +25,7 @@ final class PlacesViewModel {
     private let getPhotoUseCase: GetPlacePhotoUseCase
     private let setRatingUseCase: SetPlaceRatingUseCase
     private let setVisitedUseCase: SetPlaceVisitedUseCase
+    private let pushSender: PushNotificationSender
 
     private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -41,7 +42,8 @@ final class PlacesViewModel {
         deletePlace: DeletePlaceUseCase,
         getPhoto: GetPlacePhotoUseCase,
         setRating: SetPlaceRatingUseCase,
-        setVisited: SetPlaceVisitedUseCase
+        setVisited: SetPlaceVisitedUseCase,
+        pushSender: PushNotificationSender
     ) {
         self.currentUser = currentUser
         self.getPlaces = getPlaces
@@ -51,6 +53,7 @@ final class PlacesViewModel {
         self.getPhotoUseCase = getPhoto
         self.setRatingUseCase = setRating
         self.setVisitedUseCase = setVisited
+        self.pushSender = pushSender
         // Firebase'den gerçek zamanlı dinle.
         observePlaces.execute { [weak self] places in
             self?.places = places.sorted { $0.dateVisited > $1.dateVisited }
@@ -109,6 +112,11 @@ final class PlacesViewModel {
 
     func setMyRating(_ place: Place, rating: Int) {
         setRatingUseCase.execute(placeId: place.id, userKey: currentUser.rawValue, rating: rating)
+        pushSender.send(
+            to: currentUser.partner,
+            title: "\(currentUser.firstName) bir yeri puanladı",
+            body: "\(place.name) — sen de puanla"
+        )
     }
 
     func myRating(for place: Place) -> Int {
@@ -130,17 +138,31 @@ final class PlacesViewModel {
         CLLocationCoordinate2D(latitude: place.latitude, longitude: place.longitude)
     }
 
+    /// Ortalama puana göre kırmızıdan yeşile akıcı bir geçiş — 3 sabit renk
+    /// yerine 10 seviyenin her biri kendi tonunda görünür (trafik ışığı gibi
+    /// kademeli, ama pürüzsüz bir geçişle).
     func pinColor(for place: Place) -> Color {
         let avg = place.averageRating
-        if avg <= 0 { return .gray }
-        if avg < 2.5 { return .red }
-        if avg < 4 { return .orange }
-        return .green
+        guard avg > 0 else { return .gray }
+        let t = min(max(avg / 10, 0), 1)
+
+        let red = (r: 255.0, g: 59.0, b: 48.0)
+        let orange = (r: 255.0, g: 204.0, b: 0.0)
+        let green = (r: 52.0, g: 199.0, b: 89.0)
+
+        let start = t < 0.5 ? red : orange
+        let end = t < 0.5 ? orange : green
+        let localT = t < 0.5 ? t / 0.5 : (t - 0.5) / 0.5
+
+        let r = start.r + (end.r - start.r) * localT
+        let g = start.g + (end.g - start.g) * localT
+        let b = start.b + (end.b - start.b) * localT
+        return Color(.sRGB, red: r / 255, green: g / 255, blue: b / 255, opacity: 1)
     }
 
     func averageText(for place: Place) -> String {
         let avg = place.averageRating
-        return avg <= 0 ? "Puan yok" : String(format: "%.1f", avg)
+        return avg <= 0 ? "Puan yok" : String(format: "%.1f/10", avg)
     }
 
     func dateText(for place: Place) -> String {

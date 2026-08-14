@@ -14,6 +14,7 @@ struct PlacesView: View {
     @State private var viewModel: PlacesViewModel
     /// Harita ancak bu sekme açıkken çizilsin (arka planda sürekli render = ısınma/kasma).
     let isActive: Bool
+    @State private var showingList = false
 
     init(viewModel: PlacesViewModel, isActive: Bool) {
         _viewModel = State(initialValue: viewModel)
@@ -48,9 +49,14 @@ struct PlacesView: View {
                     .ignoresSafeArea()
             }
 
-            titlePill
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding(AppSpacing.md)
+            Button {
+                showingList = true
+            } label: {
+                titlePill
+            }
+            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .padding(AppSpacing.md)
 
             addButton
                 .padding(AppSpacing.lg)
@@ -63,6 +69,17 @@ struct PlacesView: View {
         .sheet(isPresented: $viewModel.showingAdd) {
             AddPlaceSheet(viewModel: viewModel)
         }
+        .sheet(isPresented: $showingList) {
+            PlacesListSheet(viewModel: viewModel) { place in
+                showingList = false
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                    viewModel.selectedPlace = place
+                }
+            }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+            .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+        }
     }
 
     // Apple Haritalar tarzı: dümdüz dolu renkli nokta (halkasız).
@@ -74,18 +91,23 @@ struct PlacesView: View {
     }
 
     private var titlePill: some View {
-        Text("Gittiğimiz Yerler")
-            .font(.headline)
-            .foregroundStyle(AppColors.textPrimary)
-            .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, AppSpacing.sm)
-            .background(
-                Capsule()
-                    .fill(AppColors.surface.opacity(0.9))
-                    .overlay(Capsule().stroke(AppColors.glassStroke, lineWidth: 1))
-            )
-            .clipShape(Capsule())
-            .shadow(color: .black.opacity(0.4), radius: 8, y: 4)
+        HStack(spacing: 6) {
+            Text("Gittiğimiz Yerler")
+                .font(.headline)
+                .foregroundStyle(AppColors.textPrimary)
+            Image(systemName: "list.bullet")
+                .font(.subheadline)
+                .foregroundStyle(AppColors.textSecondary)
+        }
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.vertical, AppSpacing.sm)
+        .background(
+            Capsule()
+                .fill(AppColors.surface.opacity(0.9))
+                .overlay(Capsule().stroke(AppColors.glassStroke, lineWidth: 1))
+        )
+        .clipShape(Capsule())
+        .shadow(color: .black.opacity(0.4), radius: 8, y: 4)
     }
 
     // Harita üstünde yüzen + butonu (sabit, sağ alt).

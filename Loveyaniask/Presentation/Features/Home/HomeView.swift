@@ -55,11 +55,11 @@ struct HomeView: View {
                         .buttonStyle(.plain)
                     }
 
-                    MoodHomeSection(viewModel: moodViewModel)
-
                     SpecialDaysSection(viewModel: specialDaysViewModel)
 
                     QuickNotesSection(viewModel: quickNotesViewModel)
+
+                    MoodHomeSection(viewModel: moodViewModel)
 
                     PlansSection(viewModel: plansViewModel)
                 }

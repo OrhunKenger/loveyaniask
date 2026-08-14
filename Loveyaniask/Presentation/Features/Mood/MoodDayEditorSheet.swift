@@ -86,13 +86,16 @@ private struct PartnerMoodCard: View {
                 Button {
                     viewModel.setMood(date: date, partner: partner, mood: mood)
                 } label: {
-                    Text("\(mood.emoji)  \(mood.label)")
+                    HStack(spacing: 6) {
+                        EmojiIcon(emoji: mood.emoji, size: 18)
+                        Text(mood.label)
+                    }
                 }
             }
         } label: {
             HStack {
                 if let mood = viewModel.mood(for: date, partner: partner) {
-                    Text(mood.emoji)
+                    EmojiIcon(emoji: mood.emoji, size: 18)
                     Text(mood.label)
                         .foregroundStyle(AppColors.textPrimary)
                 } else {
@@ -150,7 +153,7 @@ private struct PartnerMoodCard: View {
     private var readOnlyMood: some View {
         HStack {
             if let mood = viewModel.mood(for: date, partner: partner) {
-                Text(mood.emoji)
+                EmojiIcon(emoji: mood.emoji, size: 18)
                 Text(mood.label)
                     .foregroundStyle(AppColors.textPrimary)
             } else {

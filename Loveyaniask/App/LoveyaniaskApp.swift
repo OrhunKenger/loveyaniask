@@ -7,16 +7,17 @@
 //
 
 import SwiftUI
-import FirebaseCore
 import MapboxMaps
 
 @main
 struct LoveyaniaskApp: App {
+    // Firebase artık AppDelegate.didFinishLaunching içinde başlatılıyor —
+    // FCM/APNs kurulumunun Firebase'den önce çalışmaması garanti olsun diye
+    // (Apple'ın @UIApplicationDelegateAdaptor + Firebase önerdiği sıralama budur).
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     private let dependencies = AppDependencies()
 
     init() {
-        // Firebase'i uygulama açılır açılmaz başlat.
-        FirebaseApp.configure()
         // Mapbox public token'ı tanıt (harita için).
         // Parçalı yazıldı ki GitHub gizli-anahtar tarayıcısı yanlışlıkla bloklamasın (public token).
         MapboxOptions.accessToken = ["pk.eyJ1Ijoib3JodW5rZW5n",

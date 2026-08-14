@@ -39,8 +39,7 @@ struct AddSpecialDaySheet: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: AppSpacing.sm) {
                             ForEach(emojis, id: \.self) { item in
-                                Text(item)
-                                    .font(.system(size: 26))
+                                EmojiIcon(emoji: item, size: 26)
                                     .frame(width: 44, height: 44)
                                     .background(
                                         Circle().fill(emoji == item

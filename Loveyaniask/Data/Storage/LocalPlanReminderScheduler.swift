@@ -3,7 +3,7 @@
 //  Loveyaniask
 //
 //  Planlar için yerel bildirim (UNUserNotificationCenter).
-//  Her plan için: 1 gün önce + tam zamanında hatırlatır.
+//  Her plan için: 10 gün önce, 5 gün önce, 1 gün önce ve tam zamanında hatırlatır.
 //
 
 import Foundation
@@ -33,14 +33,20 @@ final class LocalPlanReminderScheduler: PlanReminderScheduler {
                              body: "Plan zamanı geldi: \(plan.title)",
                              date: plan.date)
                 }
-                // 1 gün önce (aynı saatte)
-                if let dayBefore = calendar.date(byAdding: .day, value: -1, to: plan.date),
-                   dayBefore > now {
+                // 10 / 5 / 1 gün önce (aynı saatte)
+                let stages: [(daysBefore: Int, prefix: String)] = [
+                    (10, "10 gün kaldı"),
+                    (5, "5 gün kaldı"),
+                    (1, "Yarın"),
+                ]
+                for stage in stages {
+                    guard let fireDate = calendar.date(byAdding: .day, value: -stage.daysBefore, to: plan.date),
+                          fireDate > now else { continue }
                     self.add(center,
-                             id: "plan.\(plan.id.uuidString).before",
+                             id: "plan.\(plan.id.uuidString).before.\(stage.daysBefore)",
                              title: "⏰ Yaklaşan plan",
-                             body: "Yarın: \(plan.title)",
-                             date: dayBefore)
+                             body: "\(stage.prefix): \(plan.title)",
+                             date: fireDate)
                 }
             }
         }

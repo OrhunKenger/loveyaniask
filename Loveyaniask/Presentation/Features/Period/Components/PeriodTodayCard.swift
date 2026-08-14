@@ -22,8 +22,7 @@ struct PeriodTodayCard: View {
         return VStack(alignment: .leading, spacing: AppSpacing.md) {
             // Faz rozeti
             HStack(spacing: 6) {
-                Text(phase.emoji)
-                    .font(.subheadline)
+                EmojiIcon(emoji: phase.emoji, size: 15)
                 Text("\(phase.name) · \(viewModel.currentCycleDay). gün")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(accent)

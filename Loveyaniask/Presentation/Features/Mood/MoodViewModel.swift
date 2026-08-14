@@ -18,6 +18,7 @@ struct CalendarDay: Identifiable {
 @Observable
 final class MoodViewModel {
     private(set) var entries: [MoodEntry] = []
+    private(set) var analysis: MoodAnalysis?
     var displayedMonth: Date
     var selectedDay: CalendarDay?
 
@@ -26,6 +27,8 @@ final class MoodViewModel {
     private let setMoodUseCase: SetMoodUseCase
     private let setPhotoUseCase: SetMoodPhotoUseCase
     private let getPhotoUseCase: GetMoodPhotoUseCase
+    private let observeAnalysisUseCase: ObserveMoodAnalysisUseCase
+    private let pushSender: PushNotificationSender
     private let currentUser: UserProfile
 
     let weekdaySymbols = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"]
@@ -50,6 +53,8 @@ final class MoodViewModel {
         setMoodUseCase: SetMoodUseCase,
         setPhotoUseCase: SetMoodPhotoUseCase,
         getPhotoUseCase: GetMoodPhotoUseCase,
+        observeAnalysisUseCase: ObserveMoodAnalysisUseCase,
+        pushSender: PushNotificationSender,
         currentUser: UserProfile
     ) {
         self.getEntries = getEntries
@@ -57,11 +62,16 @@ final class MoodViewModel {
         self.setMoodUseCase = setMoodUseCase
         self.setPhotoUseCase = setPhotoUseCase
         self.getPhotoUseCase = getPhotoUseCase
+        self.observeAnalysisUseCase = observeAnalysisUseCase
+        self.pushSender = pushSender
         self.currentUser = currentUser
         self.displayedMonth = Calendar.current.startOfDay(for: Date())
         // Firebase'den gerçek zamanlı dinle.
         observeEntries.execute { [weak self] entries in
             self?.entries = entries
+        }
+        observeAnalysisUseCase.execute { [weak self] analysis in
+            self?.analysis = analysis
         }
     }
 
@@ -104,6 +114,13 @@ final class MoodViewModel {
         // Repository optimistik olarak önbelleği güncelleyip observer'ı tetikler;
         // ayrıca reload() çağırmaya gerek yok (çift güncelleme olurdu).
         setMoodUseCase.execute(date: date, partner: partner, mood: mood)
+        if partner == .me, calendar.isDateInToday(date) {
+            pushSender.send(
+                to: currentUser.partner,
+                title: "\(currentUser.firstName) ruh halini paylaştı",
+                body: "\(mood.emoji) \(mood.label)"
+            )
+        }
     }
 
     func setPhoto(date: Date, partner: Partner, imageData: Data) {

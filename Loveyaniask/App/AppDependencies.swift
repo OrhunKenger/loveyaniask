@@ -44,7 +44,8 @@ struct AppDependencies {
             observeDays: ObserveSpecialDaysUseCase(repository: repository),
             addDay: AddSpecialDayUseCase(repository: repository),
             updateDay: UpdateSpecialDayUseCase(repository: repository),
-            deleteDay: DeleteSpecialDayUseCase(repository: repository)
+            deleteDay: DeleteSpecialDayUseCase(repository: repository),
+            reminderScheduler: LocalSpecialDayReminderScheduler()
         )
     }
 
@@ -57,7 +58,8 @@ struct AppDependencies {
             add: AddLibraryItemUseCase(repository: repository),
             update: UpdateLibraryItemUseCase(repository: repository),
             delete: DeleteLibraryItemUseCase(repository: repository),
-            search: search
+            search: search,
+            pushSender: FirebasePushNotificationSender()
         )
     }
 
@@ -92,7 +94,8 @@ struct AppDependencies {
             deletePlace: DeletePlaceUseCase(repository: repository, photoStore: photoStore),
             getPhoto: GetPlacePhotoUseCase(photoStore: photoStore),
             setRating: SetPlaceRatingUseCase(repository: repository),
-            setVisited: SetPlaceVisitedUseCase(repository: repository)
+            setVisited: SetPlaceVisitedUseCase(repository: repository),
+            pushSender: FirebasePushNotificationSender()
         )
     }
 
@@ -100,12 +103,30 @@ struct AppDependencies {
         // Ruh halleri artık Firebase'de (gerçek kişiye göre, senkron). Fotoğraflar cihazda yerel.
         let repository = FirebaseMoodRepository(currentUser: currentUser)
         let photoStore = FileMoodPhotoStore()
+        let analysisRepository = FirebaseMoodAnalysisRepository()
         return MoodViewModel(
             getEntries: GetMoodEntriesUseCase(repository: repository),
             observeEntries: ObserveMoodEntriesUseCase(repository: repository),
             setMoodUseCase: SetMoodUseCase(repository: repository),
             setPhotoUseCase: SetMoodPhotoUseCase(repository: repository, photoStore: photoStore),
             getPhotoUseCase: GetMoodPhotoUseCase(photoStore: photoStore),
+            observeAnalysisUseCase: ObserveMoodAnalysisUseCase(repository: analysisRepository),
+            pushSender: FirebasePushNotificationSender(),
+            currentUser: currentUser
+        )
+    }
+
+    func makeAkisViewModel(currentUser: UserProfile) -> AkisViewModel {
+        // Akış: meta veri Realtime Database'de, medya Firebase Storage'da.
+        let repository = FirebaseMomentRepository(currentUser: currentUser)
+        return AkisViewModel(
+            observeUseCase: ObserveMomentsUseCase(repository: repository),
+            uploadUseCase: UploadMomentUseCase(repository: repository),
+            deleteUseCase: DeleteMomentUseCase(repository: repository),
+            setResurfaceUseCase: SetMomentResurfaceUseCase(repository: repository),
+            loadMediaUseCase: LoadMomentMediaUseCase(repository: repository),
+            onThisDayScheduler: LocalOnThisDayReminderScheduler(),
+            pushSender: FirebasePushNotificationSender(),
             currentUser: currentUser
         )
     }

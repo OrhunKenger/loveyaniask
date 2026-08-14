@@ -89,38 +89,35 @@ struct LibraryDetailSheet: View {
     // MARK: - Puanlar
 
     private func ratingsCard(_ item: LibraryItem) -> some View {
-        VStack(spacing: AppSpacing.md) {
-            ratingRow(name: "Senin puanın", rating: viewModel.myRating(for: item), interactive: true) { star in
-                viewModel.setMyRating(item, rating: star)
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Senin puanın")
+                    .font(.subheadline)
+                    .foregroundStyle(AppColors.textPrimary)
+                RatingChipsPicker(current: viewModel.myRating(for: item)) { value in
+                    viewModel.setMyRating(item, rating: value)
+                }
             }
             Divider()
-            ratingRow(
-                name: viewModel.currentUser.partner.firstName,
-                rating: viewModel.rating(of: viewModel.currentUser.partner, for: item),
-                interactive: false,
-                onTap: { _ in }
-            )
+            HStack {
+                Text(viewModel.currentUser.partner.firstName)
+                    .font(.subheadline)
+                    .foregroundStyle(AppColors.textPrimary)
+                Spacer()
+                let partnerRating = viewModel.rating(of: viewModel.currentUser.partner, for: item)
+                if partnerRating > 0 {
+                    Text("\(partnerRating)/10")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(AppColors.textPrimary)
+                } else {
+                    Text("puan vermedi")
+                        .font(.caption)
+                        .foregroundStyle(AppColors.textSecondary)
+                }
+            }
         }
         .padding(AppSpacing.md)
         .background(AppColors.surface)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
-
-    private func ratingRow(name: String, rating: Int, interactive: Bool, onTap: @escaping (Int) -> Void) -> some View {
-        HStack {
-            Text(name)
-                .font(.subheadline)
-                .foregroundStyle(AppColors.textPrimary)
-            Spacer()
-            HStack(spacing: 4) {
-                ForEach(1...5, id: \.self) { star in
-                    Image(systemName: star <= rating ? "star.fill" : "star")
-                        .foregroundStyle(star <= rating ? .yellow : AppColors.textSecondary)
-                        .onTapGesture {
-                            if interactive { onTap(star) }
-                        }
-                }
-            }
-        }
     }
 }

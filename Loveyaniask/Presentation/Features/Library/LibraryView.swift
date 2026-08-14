@@ -108,7 +108,10 @@ struct LibraryView: View {
                 Button {
                     withAnimation(.snappy(duration: 0.2)) { viewModel.selectedKind = kind }
                 } label: {
-                    Text("\(kind.emoji) \(kind.label)")
+                    HStack(spacing: 5) {
+                        EmojiIcon(emoji: kind.emoji, size: 15)
+                        Text(kind.label)
+                    }
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(selected ? .white : textLight.opacity(0.85))
                         .padding(.vertical, AppSpacing.sm)
@@ -192,8 +195,7 @@ struct LibraryView: View {
 
     private var emptyState: some View {
         VStack(spacing: AppSpacing.md) {
-            Text(viewModel.selectedKind.emoji)
-                .font(.system(size: 56))
+            EmojiIcon(emoji: viewModel.selectedKind.emoji, size: 56)
             Text("Henüz \(viewModel.selectedKind.label.lowercased()) yok")
                 .font(.headline)
                 .foregroundStyle(textLight)
@@ -226,7 +228,7 @@ struct PosterImage: View {
                 )
                 .overlay(
                     VStack(spacing: 4) {
-                        Text(kind.emoji).font(.system(size: width * 0.34))
+                        EmojiIcon(emoji: kind.emoji, size: width * 0.34)
                         Text(kind.label)
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(.white.opacity(0.6))

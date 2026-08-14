@@ -78,8 +78,7 @@ private struct SpecialDayBubble: View {
                     .shadow(color: AppColors.primary.opacity(0.35), radius: 10, y: 6)
 
                 VStack(spacing: 1) {
-                    Text(emoji)
-                        .font(.system(size: 24))
+                    EmojiIcon(emoji: emoji, size: 24)
                     Text(daysRemaining == 0 ? "Bugün" : "\(daysRemaining)")
                         .font(.headline)
                         .foregroundStyle(.white)

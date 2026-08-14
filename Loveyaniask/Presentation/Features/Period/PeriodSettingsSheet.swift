@@ -15,7 +15,6 @@ struct PeriodSettingsSheet: View {
     @State private var cycleLength: Int
     @State private var periodLength: Int
     @State private var reminderEnabled: Bool
-    @State private var reminderDaysBefore: Int
 
     init(viewModel: PeriodViewModel) {
         self.viewModel = viewModel
@@ -23,7 +22,6 @@ struct PeriodSettingsSheet: View {
         _cycleLength = State(initialValue: viewModel.settings.cycleLength)
         _periodLength = State(initialValue: viewModel.settings.periodLength)
         _reminderEnabled = State(initialValue: viewModel.settings.reminderEnabled)
-        _reminderDaysBefore = State(initialValue: viewModel.settings.reminderDaysBefore)
     }
 
     var body: some View {
@@ -47,7 +45,9 @@ struct PeriodSettingsSheet: View {
                 Section("Hatırlatma") {
                     Toggle("Regl yaklaşınca hatırlat", isOn: $reminderEnabled)
                     if reminderEnabled {
-                        Stepper("\(reminderDaysBefore) gün önceden", value: $reminderDaysBefore, in: 1...7)
+                        Text("10, 5 ve 1 gün önce hatırlatılırsın")
+                            .font(.caption)
+                            .foregroundStyle(AppColors.textSecondary)
                     }
                 }
 
@@ -76,8 +76,7 @@ struct PeriodSettingsSheet: View {
                             lastPeriodStart: lastPeriodStart,
                             cycleLength: cycleLength,
                             periodLength: periodLength,
-                            reminderEnabled: reminderEnabled,
-                            reminderDaysBefore: reminderDaysBefore
+                            reminderEnabled: reminderEnabled
                         )
                         dismiss()
                     }

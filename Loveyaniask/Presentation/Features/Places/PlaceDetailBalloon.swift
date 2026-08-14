@@ -40,10 +40,12 @@ struct PlaceDetailBalloon: View {
                 }
 
                 HStack(spacing: AppSpacing.xs) {
-                    starsRow(for: Int(place.averageRating.rounded()))
-                    Text(viewModel.averageText(for: place))
+                    Image(systemName: "star.fill")
                         .font(.subheadline)
-                        .foregroundStyle(AppColors.textSecondary)
+                        .foregroundStyle(viewModel.pinColor(for: place))
+                    Text(viewModel.averageText(for: place))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(AppColors.textPrimary)
                     Text("(ortalama)")
                         .font(.caption2)
                         .foregroundStyle(AppColors.textSecondary)
@@ -52,11 +54,13 @@ struct PlaceDetailBalloon: View {
                 Divider()
 
                 // Senin puanın (etkileşimli)
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text("Senin puanın")
                         .font(.caption)
                         .foregroundStyle(AppColors.textSecondary)
-                    interactiveStars(for: place)
+                    RatingChipsPicker(current: viewModel.myRating(for: place)) { value in
+                        viewModel.setMyRating(place, rating: value)
+                    }
                 }
 
                 // Partnerin puanı
@@ -68,7 +72,9 @@ struct PlaceDetailBalloon: View {
                     Spacer()
                     let partnerRating = viewModel.rating(of: partner, for: place)
                     if partnerRating > 0 {
-                        starsRow(for: partnerRating)
+                        Text("\(partnerRating)/10")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(AppColors.textPrimary)
                     } else {
                         Text("puan vermedi")
                             .font(.caption)
@@ -102,27 +108,4 @@ struct PlaceDetailBalloon: View {
         .shadow(color: .black.opacity(0.45), radius: 24, y: 12)
     }
 
-    private func starsRow(for rating: Int) -> some View {
-        HStack(spacing: 1) {
-            ForEach(1...5, id: \.self) { star in
-                Image(systemName: star <= rating ? "star.fill" : "star")
-                    .font(.caption)
-                    .foregroundStyle(star <= rating ? AppColors.primary : AppColors.textSecondary.opacity(0.4))
-            }
-        }
-    }
-
-    private func interactiveStars(for place: Place) -> some View {
-        let mine = viewModel.myRating(for: place)
-        return HStack(spacing: AppSpacing.xs) {
-            ForEach(1...5, id: \.self) { star in
-                Image(systemName: star <= mine ? "star.fill" : "star")
-                    .font(.title3)
-                    .foregroundStyle(star <= mine ? AppColors.primary : AppColors.textSecondary)
-                    .onTapGesture {
-                        viewModel.setMyRating(place, rating: star)
-                    }
-            }
-        }
-    }
 }

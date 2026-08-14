@@ -13,7 +13,7 @@ struct Place: Codable, Identifiable, Equatable {
     var name: String
     var latitude: Double
     var longitude: Double
-    var ratings: [String: Int]   // UserProfile.rawValue -> 1...5
+    var ratings: [String: Int]   // UserProfile.rawValue -> 1...10
     var note: String
     var dateVisited: Date
     var photoFileName: String?

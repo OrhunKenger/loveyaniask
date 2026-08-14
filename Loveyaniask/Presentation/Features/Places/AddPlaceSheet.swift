@@ -84,8 +84,8 @@ struct AddPlaceSheet: View {
                 }
 
                 if !wishlist {
-                    Section("Senin puanın") {
-                        starsPicker
+                    Section("Senin puanın (10 üzerinden)") {
+                        RatingChipsPicker(current: rating) { rating = $0 }
                     }
                 }
 
@@ -118,17 +118,6 @@ struct AddPlaceSheet: View {
                         .fontWeight(.semibold)
                         .disabled(!canSave)
                 }
-            }
-        }
-    }
-
-    private var starsPicker: some View {
-        HStack(spacing: AppSpacing.sm) {
-            ForEach(1...5, id: \.self) { star in
-                Image(systemName: star <= rating ? "star.fill" : "star")
-                    .font(.title3)
-                    .foregroundStyle(star <= rating ? AppColors.primary : AppColors.textSecondary)
-                    .onTapGesture { rating = star }
             }
         }
     }

@@ -27,12 +27,14 @@ final class UserDefaultsCoupleDataSource: CoupleLocalDataSource {
         return Self.defaultStartDate
     }
 
-    /// Varsayılan beraberlik tarihi: 10 Mayıs 2026.
+    /// Varsayılan beraberlik tarihi: 10 Mayıs 2026, gece saat 01:00 civarı.
     static var defaultStartDate: Date {
         var components = DateComponents()
         components.year = 2026
         components.month = 5
         components.day = 10
+        components.hour = 1
+        components.minute = 0
         return Calendar.current.date(from: components) ?? Date()
     }
 }

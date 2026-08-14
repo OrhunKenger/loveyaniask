@@ -26,6 +26,7 @@ final class SpecialDaysViewModel {
     private let addDayUseCase: AddSpecialDayUseCase
     private let updateDayUseCase: UpdateSpecialDayUseCase
     private let deleteDayUseCase: DeleteSpecialDayUseCase
+    private let reminderScheduler: SpecialDayReminderScheduler
     private let calculator = SpecialDayCalculator()
     private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -39,19 +40,23 @@ final class SpecialDaysViewModel {
         observeDays: ObserveSpecialDaysUseCase,
         addDay: AddSpecialDayUseCase,
         updateDay: UpdateSpecialDayUseCase,
-        deleteDay: DeleteSpecialDayUseCase
+        deleteDay: DeleteSpecialDayUseCase,
+        reminderScheduler: SpecialDayReminderScheduler
     ) {
         self.getDays = getDays
         self.observeDaysUseCase = observeDays
         self.addDayUseCase = addDay
         self.updateDayUseCase = updateDay
         self.deleteDayUseCase = deleteDay
+        self.reminderScheduler = reminderScheduler
+        reminderScheduler.requestAuthorization()
         // Firebase'den gerçek zamanlı dinle, kalan güne göre sırala.
         observeDays.execute { [weak self] days in
             guard let self else { return }
             self.days = days.sorted {
                 self.calculator.daysRemaining(to: $0) < self.calculator.daysRemaining(to: $1)
             }
+            self.reminderScheduler.reschedule(days)
         }
     }
 

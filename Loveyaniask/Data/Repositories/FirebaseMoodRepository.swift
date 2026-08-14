@@ -72,5 +72,9 @@ final class FirebaseMoodRepository: MoodRepository {
         if let mood = entry.mood { data["mood"] = mood.rawValue }
         if let photo = entry.photoFileName { data["photoFileName"] = photo }
         ref.child(entry.dayKey).child(ownerKey).setValue(data)
+
+        // AI analiz zamanlayıcısının "yeni değişiklik var mı?" kontrolü için.
+        Database.database().reference().child("moodMeta").child("lastChangedAt")
+            .setValue(ServerValue.timestamp())
     }
 }

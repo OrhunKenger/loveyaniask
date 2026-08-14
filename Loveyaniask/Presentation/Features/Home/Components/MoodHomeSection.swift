@@ -42,7 +42,7 @@ struct MoodHomeSection: View {
                 FlowLayout(spacing: AppSpacing.sm, lineSpacing: AppSpacing.sm) {
                     ForEach(Mood.displayOrder) { mood in
                         let selected = viewModel.mood(for: today, partner: .me) == mood
-                        moodChip(mood, selected: selected)
+                        moodChip(mood, selected: selected, tint: Self.valenceColor(for: mood))
                             .onTapGesture {
                                 withAnimation(.snappy(duration: 0.2)) {
                                     viewModel.setMood(date: today, partner: .me, mood: mood)
@@ -67,9 +67,12 @@ struct MoodHomeSection: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(AppColors.textSecondary)
                 if let mood = viewModel.mood(for: today, partner: .partner) {
-                    Text("\(mood.emoji) \(mood.label)")
-                        .font(.subheadline)
-                        .foregroundStyle(AppColors.textPrimary)
+                    HStack(spacing: 4) {
+                        EmojiIcon(emoji: mood.emoji, size: 18)
+                        Text(mood.label)
+                            .font(.subheadline)
+                            .foregroundStyle(AppColors.textPrimary)
+                    }
                 } else {
                     Text("henüz paylaşmadı 🫥")
                         .font(.subheadline)
@@ -93,10 +96,9 @@ struct MoodHomeSection: View {
         }
     }
 
-    private func moodChip(_ mood: Mood, selected: Bool) -> some View {
+    private func moodChip(_ mood: Mood, selected: Bool, tint: Color) -> some View {
         HStack(spacing: 5) {
-            Text(mood.emoji)
-                .font(.system(size: 17))
+            EmojiIcon(emoji: mood.emoji, size: 17)
             Text(mood.label)
                 .font(.subheadline.weight(selected ? .semibold : .regular))
                 .foregroundStyle(selected ? AppColors.textPrimary : AppColors.textSecondary)
@@ -104,12 +106,27 @@ struct MoodHomeSection: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(
-            Capsule().fill(selected ? AppColors.primary.opacity(0.22) : AppColors.glassFill)
+            Capsule().fill(tint.opacity(selected ? 0.32 : 0.14))
         )
         .overlay(
-            Capsule().stroke(selected ? AppColors.primary : AppColors.glassStroke, lineWidth: selected ? 2 : 1)
+            Capsule().stroke(tint.opacity(selected ? 1 : 0.4), lineWidth: selected ? 2 : 1)
         )
         .contentShape(Capsule())
+    }
+
+    /// Duyguyu, akış sırasındaki konumuna göre sıcaktan (mutlu) soğuğa (zor)
+    /// bir renk skalasında konumlandırır — 47 seçenek arasında göz, tek düz
+    /// bulut yerine bir "sıcaklık akışı" takip ederek tarar.
+    private static func valenceColor(for mood: Mood) -> Color {
+        let order = Mood.displayOrder
+        guard let index = order.firstIndex(of: mood), order.count > 1 else { return AppColors.primary }
+        let t = Double(index) / Double(order.count - 1)
+        let warm = (r: 255.0, g: 111.0, b: 165.0)   // AppColors.primary — gül
+        let cool = (r: 127.0, g: 160.0, b: 216.0)   // soğuk mavi
+        let r = warm.r + (cool.r - warm.r) * t
+        let g = warm.g + (cool.g - warm.g) * t
+        let b = warm.b + (cool.b - warm.b) * t
+        return Color(.sRGB, red: r / 255, green: g / 255, blue: b / 255, opacity: 1)
     }
 }
 

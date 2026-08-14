@@ -14,8 +14,7 @@ struct SpecialDayDetailSheet: View {
 
     var body: some View {
         VStack(spacing: AppSpacing.md) {
-            Text(day.emoji)
-                .font(.system(size: 56))
+            EmojiIcon(emoji: day.emoji, size: 56)
 
             Text(day.title)
                 .font(.title3.bold())

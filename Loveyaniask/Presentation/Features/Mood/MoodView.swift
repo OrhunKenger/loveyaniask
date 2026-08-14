@@ -28,6 +28,7 @@ struct MoodView: View {
                     header
                     calendarCard
                     legend
+                    analysisCard
                 }
                 .padding(AppSpacing.md)
             }
@@ -115,12 +116,8 @@ struct MoodView: View {
                 .foregroundStyle(AppColors.textPrimary)
 
             HStack(spacing: 2) {
-                Text(meMood?.emoji ?? "·")
-                    .font(.system(size: 15))
-                    .opacity(meMood == nil ? 0.25 : 1)
-                Text(partnerMood?.emoji ?? "·")
-                    .font(.system(size: 15))
-                    .opacity(partnerMood == nil ? 0.25 : 1)
+                moodDot(meMood)
+                moodDot(partnerMood)
             }
         }
         .frame(maxWidth: .infinity)
@@ -143,6 +140,17 @@ struct MoodView: View {
         }
     }
 
+    @ViewBuilder
+    private func moodDot(_ mood: Mood?) -> some View {
+        if let mood {
+            EmojiIcon(emoji: mood.emoji, size: 15)
+        } else {
+            Text("·")
+                .font(.system(size: 15))
+                .opacity(0.25)
+        }
+    }
+
     // MARK: - Açıklama
 
     private var legend: some View {
@@ -153,5 +161,40 @@ struct MoodView: View {
         .font(.caption2)
         .foregroundStyle(AppColors.textSecondary)
     }
+
+    // MARK: - AI Analiz
+
+    private var analysisCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            HStack(spacing: 6) {
+                Image(systemName: "sparkles")
+                    .foregroundStyle(AppColors.primary)
+                Text("Ruh Hali Analizi")
+                    .font(.headline)
+                    .foregroundStyle(AppColors.textPrimary)
+            }
+
+            if let analysis = viewModel.analysis {
+                Text(analysis.text)
+                    .font(.subheadline)
+                    .foregroundStyle(AppColors.textPrimary)
+                Text(Self.relativeFormatter.localizedString(for: analysis.generatedAt, relativeTo: Date()))
+                    .font(.caption2)
+                    .foregroundStyle(AppColors.textSecondary)
+            } else {
+                Text("Henüz analiz yok. Ruh haliniz değiştikçe burada otomatik bir değerlendirme belirecek.")
+                    .font(.subheadline)
+                    .foregroundStyle(AppColors.textSecondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassCard(cornerRadius: 20, padding: AppSpacing.lg)
+    }
+
+    private static let relativeFormatter: RelativeDateTimeFormatter = {
+        let f = RelativeDateTimeFormatter()
+        f.locale = Locale(identifier: "tr_TR")
+        return f
+    }()
 }
 

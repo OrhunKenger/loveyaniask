@@ -25,7 +25,7 @@ struct PeriodStatusCard: View {
                     .stroke(Color.white, style: StrokeStyle(lineWidth: 6, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                 VStack(spacing: 0) {
-                    Text(emoji).font(.title3)
+                    EmojiIcon(emoji: emoji, size: 20)
                     Text("\(cycleDay).")
                         .font(.headline)
                         .foregroundStyle(.white)

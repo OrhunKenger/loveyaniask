@@ -222,13 +222,12 @@ final class PeriodViewModel {
 
     // MARK: - Aksiyonlar
 
-    func save(lastPeriodStart: Date, cycleLength: Int, periodLength: Int, reminderEnabled: Bool, reminderDaysBefore: Int) {
+    func save(lastPeriodStart: Date, cycleLength: Int, periodLength: Int, reminderEnabled: Bool) {
         var updated = settings
         updated.lastPeriodStart = calendar.startOfDay(for: lastPeriodStart)
         updated.cycleLength = cycleLength
         updated.periodLength = periodLength
         updated.reminderEnabled = reminderEnabled
-        updated.reminderDaysBefore = reminderDaysBefore
         settings = updated
         saveSettingsUseCase.execute(updated)
         if reminderEnabled { reminderScheduler.requestAuthorization() }
@@ -272,13 +271,7 @@ final class PeriodViewModel {
             reminderScheduler.cancelAll()
             return
         }
-        let next = predictor.nextPeriodStart()
-        let remindDate = calendar.date(byAdding: .day, value: -settings.reminderDaysBefore, to: next) ?? next
-        reminderScheduler.schedule(
-            title: "Regl yaklaşıyor 💗",
-            body: "Tahmini regl tarihi \(nextPeriodDateText). Hazırlıklı ol.",
-            on: remindDate
-        )
+        reminderScheduler.scheduleUpcoming(periodStart: predictor.nextPeriodStart(), dateText: nextPeriodDateText)
     }
 
     func select(_ date: Date) {

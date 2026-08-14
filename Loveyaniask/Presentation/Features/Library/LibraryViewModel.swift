@@ -27,6 +27,7 @@ final class LibraryViewModel {
     private let updateUseCase: UpdateLibraryItemUseCase
     private let deleteUseCase: DeleteLibraryItemUseCase
     private let searchService: LibrarySearch
+    private let pushSender: PushNotificationSender
 
     init(
         currentUser: UserProfile,
@@ -34,7 +35,8 @@ final class LibraryViewModel {
         add: AddLibraryItemUseCase,
         update: UpdateLibraryItemUseCase,
         delete: DeleteLibraryItemUseCase,
-        search: LibrarySearch
+        search: LibrarySearch,
+        pushSender: PushNotificationSender
     ) {
         self.currentUser = currentUser
         self.observeUseCase = observe
@@ -42,6 +44,7 @@ final class LibraryViewModel {
         self.updateUseCase = update
         self.deleteUseCase = delete
         self.searchService = search
+        self.pushSender = pushSender
         observe.execute { [weak self] items in
             self?.items = items.sorted { $0.addedAt > $1.addedAt }
         }
@@ -112,6 +115,11 @@ final class LibraryViewModel {
         updated.ratings[currentUser.rawValue] = rating
         updateUseCase.execute(updated)
         if selectedItem?.id == item.id { selectedItem = updated }
+        pushSender.send(
+            to: currentUser.partner,
+            title: "\(currentUser.firstName) bir şey puanladı",
+            body: "\(item.title) — sen de puanla"
+        )
     }
 
     func delete(_ item: LibraryItem) {
@@ -126,6 +134,6 @@ final class LibraryViewModel {
 
     func ratingText(for item: LibraryItem) -> String {
         let avg = item.averageRating
-        return avg <= 0 ? "" : String(format: "%.1f", avg)
+        return avg <= 0 ? "" : String(format: "%.1f/10", avg)
     }
 }

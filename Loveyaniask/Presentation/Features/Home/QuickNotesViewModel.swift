@@ -12,7 +12,6 @@ import Observation
 @Observable
 final class QuickNotesViewModel {
     private(set) var notes: [QuickNote] = []
-    var showingAdd = false
 
     private let currentUser: UserProfile
     private let repository: any QuickNoteRepository

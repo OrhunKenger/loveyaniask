@@ -12,15 +12,13 @@ struct PeriodSettings {
     var cycleLength: Int   // ortalama döngü (gün)
     var periodLength: Int  // regl süresi (gün)
     var reminderEnabled: Bool
-    var reminderDaysBefore: Int
 
     static var `default`: PeriodSettings {
         PeriodSettings(
             lastPeriodStart: Calendar.current.startOfDay(for: Date()),
             cycleLength: 28,
             periodLength: 5,
-            reminderEnabled: false,
-            reminderDaysBefore: 2
+            reminderEnabled: false
         )
     }
 }

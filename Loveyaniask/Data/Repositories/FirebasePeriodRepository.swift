@@ -88,8 +88,7 @@ final class FirebasePeriodRepository: PeriodRepository {
             "lastPeriodStart": settings.lastPeriodStart.timeIntervalSince1970,
             "cycleLength": settings.cycleLength,
             "periodLength": settings.periodLength,
-            "reminderEnabled": settings.reminderEnabled,
-            "reminderDaysBefore": settings.reminderDaysBefore
+            "reminderEnabled": settings.reminderEnabled
         ])
     }
 
@@ -141,7 +140,6 @@ final class FirebasePeriodRepository: PeriodRepository {
         if let c = d["cycleLength"] as? Int { s.cycleLength = c }
         if let p = d["periodLength"] as? Int { s.periodLength = p }
         if let r = d["reminderEnabled"] as? Bool { s.reminderEnabled = r }
-        if let rb = d["reminderDaysBefore"] as? Int { s.reminderDaysBefore = rb }
         return s
     }
 }

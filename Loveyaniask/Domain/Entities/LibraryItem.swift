@@ -55,7 +55,7 @@ struct LibraryItem: Identifiable, Equatable {
     var status: LibraryStatus
     var posterURL: String?
     var overview: String
-    var ratings: [String: Int]   // UserProfile.rawValue -> 1...5
+    var ratings: [String: Int]   // UserProfile.rawValue -> 1...10
     var note: String
     var addedBy: String
     var addedAt: Date

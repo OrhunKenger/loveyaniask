@@ -94,7 +94,7 @@ struct PeriodDayDetailSheet: View {
                         if selected { symptoms.remove(symptom) } else { symptoms.insert(symptom) }
                     } label: {
                         HStack(spacing: 4) {
-                            Text(symptom.emoji)
+                            EmojiIcon(emoji: symptom.emoji, size: 16)
                             Text(symptom.label)
                                 .font(.caption)
                                 .lineLimit(1)
@@ -132,9 +132,16 @@ struct PeriodDayDetailSheet: View {
                     Text("Belirtiler")
                         .font(.headline)
                         .foregroundStyle(AppColors.textPrimary)
-                    Text(note.symptoms.map { "\($0.emoji) \($0.label)" }.joined(separator: "   "))
-                        .font(.subheadline)
-                        .foregroundStyle(AppColors.textSecondary)
+                    HStack(spacing: AppSpacing.md) {
+                        ForEach(note.symptoms) { symptom in
+                            HStack(spacing: 3) {
+                                EmojiIcon(emoji: symptom.emoji, size: 15)
+                                Text(symptom.label)
+                            }
+                        }
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(AppColors.textSecondary)
                 }
                 if !note.note.isEmpty {
                     Text("Not")
