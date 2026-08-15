@@ -291,6 +291,7 @@
 				DEVELOPMENT_TEAM = 332G8N8PQ9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Akış'ta bir an paylaşmak için kameraya ihtiyacımız var.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Video çekerken ses kaydetmek için mikrofona ihtiyacımız var.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Akış'taki anları galerine kaydedebilmen için.";
@@ -328,6 +329,7 @@
 				DEVELOPMENT_TEAM = 332G8N8PQ9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Akış'ta bir an paylaşmak için kameraya ihtiyacımız var.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Video çekerken ses kaydetmek için mikrofona ihtiyacımız var.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Akış'taki anları galerine kaydedebilmen için.";
