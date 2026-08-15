@@ -23,7 +23,6 @@ struct MoodHomeSection: View {
     private var today: Date { Date() }
 
     var body: some View {
-        let _ = PerfMonitor.shared.countBody("mood")
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             HStack {
                 Text("Bugün nasıl hissediyorsun?")

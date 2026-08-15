@@ -35,9 +35,6 @@ struct LoveyaniaskApp: App {
             FirebaseApp.configure()
         }
         dependencies = AppDependencies()
-
-        // GEÇİCİ: teşhis paneli ölçümü (bkz. PerfMonitor).
-        PerfMonitor.shared.start()
     }
 
     var body: some Scene {

@@ -56,10 +56,6 @@ struct RootView: View {
             .ignoresSafeArea(.keyboard, edges: .bottom)
 
             KenCompanionView(companion: kenCompanion)
-
-            // GEÇİCİ: teşhis paneli, akıcılık sorunu çözülünce kaldırılacak.
-            PerfHUD()
-                .allowsHitTesting(true)
         }
     }
 }

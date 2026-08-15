@@ -37,7 +37,6 @@ struct HomeView: View {
     }
 
     var body: some View {
-        let _ = PerfMonitor.shared.countBody("home")
         ZStack {
             GlowBackground()
 

@@ -28,7 +28,6 @@ struct QuickNotesSection: View {
     @FocusState private var composeFocused: Bool
 
     var body: some View {
-        let _ = PerfMonitor.shared.countBody("notlar")
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             SectionHeader(title: "Hızlı Not")
 
