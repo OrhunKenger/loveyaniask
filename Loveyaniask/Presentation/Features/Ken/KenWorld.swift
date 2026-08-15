@@ -350,6 +350,18 @@ final class KenWorld {
         start(scene: picked, now: now)
     }
 
+    /// Ağırlıklı rastgele seçim.
+    private static func weightedPick<T>(_ options: [(T, Double)]) -> T? {
+        let total = options.reduce(0) { $0 + Swift.max(0, $1.1) }
+        guard total > 0 else { return options.first?.0 }
+        var roll = Double.random(in: 0..<total)
+        for (value, weight) in options {
+            roll -= Swift.max(0, weight)
+            if roll < 0 { return value }
+        }
+        return options.last?.0
+    }
+
     private func start(scene picked: KenScene, now: Date) {
         scene = picked
         lastSceneDrive = picked.drive
