@@ -1,39 +1,39 @@
-# Loveyaniask — Codemagic yapılandırması
+# Codemagic CI/CD — Loveyaniask
+# NOT: Bu dosya reponun KÖKÜNDE olmalı (Codemagic burada arar).
 #
-# Amaç: Mac'e bağlanmadan, doğrudan GitHub'dan TestFlight'a build almak.
+# Native iOS (Xcode projesi, Flutter değil). Bağımlılıklar SPM ile geliyor.
 #
-# Codemagic tarafında bir kez ayarlanması gerekenler (bkz. README niteliğindeki
-# notlar aşağıda):
-#   1. App Store Connect API anahtarı  → integrations.app_store_connect adı
-#   2. "mapbox" adında ortam değişkeni grubu → MAPBOX_DOWNLOADS_TOKEN (gizli)
+# Codemagic UI'da bir kez ayarlanacaklar:
+#   Environment variables → grup adı "loveyaniask", ikisi de Secure:
+#     CERTIFICATE_PRIVATE_KEY  → hesap geneli Apple Distribution private key'i
+#                                (bkz. "ÖNEMLİ — Codemagic iOS İmzalama Anahtarı" notu)
+#     MAPBOX_DOWNLOADS_TOKEN   → sk. ile başlayan Mapbox indirme token'ı
 #
-# Build numarası otomatik: TestFlight'ta en son 10 numaralı build olduğu için
-# ilk Codemagic build'i 11 olur, sonrası 12, 13... (bkz. BUILD_NUMBER_OFFSET).
+# İMZALAMA UYARISI: Apple en fazla 2 dağıtım sertifikasına izin veriyor ve
+# slotlar DOLU. Bu yüzden Codemagic'in otomatik imzalamasını (ios_signing bloğu)
+# KULLANMIYORUZ — o yeni sertifika üretmeye çalışır. Bunun yerine mevcut
+# private key veriliyor, fetch-signing-files sadece bu bundle id için yeni
+# PROFİL oluşturuyor. Aynı yöntem "para" projesinde çalışıyor.
 
 workflows:
   ios-testflight:
-    name: Loveyaniask → TestFlight
+    name: Loveyaniask iOS (TestFlight)
     instance_type: mac_mini_m2
-    max_build_duration: 60
+    max_build_duration: 90
 
     integrations:
-      # Codemagic → Teams/Settings → Developer Portal → Apple Developer Portal
-      # altında eklediğin App Store Connect API anahtarının ADI buraya yazılacak.
-      app_store_connect: Loveyaniask ASC
+      app_store_connect: Codemagic Admin
 
     environment:
       groups:
-        # Codemagic → uygulama → Environment variables → grup adı "mapbox"
-        # İçinde: MAPBOX_DOWNLOADS_TOKEN (sk. ile başlayan, Secure işaretli)
-        - mapbox
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.loveyaniask.Loveyaniask
+        - loveyaniask
       xcode: latest
       vars:
+        BUNDLE_ID: "com.loveyaniask.Loveyaniask"
         XCODE_PROJECT: "Loveyaniask.xcodeproj"
         XCODE_SCHEME: "Loveyaniask"
-        # TestFlight'taki son build numarası. İlk CI build'i bunun bir fazlası olur.
+        # TestFlight'taki son build numarası. İlk CI build'i bunun bir fazlası
+        # olur (11), sonrası 12, 13... Böylece mevcut build'lerle çakışmaz.
         BUILD_NUMBER_OFFSET: 10
 
     triggering:
@@ -64,10 +64,21 @@ workflows:
           BUILD_NUMBER=$((BUILD_NUMBER_OFFSET + PROJECT_BUILD_NUMBER))
           echo "Build numarası: $BUILD_NUMBER"
           # Proje "Apple Generic" sürümleme kullanmadığı için agvtool yerine
-          # doğrudan pbxproj'daki değeri yazıyoruz. Bu değişiklik sadece CI'da,
-          # geçici; repoya geri yazılmıyor.
+          # pbxproj'daki değeri doğrudan yazıyoruz. Sadece CI'da, geçici.
           sed -i '' "s/CURRENT_PROJECT_VERSION = .*;/CURRENT_PROJECT_VERSION = $BUILD_NUMBER;/g" \
             "$XCODE_PROJECT/project.pbxproj"
+
+      - name: İmzalama sertifikası + profil
+        script: |
+          set -e
+          keychain initialize
+          # --create: sertifika mevcut anahtardan bulunur, YOKSA sadece profil üretilir.
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --certificate-key "@env:CERTIFICATE_PRIVATE_KEY" \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles
 
       - name: Swift paketlerini çöz
         script: |
@@ -75,11 +86,6 @@ workflows:
           xcodebuild -resolvePackageDependencies \
             -project "$XCODE_PROJECT" \
             -scheme "$XCODE_SCHEME"
-
-      - name: İmzalama profillerini kur
-        script: |
-          set -e
-          xcode-project use-profiles
 
       - name: Archive + IPA
         script: |
@@ -91,7 +97,6 @@ workflows:
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
-      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
 
     publishing:
       app_store_connect:
