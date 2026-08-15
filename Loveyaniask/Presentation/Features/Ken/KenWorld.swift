@@ -373,7 +373,9 @@ final class KenWorld {
 }
 
 private extension CGFloat {
+    /// Swift.min/Swift.max olarak nitelenmeli: CGFloat uzantısının içinde
+    /// niteliksiz `max`, global fonksiyon yerine CGFloat'ın statik üyesine çözülüyor.
     func clamped(to range: ClosedRange<CGFloat>) -> CGFloat {
-        min(max(self, range.lowerBound), range.upperBound)
+        Swift.min(Swift.max(self, range.lowerBound), range.upperBound)
     }
 }
