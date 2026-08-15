@@ -40,25 +40,108 @@ private enum KenPath {
         return path
     }
 
-    /// Bir kol, bacak ya da kaş: sabit bir noktadan verilen açıda uzanan tek çizgi.
+    /// Kulak: tepede, dışa doğru eğik yaprak biçimi. Küçük tutuluyor —
+    /// büyüğü Ken'i "kedi çizimi"ne çevirir, soyut sevimliliğini kaybeder.
+    static func ear(in rect: CGRect, atX x: CGFloat, tilt: CGFloat) -> Path {
+        func p(_ px: CGFloat, _ py: CGFloat) -> CGPoint {
+            CGPoint(x: rect.minX + px * rect.width, y: rect.minY + py * rect.height)
+        }
+        var path = Path()
+        path.move(to: p(x, 0.255))
+        path.addQuadCurve(to: p(x + tilt * 0.085, 0.115), control: p(x + tilt * 0.10, 0.20))
+        path.addQuadCurve(to: p(x + tilt * 0.005, 0.245), control: p(x - tilt * 0.02, 0.185))
+        path.closeSubpath()
+        return path
+    }
+
+    /// Uzuv: kökte kalın, uçta ince. Sabit kalınlıktaki çizgi "şema" okur;
+    /// incelen bir şekil organik okur — karakterin en ucuz canlılık kaynağı.
     /// Açı 0 = aşağı, 90 = sağa, -90 = sola, 180 = yukarı.
-    static func limb(anchor: CGPoint, degrees: Double, length: CGFloat) -> Path {
+    static func limb(anchor: CGPoint, degrees: Double, length: CGFloat,
+                     rootWidth: CGFloat, tipWidth: CGFloat) -> (path: Path, tip: CGPoint, direction: CGVector) {
+        let rad = Angle.degrees(degrees).radians
+        let dir = CGVector(dx: sin(rad), dy: cos(rad))
+        let perp = CGVector(dx: -dir.dy, dy: dir.dx)
+        let tip = CGPoint(x: anchor.x + dir.dx * length, y: anchor.y + dir.dy * length)
+
+        func offset(_ point: CGPoint, _ amount: CGFloat) -> CGPoint {
+            CGPoint(x: point.x + perp.dx * amount, y: point.y + perp.dy * amount)
+        }
+        let r = rootWidth / 2, t = tipWidth / 2
+        var path = Path()
+        path.move(to: offset(anchor, r))
+        path.addLine(to: offset(tip, t))
+        path.addQuadCurve(
+            to: offset(tip, -t),
+            control: CGPoint(x: tip.x + dir.dx * t * 1.6, y: tip.y + dir.dy * t * 1.6)
+        )
+        path.addLine(to: offset(anchor, -r))
+        path.addQuadCurve(
+            to: offset(anchor, r),
+            control: CGPoint(x: anchor.x - dir.dx * r * 1.2, y: anchor.y - dir.dy * r * 1.2)
+        )
+        path.closeSubpath()
+        return (path, tip, dir)
+    }
+
+    /// Pati: uzvun ucundaki yastık. Ken'in imzası 🐾 ama pençesi yoktu —
+    /// bu, karakterin en görünür tutarsızlığıydı.
+    static func paw(at tip: CGPoint, direction: CGVector, size: CGFloat) -> Path {
+        let center = CGPoint(x: tip.x + direction.dx * size * 0.18, y: tip.y + direction.dy * size * 0.18)
+        return Path(ellipseIn: CGRect(x: center.x - size * 0.5, y: center.y - size * 0.42,
+                                      width: size, height: size * 0.84))
+    }
+
+    /// Kuyruk gövdesi: incelen bir eğri. Ucundaki kalp ayrı çiziliyor.
+    static func tail(in rect: CGRect, curl: CGFloat) -> (path: Path, tip: CGPoint) {
+        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+            CGPoint(x: rect.minX + x * rect.width, y: rect.minY + y * rect.height)
+        }
+        let start = p(0.66, 0.74)
+        let end = p(0.88, 0.58 - 0.13 * curl)
+        let control = p(0.93, 0.76 - 0.09 * curl)
+        let width = rect.width * 0.055
+
+        // Incelen kuyruk: eğrinin iki yanından, uca doğru daralarak.
+        var path = Path()
+        path.move(to: CGPoint(x: start.x, y: start.y - width / 2))
+        path.addQuadCurve(to: end, control: CGPoint(x: control.x - width * 0.2, y: control.y - width * 0.5))
+        path.addQuadCurve(to: CGPoint(x: start.x, y: start.y + width / 2),
+                          control: CGPoint(x: control.x + width * 0.2, y: control.y + width * 0.5))
+        path.closeSubpath()
+        return (path, end)
+    }
+
+    /// Kuyruğun ucundaki kalp — Ken'i siluetinden tanınır kılan tek detay,
+    /// ve uygulamanın konusuyla doğrudan bağı.
+    static func heart(center: CGPoint, size: CGFloat) -> Path {
+        let w = size, h = size
+        var path = Path()
+        path.move(to: CGPoint(x: center.x, y: center.y + h * 0.45))
+        path.addCurve(
+            to: CGPoint(x: center.x - w * 0.5, y: center.y - h * 0.1),
+            control1: CGPoint(x: center.x - w * 0.3, y: center.y + h * 0.22),
+            control2: CGPoint(x: center.x - w * 0.5, y: center.y + h * 0.1)
+        )
+        path.addArc(center: CGPoint(x: center.x - w * 0.25, y: center.y - h * 0.1),
+                    radius: w * 0.25, startAngle: .degrees(180), endAngle: .degrees(0), clockwise: false)
+        path.addArc(center: CGPoint(x: center.x + w * 0.25, y: center.y - h * 0.1),
+                    radius: w * 0.25, startAngle: .degrees(180), endAngle: .degrees(0), clockwise: false)
+        path.addCurve(
+            to: CGPoint(x: center.x, y: center.y + h * 0.45),
+            control1: CGPoint(x: center.x + w * 0.5, y: center.y + h * 0.1),
+            control2: CGPoint(x: center.x + w * 0.3, y: center.y + h * 0.22)
+        )
+        path.closeSubpath()
+        return path
+    }
+
+    /// Kaş gibi ince çizgiler için düz doğru.
+    static func line(anchor: CGPoint, degrees: Double, length: CGFloat) -> Path {
         let rad = Angle.degrees(degrees).radians
         var path = Path()
         path.move(to: anchor)
         path.addLine(to: CGPoint(x: anchor.x + sin(rad) * length, y: anchor.y + cos(rad) * length))
-        return path
-    }
-
-    /// Gövdenin arkasından çıkan kuyruk. `curl` yukarı kalkıklığı belirler:
-    /// keyifliyken yukarı kıvrılıp sallanır, uykuluyken aşağı sarkar.
-    static func tail(in rect: CGRect, curl: CGFloat) -> Path {
-        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
-            CGPoint(x: rect.minX + x * rect.width, y: rect.minY + y * rect.height)
-        }
-        var path = Path()
-        path.move(to: p(0.68, 0.73))
-        path.addQuadCurve(to: p(0.90, 0.56 - 0.13 * curl), control: p(0.93, 0.74 - 0.09 * curl))
         return path
     }
 
@@ -258,17 +341,26 @@ struct KenCharacterView: View {
         let shading = bodyShading(w: w, h: h)
         let inkShading = GraphicsContext.Shading.color(Self.ink)
 
-        context.stroke(
-            KenPath.tail(in: rect, curl: CGFloat(frame.tail)),
-            with: shading,
-            style: StrokeStyle(lineWidth: 0.055 * w, lineCap: .round)
-        )
+        // Kuyruk ve ucundaki kalp — gövdenin arkasında.
+        let tail = KenPath.tail(in: rect, curl: CGFloat(frame.tail))
+        context.fill(tail.path, with: shading)
+        context.fill(KenPath.heart(center: tail.tip, size: 0.16 * w), with: shading)
 
-        let legStyle = StrokeStyle(lineWidth: 0.085 * w, lineCap: .round)
-        let armStyle = StrokeStyle(lineWidth: 0.075 * w, lineCap: .round)
-        context.stroke(KenPath.limb(anchor: CGPoint(x: 0.38 * w, y: 0.79 * h), degrees: frame.legLeft, length: 0.22 * h), with: shading, style: legStyle)
-        context.stroke(KenPath.limb(anchor: CGPoint(x: 0.62 * w, y: 0.79 * h), degrees: frame.legRight, length: 0.22 * h), with: shading, style: legStyle)
-        context.stroke(KenPath.limb(anchor: CGPoint(x: 0.24 * w, y: 0.50 * h), degrees: frame.armLeft, length: 0.20 * h), with: shading, style: armStyle)
+        // Kulaklar da arkada: tepeden dışarı taşsınlar.
+        context.fill(KenPath.ear(in: rect, atX: 0.355, tilt: -1), with: shading)
+        context.fill(KenPath.ear(in: rect, atX: 0.645, tilt: 1), with: shading)
+
+        // Bacaklar ve sol kol gövdenin arkasında kalıyor.
+        let legL = KenPath.limb(anchor: CGPoint(x: 0.38 * w, y: 0.76 * h), degrees: frame.legLeft,
+                                length: 0.21 * h, rootWidth: 0.095 * w, tipWidth: 0.055 * w)
+        let legR = KenPath.limb(anchor: CGPoint(x: 0.62 * w, y: 0.76 * h), degrees: frame.legRight,
+                                length: 0.21 * h, rootWidth: 0.095 * w, tipWidth: 0.055 * w)
+        let armL = KenPath.limb(anchor: CGPoint(x: 0.25 * w, y: 0.50 * h), degrees: frame.armLeft,
+                                length: 0.19 * h, rootWidth: 0.085 * w, tipWidth: 0.05 * w)
+        for limb in [legL, legR, armL] {
+            context.fill(limb.path, with: shading)
+            context.fill(KenPath.paw(at: limb.tip, direction: limb.direction, size: 0.10 * w), with: shading)
+        }
 
         // Gövdenin arkasındaki sıcak parıltı. Eskiden .shadow ile yapılıyordu;
         // Canvas'ta gölge filtresi her karede blur demek olurdu, o yüzden aynı
@@ -284,9 +376,20 @@ struct KenCharacterView: View {
         )
         context.fill(KenPath.body(in: rect), with: shading)
 
+        // Açık renk göbek lekesi: hem hacim verir hem de Ken'i uygulamanın
+        // pembesinden ayırır — eskiden zemine karışıyordu.
+        context.fill(
+            KenPath.ellipse(center: CGPoint(x: 0.5 * w, y: 0.63 * h), width: 0.42 * w, height: 0.30 * h),
+            with: .color(Color(hex: "FFF1F6").opacity(0.28))
+        )
+
         drawFace(in: &context, w: w, h: h, rect: rect, frame: frame, face: face, blink: blink, ink: inkShading)
 
-        context.stroke(KenPath.limb(anchor: CGPoint(x: 0.76 * w, y: 0.50 * h), degrees: frame.armRight, length: 0.20 * h), with: shading, style: armStyle)
+        // Sağ kol en önde — gövdenin üstünden geçiyor.
+        let armR = KenPath.limb(anchor: CGPoint(x: 0.75 * w, y: 0.50 * h), degrees: frame.armRight,
+                                length: 0.19 * h, rootWidth: 0.085 * w, tipWidth: 0.05 * w)
+        context.fill(armR.path, with: shading)
+        context.fill(KenPath.paw(at: armR.tip, direction: armR.direction, size: 0.10 * w), with: shading)
     }
 
     private func drawFace(in context: inout GraphicsContext, w: CGFloat, h: CGFloat, rect: CGRect, frame: KenFrame, face: KenFace, blink: CGFloat, ink: GraphicsContext.Shading) {
@@ -308,27 +411,32 @@ struct KenCharacterView: View {
         // Kaşlar — dış uçtan iç uca uzanır; pozitif tilt iç ucu aşağı çekip
         // çatık (gıcık), negatif değer yukarı kaldırıp yumuşatır.
         let browStyle = StrokeStyle(lineWidth: 0.018 * w, lineCap: .round)
-        context.stroke(KenPath.limb(anchor: CGPoint(x: 0.32 * w, y: 0.45 * h), degrees: 90 - face.browTilt, length: 0.12 * w), with: ink, style: browStyle)
-        context.stroke(KenPath.limb(anchor: CGPoint(x: 0.68 * w, y: 0.45 * h), degrees: -90 + face.browTilt, length: 0.12 * w), with: ink, style: browStyle)
+        context.stroke(KenPath.line(anchor: CGPoint(x: 0.32 * w, y: 0.45 * h), degrees: 90 - face.browTilt, length: 0.12 * w), with: ink, style: browStyle)
+        context.stroke(KenPath.line(anchor: CGPoint(x: 0.68 * w, y: 0.45 * h), degrees: -90 + face.browTilt, length: 0.12 * w), with: ink, style: browStyle)
 
-        // Gözler: kapak açıklığı ifadeden ve göz kırpmadan geliyor, ikisi çarpılıyor.
-        let eyeOpen = max(0.04, (1 - face.eyeSquint) * frame.eyeOpen * (1 - blink))
-        let eyeSize = 0.07 * w
+        // Gözler: eskiden göz tümüyle küçültülüyordu, bu "gözü kısmak" değil
+        // "gözü küçültmek" gibi duruyordu. Artık göz tam boyutta çiziliyor ve
+        // ÜSTÜNE kapak iniyor — kısık, uykulu, şaşkın hepsi aynı stille çıkıyor.
+        let closedAmount = min(1, face.eyeSquint + blink + (1 - frame.eyeOpen))
+        let eyeSize = 0.075 * w
         let eyeY = 0.52 * h + frame.gazeY * 0.018 * h
-        for eyeX in [0.42 * w, 0.60 * w] {
+        for eyeX in [0.415 * w, 0.605 * w] {
             let center = CGPoint(x: eyeX + frame.gazeX * 0.022 * w, y: eyeY)
-            context.fill(
-                KenPath.ellipse(center: center, width: eyeSize, height: eyeSize * eyeOpen),
-                with: ink
-            )
-            if eyeOpen > 0.45 {
-                context.fill(
+            let eyeRect = CGRect(x: center.x - eyeSize / 2, y: center.y - eyeSize / 2,
+                                 width: eyeSize, height: eyeSize)
+            var eye = context
+            eye.clip(to: Path(ellipseIn: eyeRect))
+            // Kapağın altında kalan kısım görünür.
+            let lidY = eyeRect.minY + eyeRect.height * closedAmount
+            eye.fill(Path(CGRect(x: eyeRect.minX, y: lidY,
+                                 width: eyeRect.width, height: eyeRect.height)), with: ink)
+            if closedAmount < 0.45 {
+                eye.fill(
                     KenPath.ellipse(
-                        center: CGPoint(x: center.x - eyeSize * 0.18, y: center.y - eyeSize * 0.2 * eyeOpen),
-                        width: eyeSize * 0.3,
-                        height: eyeSize * 0.3 * eyeOpen
+                        center: CGPoint(x: center.x - eyeSize * 0.2, y: center.y - eyeSize * 0.18),
+                        width: eyeSize * 0.32, height: eyeSize * 0.32
                     ),
-                    with: .color(.white.opacity(0.85))
+                    with: .color(.white.opacity(0.9))
                 )
             }
         }
