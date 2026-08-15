@@ -120,7 +120,7 @@ enum KenTapLines {
         "Böyle günler için varım ben ✨"
     ]
 
-    /// Art arda çok dokununca (bkz. KenCompanionView) her zaman gösterilen
+    /// Art arda çok dokununca (bkz. KenStage) her zaman gösterilen
     /// "gıcık oldum" tepkileri — normal havuzun dışında, garanti çıkar.
     static let annoyed: [String] = [
         "Tamam tamam, anladım 😑",
@@ -128,6 +128,17 @@ enum KenTapLines {
         "Hop hop, yavaş ol biraz 😅",
         "Beni bu kadar dürtme, gıcık oluyorum 😒",
         "Tamam ben buradayım, sakin ol 🙄"
+    ]
+
+    /// Havaya fırlatılıp yere çakıldıktan sonra söylenenler. Kızgın ama
+    /// kırıcı değil — Ken size sitem eder, sizi suçlamaz.
+    static let thrown: [String] = [
+        "Ayy! Ne yapıyorsun sen 😤",
+        "Bir daha yaparsan küserim bak",
+        "Uçmayı sevmiyorum, haberin olsun 😒",
+        "Kafamı çarptım… sağ ol",
+        "Tamam, oyun bu, anladım. Ama yavaş 😑",
+        "Beni eşya sandın galiba"
     ]
 
     /// Beraberlik gün sayısına göre üretilen, ana sayfadaki sayaçla aynı hesabı

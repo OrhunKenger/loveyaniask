@@ -71,7 +71,9 @@ struct RootView: View {
             .background(AppColors.background.ignoresSafeArea())
             .ignoresSafeArea(.keyboard, edges: .bottom)
 
-            KenCompanionView(companion: kenCompanion)
+            // Ken her sekmede yaşıyor — harita hariç. Orada tam ekran bir
+            // etkileşim var, Ken hem yolu keser hem de fırlatılacak bir yer değil.
+            KenStage(companion: kenCompanion, isEnabled: selectedTab != .places)
         }
     }
 }

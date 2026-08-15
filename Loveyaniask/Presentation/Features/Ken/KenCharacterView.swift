@@ -5,7 +5,7 @@
 //  Ken'in gövdesi: yuvarlak gövde + kol/bacak/kuyruk + kaş/göz/ağız ile değişen
 //  bir yüz ifadesi. Gövde rengi ruh hali tonuna göre sıcaktan soğuğa kayar
 //  (bkz. KenCompanion.moodTone), ifade ise davranışa göre değişir; art arda
-//  dokununca (KenCompanionView) "gıcık" ifadesine geçebilir.
+//  dokununca (KenStage) "gıcık" ifadesine geçebilir.
 //
 //  Hareket, SwiftUI animasyonlarıyla değil, sürekli zamanın fonksiyonu olarak
 //  üretiliyor (bkz. KenMotion): TimelineView her karede o anki KenFrame'i
@@ -96,7 +96,7 @@ struct KenFace {
 }
 
 /// Ken'in sergileyebileceği yüz ifadeleri. Davranışa göre varsayılanı seçilir;
-/// art arda dokununca (bkz. KenCompanionView) geçici olarak `.annoyed`'e döner.
+/// art arda dokununca (bkz. KenStage) geçici olarak `.annoyed`'e döner.
 enum KenExpression {
     case sweet
     case content
@@ -160,6 +160,9 @@ enum KenExpression {
         case .greet, .introduce: .love
         case .snooze: .sleepy
         case .miss: .longing
+        case .held: .longing
+        case .dizzy: .sleepy
+        case .grumble: .annoyed
         }
     }
 }
@@ -170,7 +173,7 @@ struct KenCharacterView: View {
     let behavior: KenBehavior
     /// 0 (sıcak/olumlu) ... 1 (soğuk/zor) — nil ise varsayılan marka rengi kullanılır.
     var tone: Double? = nil
-    /// Art arda dokunulunca dışarıdan (KenCompanionView) true yapılır.
+    /// Art arda dokunulunca dışarıdan (KenStage) true yapılır.
     var annoyed: Bool = false
     /// Görünmezken hareket motoru duruyor — boşuna kare üretmesin diye.
     var isVisible: Bool = true

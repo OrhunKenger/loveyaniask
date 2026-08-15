@@ -20,11 +20,38 @@ final class ProfileViewModel {
     private let repository: any ProfileRepository
     private let auth: any AuthService
 
+    /// Çözülmüş fotoğraflar. `image(for:)` view body'sinden çağrıldığı için
+    /// (ana sayfanın header'ı dahil) her çizimde base64 + JPEG çözmek uygulamayı
+    /// gözle görülür şekilde yavaşlatıyordu. Artık veri değiştiğinde BİR KEZ
+    /// çözülüyor, body sadece hazır olanı alıyor.
+    @ObservationIgnored private var decodedImages: [String: UIImage] = [:]
+
     init(currentUser: UserProfile, repository: any ProfileRepository, auth: any AuthService) {
         self.currentUser = currentUser
         self.repository = repository
         self.auth = auth
-        repository.observeProfiles { [weak self] in self?.profiles = $0 }
+        repository.observeProfiles { [weak self] profiles in
+            guard let self else { return }
+            self.decodeImages(from: profiles)
+            self.profiles = profiles
+        }
+    }
+
+    /// Yeni profil verisi gelince değişen fotoğrafları bir kez çözer.
+    private func decodeImages(from profiles: [String: PartnerProfile]) {
+        var decoded: [String: UIImage] = [:]
+        for (key, profile) in profiles {
+            guard let b64 = profile.photoBase64 else { continue }
+            if b64 == self.profiles[key]?.photoBase64, let existing = decodedImages[key] {
+                decoded[key] = existing
+                continue
+            }
+            if let data = Data(base64Encoded: b64), let image = UIImage(data: data) {
+                // Çizim anında değil şimdi decode edilsin diye önceden hazırlıyoruz.
+                decoded[key] = image.preparingForDisplay() ?? image
+            }
+        }
+        decodedImages = decoded
     }
 
     /// Girili kullanıcının şifresini değiştirir. Hata varsa mesajı döner, yoksa nil.
@@ -44,10 +71,9 @@ final class ProfileViewModel {
         profiles[profile.rawValue]?.bio ?? ""
     }
 
+    /// Hazır çözülmüş fotoğraf — burada iş yapılmıyor, sadece okunuyor.
     func image(for profile: UserProfile) -> UIImage? {
-        guard let b64 = profiles[profile.rawValue]?.photoBase64,
-              let data = Data(base64Encoded: b64) else { return nil }
-        return UIImage(data: data)
+        decodedImages[profile.rawValue]
     }
 
     /// Kendi profilini kaydeder. image nil ise mevcut fotoğraf korunur.

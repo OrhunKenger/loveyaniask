@@ -115,8 +115,7 @@ private struct PartnerMoodCard: View {
 
     private var photoArea: some View {
         VStack(spacing: AppSpacing.sm) {
-            if let data = viewModel.photoData(for: date, partner: partner),
-               let uiImage = UIImage(data: data) {
+            if let uiImage = viewModel.photo(for: date, partner: partner) {
                 Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFill()
@@ -127,7 +126,7 @@ private struct PartnerMoodCard: View {
 
             PhotosPicker(selection: $pickerItem, matching: .images) {
                 Label(
-                    viewModel.photoData(for: date, partner: partner) == nil ? "Fotoğraf ekle" : "Fotoğrafı değiştir",
+                    viewModel.hasPhoto(for: date, partner: partner) ? "Fotoğrafı değiştir" : "Fotoğraf ekle",
                     systemImage: "photo"
                 )
                 .font(.subheadline.weight(.medium))
@@ -170,8 +169,7 @@ private struct PartnerMoodCard: View {
 
     @ViewBuilder
     private var readOnlyPhoto: some View {
-        if let data = viewModel.photoData(for: date, partner: partner),
-           let uiImage = UIImage(data: data) {
+        if let uiImage = viewModel.photo(for: date, partner: partner) {
             Image(uiImage: uiImage)
                 .resizable()
                 .scaledToFill()
