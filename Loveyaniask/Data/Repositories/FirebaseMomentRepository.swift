@@ -69,7 +69,7 @@ final class FirebaseMomentRepository: MomentRepository {
         onChange(items)
     }
 
-    func upload(mediaType: MomentMediaType, fileURL: URL, completion: @escaping (Bool) -> Void) {
+    func upload(mediaType: MomentMediaType, fileURL: URL, completion: @escaping (Error?) -> Void) {
         let id = ref.childByAutoId().key ?? UUID().uuidString
         let ext = mediaType == .photo ? "jpg" : "mov"
         let storagePath = "\(id).\(ext)"
@@ -83,19 +83,19 @@ final class FirebaseMomentRepository: MomentRepository {
                 "createdAt": ServerValue.timestamp()
             ]
             self.ref.child(id).setValue(data) { error, _ in
-                completion(error == nil)
+                completion(error)
             }
         }
 
         if mediaType == .photo, let rawData = try? Data(contentsOf: fileURL) {
             let jpegData = ImageDownsampler.downsampledJPEG(from: rawData, maxPixel: 2000, quality: 0.85) ?? rawData
             itemStorageRef.putData(jpegData, metadata: nil) { _, error in
-                guard error == nil else { completion(false); return }
+                guard error == nil else { completion(error); return }
                 writeMetadata()
             }
         } else {
             itemStorageRef.putFile(from: fileURL, metadata: nil) { _, error in
-                guard error == nil else { completion(false); return }
+                guard error == nil else { completion(error); return }
                 writeMetadata()
             }
         }

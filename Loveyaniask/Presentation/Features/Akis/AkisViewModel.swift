@@ -80,10 +80,10 @@ final class AkisViewModel {
     func upload(mediaType: MomentMediaType, fileURL: URL) {
         isUploading = true
         uploadError = nil
-        uploadUseCase.execute(mediaType: mediaType, fileURL: fileURL) { [weak self] success in
+        uploadUseCase.execute(mediaType: mediaType, fileURL: fileURL) { [weak self] error in
             guard let self else { return }
             self.isUploading = false
-            if success {
+            if error == nil {
                 self.pushSender.send(
                     to: self.currentUser.partner,
                     title: "\(self.currentUser.firstName) Akış'ta bir an paylaştı",
@@ -92,7 +92,11 @@ final class AkisViewModel {
                 )
                 self.kenCompanion.celebrateEvent()
             } else {
-                self.uploadError = "An paylaşılamadı. İnternet bağlantını kontrol edip tekrar dener misin?"
+                // Gerçek sebebi göster: bağlantı, izin, kota — hepsi farklı çözüm
+                // gerektiriyor, "internetini kontrol et" demek yanlış yönlendiriyor.
+                self.uploadError = "An paylaşılamadı.
+
+\(error?.localizedDescription ?? "Bilinmeyen hata")"
             }
         }
     }

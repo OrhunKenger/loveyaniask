@@ -12,7 +12,7 @@ struct UploadMomentUseCase {
         self.repository = repository
     }
 
-    func execute(mediaType: MomentMediaType, fileURL: URL, completion: @escaping (Bool) -> Void) {
+    func execute(mediaType: MomentMediaType, fileURL: URL, completion: @escaping (Error?) -> Void) {
         repository.upload(mediaType: mediaType, fileURL: fileURL, completion: completion)
     }
 }
