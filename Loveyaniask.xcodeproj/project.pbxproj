@@ -12,6 +12,8 @@
 		A32BF1652FD45649007AC701 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = A32BF1642FD45649007AC701 /* FirebaseFirestore */; };
 		A32BF1682FD4569D007AC701 /* MapboxMaps in Frameworks */ = {isa = PBXBuildFile; productRef = A32BF1672FD4569D007AC701 /* MapboxMaps */; };
 		A32C2D242FEE990500747DF7 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = A32C2D232FEE990500747DF7 /* FirebaseAuth */; };
+		A3D0E1002FF0000100000002 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = A3D0E1002FF0000100000001 /* FirebaseMessaging */; };
+		A3D0E1002FF0000100000004 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = A3D0E1002FF0000100000003 /* FirebaseStorage */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,6 +38,8 @@
 				A32BF1612FD45649007AC701 /* FirebaseCore in Frameworks */,
 				A32BF1682FD4569D007AC701 /* MapboxMaps in Frameworks */,
 				A32BF1652FD45649007AC701 /* FirebaseFirestore in Frameworks */,
+				A3D0E1002FF0000100000002 /* FirebaseMessaging in Frameworks */,
+				A3D0E1002FF0000100000004 /* FirebaseStorage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -91,6 +95,8 @@
 				A32BF1642FD45649007AC701 /* FirebaseFirestore */,
 				A32BF1672FD4569D007AC701 /* MapboxMaps */,
 				A32C2D232FEE990500747DF7 /* FirebaseAuth */,
+				A3D0E1002FF0000100000001 /* FirebaseMessaging */,
+				A3D0E1002FF0000100000003 /* FirebaseStorage */,
 			);
 			productName = Loveyaniask;
 			productReference = A3F0EAD52FCB89EE00B1B0DC /* Loveyaniask.app */;
@@ -415,6 +421,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A32BF15F2FD45649007AC701 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAuth;
+		};
+		A3D0E1002FF0000100000001 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A32BF15F2FD45649007AC701 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
+		A3D0E1002FF0000100000003 /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A32BF15F2FD45649007AC701 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
