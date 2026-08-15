@@ -1,0 +1,99 @@
+# Loveyaniask — Codemagic yapılandırması
+#
+# Amaç: Mac'e bağlanmadan, doğrudan GitHub'dan TestFlight'a build almak.
+#
+# Codemagic tarafında bir kez ayarlanması gerekenler (bkz. README niteliğindeki
+# notlar aşağıda):
+#   1. App Store Connect API anahtarı  → integrations.app_store_connect adı
+#   2. "mapbox" adında ortam değişkeni grubu → MAPBOX_DOWNLOADS_TOKEN (gizli)
+#
+# Build numarası otomatik: TestFlight'ta en son 10 numaralı build olduğu için
+# ilk Codemagic build'i 11 olur, sonrası 12, 13... (bkz. BUILD_NUMBER_OFFSET).
+
+workflows:
+  ios-testflight:
+    name: Loveyaniask → TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+
+    integrations:
+      # Codemagic → Teams/Settings → Developer Portal → Apple Developer Portal
+      # altında eklediğin App Store Connect API anahtarının ADI buraya yazılacak.
+      app_store_connect: Loveyaniask ASC
+
+    environment:
+      groups:
+        # Codemagic → uygulama → Environment variables → grup adı "mapbox"
+        # İçinde: MAPBOX_DOWNLOADS_TOKEN (sk. ile başlayan, Secure işaretli)
+        - mapbox
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.loveyaniask.Loveyaniask
+      xcode: latest
+      vars:
+        XCODE_PROJECT: "Loveyaniask.xcodeproj"
+        XCODE_SCHEME: "Loveyaniask"
+        # TestFlight'taki son build numarası. İlk CI build'i bunun bir fazlası olur.
+        BUILD_NUMBER_OFFSET: 10
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+          source: true
+      cancel_previous_builds: true
+
+    scripts:
+      - name: Mapbox indirme token'ı
+        script: |
+          set -e
+          # MapboxMaps paketi ikili dosyalarını çekerken .netrc arıyor.
+          # Bu olmadan build, bağımlılık çözme aşamasında ölür.
+          cat > "$HOME/.netrc" <<EOF
+          machine api.mapbox.com
+          login mapbox
+          password $MAPBOX_DOWNLOADS_TOKEN
+          EOF
+          chmod 600 "$HOME/.netrc"
+
+      - name: Build numarasını ayarla
+        script: |
+          set -e
+          BUILD_NUMBER=$((BUILD_NUMBER_OFFSET + PROJECT_BUILD_NUMBER))
+          echo "Build numarası: $BUILD_NUMBER"
+          # Proje "Apple Generic" sürümleme kullanmadığı için agvtool yerine
+          # doğrudan pbxproj'daki değeri yazıyoruz. Bu değişiklik sadece CI'da,
+          # geçici; repoya geri yazılmıyor.
+          sed -i '' "s/CURRENT_PROJECT_VERSION = .*;/CURRENT_PROJECT_VERSION = $BUILD_NUMBER;/g" \
+            "$XCODE_PROJECT/project.pbxproj"
+
+      - name: Swift paketlerini çöz
+        script: |
+          set -e
+          xcodebuild -resolvePackageDependencies \
+            -project "$XCODE_PROJECT" \
+            -scheme "$XCODE_SCHEME"
+
+      - name: İmzalama profillerini kur
+        script: |
+          set -e
+          xcode-project use-profiles
+
+      - name: Archive + IPA
+        script: |
+          set -e
+          xcode-project build-ipa \
+            --project "$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true

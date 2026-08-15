@@ -14,7 +14,9 @@ xcuserdata/
 # Swift Package Manager
 .build/
 .swiftpm/
-Package.resolved
+# Package.resolved BİLEREK ignore edilmiyor: CI her build'de paketleri sıfırdan
+# çözüyor; sürüm kilidi olmazsa bir gün Firebase/Mapbox sürüm atlayınca build
+# sebepsiz patlar. Mac'te bir kez üretilip commit'lenmeli.
 
 # CocoaPods / Carthage (ileride kullanılırsa)
 Pods/
