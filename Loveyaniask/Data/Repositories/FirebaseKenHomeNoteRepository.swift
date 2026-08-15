@@ -17,7 +17,7 @@ final class FirebaseKenHomeNoteRepository: KenHomeNoteRepository {
 
     func observe(_ onChange: @escaping (KenNote?) -> Void) {
         handle = ref.observe(.value) { snapshot in
-            PerfMonitor.shared.countFirebase()
+            PerfMonitor.shared.countFirebase("kenhomenote")
             if let text = snapshot.value as? String, !text.isEmpty {
                 onChange(KenNote(text: text, generatedAt: Date()))
                 return

@@ -17,7 +17,7 @@ final class FirebaseMoodAnalysisRepository: MoodAnalysisRepository {
 
     func observe(_ onChange: @escaping (MoodAnalysis?) -> Void) {
         handle = ref.observe(.value) { snapshot in
-            PerfMonitor.shared.countFirebase()
+            PerfMonitor.shared.countFirebase("moodanalysis")
             guard
                 let d = snapshot.value as? [String: Any],
                 let text = d["text"] as? String

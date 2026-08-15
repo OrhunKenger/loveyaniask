@@ -18,7 +18,7 @@ final class FirebasePlaceRepository: PlaceRepository {
 
     init() {
         handle = ref.observe(.value) { [weak self] snapshot in
-            PerfMonitor.shared.countFirebase()
+            PerfMonitor.shared.countFirebase("place")
             guard let self else { return }
             var items: [Place] = []
             for case let child as DataSnapshot in snapshot.children {

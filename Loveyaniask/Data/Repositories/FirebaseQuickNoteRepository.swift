@@ -19,7 +19,7 @@ final class FirebaseQuickNoteRepository: QuickNoteRepository {
 
     func observeNotes(_ onChange: @escaping ([QuickNote]) -> Void) {
         handle = notesRef.observe(.value) { snapshot in
-            PerfMonitor.shared.countFirebase()
+            PerfMonitor.shared.countFirebase("quicknote")
             var notes: [QuickNote] = []
             for case let child as DataSnapshot in snapshot.children {
                 guard let d = child.value as? [String: Any],

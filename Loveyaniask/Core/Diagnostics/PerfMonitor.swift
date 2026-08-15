@@ -29,6 +29,8 @@ final class PerfMonitor {
     /// Son saniyedeki en uzun kare, milisaniye.
     private(set) var worstFrameMs = 0
     private(set) var firebasePerSecond = 0
+    /// Hangi dinleyici kac kez tetiklendi (saniyelik).
+    private(set) var firebaseByName: [String: Int] = [:]
     private(set) var bodyPerSecond: [String: Int] = [:]
     /// Uygulama açıldığından beri toplam Firebase geri çağrısı.
     private(set) var firebaseTotal = 0
@@ -38,6 +40,7 @@ final class PerfMonitor {
     @ObservationIgnored private var worstFrame: CFTimeInterval = 0
     @ObservationIgnored private var lastFrameAt: CFTimeInterval = 0
     @ObservationIgnored private var firebaseCount = 0
+    @ObservationIgnored private var firebaseNames: [String: Int] = [:]
     @ObservationIgnored private var bodyCounts: [String: Int] = [:]
     @ObservationIgnored private var windowStart: CFTimeInterval = 0
     @ObservationIgnored private var link: CADisplayLink?
@@ -63,9 +66,10 @@ final class PerfMonitor {
     }
 
     /// Firebase dinleyicisi tetiklendi.
-    func countFirebase() {
+    func countFirebase(_ name: String) {
         firebaseCount += 1
         firebaseTotal += 1
+        firebaseNames[name, default: 0] += 1
     }
 
     /// Bir view'ın body'si çalıştı.
@@ -93,12 +97,14 @@ final class PerfMonitor {
         hitches = hitchCount
         worstFrameMs = Int((worstFrame * 1000).rounded())
         firebasePerSecond = firebaseCount
+        firebaseByName = firebaseNames
         bodyPerSecond = bodyCounts
 
         frameCount = 0
         hitchCount = 0
         worstFrame = 0
         firebaseCount = 0
+        firebaseNames.removeAll(keepingCapacity: true)
         bodyCounts.removeAll(keepingCapacity: true)
     }
 

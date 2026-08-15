@@ -32,6 +32,9 @@ struct PerfHUD: View {
             if expanded {
                 row("takılma", "\(monitor.hitches)/sn · en kötü \(monitor.worstFrameMs) ms")
                 row("firebase", "\(monitor.firebasePerSecond)/sn · toplam \(monitor.firebaseTotal)")
+                ForEach(monitor.firebaseByName.sorted(by: { $0.value > $1.value }).prefix(5), id: \.key) { name, count in
+                    row("  " + name, "\(count)/sn")
+                }
                 ForEach(monitor.bodyPerSecond.sorted(by: { $0.value > $1.value }), id: \.key) { name, count in
                     row(name, "\(count)/sn")
                 }

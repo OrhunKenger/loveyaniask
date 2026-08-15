@@ -32,7 +32,7 @@ final class FirebaseSpecialDayRepository: SpecialDayRepository {
 
     init() {
         handle = ref.observe(.value) { [weak self] snapshot in
-            PerfMonitor.shared.countFirebase()
+            PerfMonitor.shared.countFirebase("specialday")
             guard let self else { return }
             var items: [SpecialDay] = []
             for case let child as DataSnapshot in snapshot.children {

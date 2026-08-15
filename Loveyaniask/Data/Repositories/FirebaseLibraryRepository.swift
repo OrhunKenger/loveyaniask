@@ -17,7 +17,7 @@ final class FirebaseLibraryRepository: LibraryRepository {
 
     init() {
         handle = ref.observe(.value) { [weak self] snapshot in
-            PerfMonitor.shared.countFirebase()
+            PerfMonitor.shared.countFirebase("library")
             guard let self else { return }
             var items: [LibraryItem] = []
             for case let child as DataSnapshot in snapshot.children {

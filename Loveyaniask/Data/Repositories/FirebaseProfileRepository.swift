@@ -18,7 +18,7 @@ final class FirebaseProfileRepository: ProfileRepository {
 
     func observeProfiles(_ onChange: @escaping ([String: PartnerProfile]) -> Void) {
         handle = ref.observe(.value) { snapshot in
-            PerfMonitor.shared.countFirebase()
+            PerfMonitor.shared.countFirebase("profile")
             var result: [String: PartnerProfile] = [:]
             for case let child as DataSnapshot in snapshot.children {
                 let d = child.value as? [String: Any] ?? [:]

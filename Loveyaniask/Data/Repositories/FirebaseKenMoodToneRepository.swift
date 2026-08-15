@@ -17,7 +17,7 @@ final class FirebaseKenMoodToneRepository: KenMoodToneRepository {
 
     func observe(_ onChange: @escaping (Double?) -> Void) {
         handle = ref.observe(.value) { snapshot in
-            PerfMonitor.shared.countFirebase()
+            PerfMonitor.shared.countFirebase("kenmoodtone")
             guard let root = snapshot.value as? [String: Any] else {
                 onChange(nil)
                 return

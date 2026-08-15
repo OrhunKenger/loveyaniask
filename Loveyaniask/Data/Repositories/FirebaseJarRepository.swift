@@ -24,7 +24,7 @@ final class FirebaseJarRepository: JarRepository {
 
     func observeCapsule(_ onChange: @escaping (JarCapsule) -> Void) {
         capsuleHandle = capsuleRef.observe(.value) { [weak self] snapshot in
-            PerfMonitor.shared.countFirebase()
+            PerfMonitor.shared.countFirebase("jar")
             guard let self else { return }
 
             // İlk açılış: düğüm yoksa varsayılan döngüyü oluştur.
@@ -49,7 +49,7 @@ final class FirebaseJarRepository: JarRepository {
 
     func observeNotes(_ onChange: @escaping ([JarNote]) -> Void) {
         notesHandle = notesRef.observe(.value) { snapshot in
-            PerfMonitor.shared.countFirebase()
+            PerfMonitor.shared.countFirebase("jar")
             var notes: [JarNote] = []
             for case let child as DataSnapshot in snapshot.children {
                 guard let d = child.value as? [String: Any],

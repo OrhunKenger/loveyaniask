@@ -17,7 +17,7 @@ final class FirebasePlanRepository: PlanRepository {
 
     init() {
         handle = ref.observe(.value) { [weak self] snapshot in
-            PerfMonitor.shared.countFirebase()
+            PerfMonitor.shared.countFirebase("plan")
             guard let self else { return }
             var items: [Plan] = []
             for case let child as DataSnapshot in snapshot.children {
