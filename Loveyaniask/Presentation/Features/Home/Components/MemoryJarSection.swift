@@ -54,11 +54,12 @@ struct MemoryJarSection: View {
                 .clipShape(Capsule())
                 .shadow(color: .black.opacity(0.08), radius: 3, y: 1)
 
-            MemoryJarView(count: viewModel.count, isReady: viewModel.isReady, scale: 0.6)
+            // Ken de artık ana sayfada yaşadığı için kavanoz küçültüldü —
+            // iki yüzen nesne birbiriyle yarışmasın.
+            MemoryJarView(count: viewModel.count, isReady: viewModel.isReady, scale: 0.42)
         }
-        // Sürükleme gölgesi kaldırıldı: dikdörtgen olmayan bir içeriğin gölgesi
-        // her karede ekran dışı bir geçiş demek ve tam da sürüklerken ödeniyordu.
         .contentShape(Rectangle())
+        .shadow(color: .black.opacity(isDragging ? 0.2 : 0), radius: 12, y: 8)
     }
 
     // MARK: - Sürükleme + dokunma

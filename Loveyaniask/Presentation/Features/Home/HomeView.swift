@@ -57,7 +57,7 @@ struct HomeView: View {
                         .buttonStyle(.plain)
                     }
 
-                    KenHomeNoteCard(companion: kenCompanion, isActive: isActive)
+                    KenHomeNoteCard(companion: kenCompanion)
 
                     SpecialDaysSection(viewModel: specialDaysViewModel)
 
@@ -81,7 +81,7 @@ struct HomeView: View {
             updateKenUpcomingDay()
         }
         .sheet(isPresented: $showingProfile) {
-            ProfileView(viewModel: profileViewModel, kenCompanion: kenCompanion, onSignOut: onSignOut)
+            ProfileView(viewModel: profileViewModel, onSignOut: onSignOut)
         }
     }
 

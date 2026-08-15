@@ -82,6 +82,9 @@ enum KenMotion {
         case .greet: greet(e)
         case .introduce: introduce(e)
         case .miss: miss(e)
+        case .held: held(e)
+        case .dizzy: dizzy(e)
+        case .grumble: grumble(e)
         }
     }
 
@@ -302,6 +305,61 @@ enum KenMotion {
         f.tail = 0.05 + 0.2 * wave(e, 3.0) + 0.7 * hop
         f.gazeY = -0.38
         f.mouthOpen = CGFloat(0.25 * hop)
+        return f
+    }
+
+    /// Parmakla tutulmuş / havada: kollar yukarı savrulmuş, bacaklar hızlı
+    /// tekme atıyor, gövde hafifçe sallanıyor. Uçarken de aynı poz — çırpınıyor.
+    private static func held(_ e: Double) -> KenFrame {
+        var f = KenFrame()
+        let kick = wave(e, 0.34)
+        let kick2 = wave(e, 0.34, phase: .pi)
+        f.armLeft = -150 + 18 * wave(e, 0.46)
+        f.armRight = 150 - 18 * wave(e, 0.46, phase: 0.7)
+        f.legLeft = -26 + 30 * kick
+        f.legRight = 26 + 30 * kick2
+        f.lean = 5 * wave(e, 0.62)
+        f.squash = CGFloat(-0.05 + 0.02 * wave(e, 0.5))
+        f.tail = 0.15 + 0.5 * wave(e, 0.4)
+        f.eyeOpen = 1
+        f.gazeY = -0.2
+        f.mouthOpen = CGFloat(0.35 + 0.2 * kick)
+        return f
+    }
+
+    /// Sert düşüşten sonra: yerde toparlanıyor, gövde sağa sola devriliyor,
+    /// gözler süzülmüş, kafası dönüyor.
+    private static func dizzy(_ e: Double) -> KenFrame {
+        var f = KenFrame()
+        let wobble = wave(e, 0.9)
+        f.lean = 14 * wobble
+        f.armLeft = -70 + 20 * wave(e, 1.1)
+        f.armRight = 70 - 20 * wave(e, 1.1, phase: 0.5)
+        f.legLeft = -40
+        f.legRight = 40
+        f.lift = 0.05
+        f.squash = CGFloat(0.14 + 0.03 * wave(e, 0.7))
+        f.tail = -0.4 + 0.2 * wave(e, 1.4)
+        f.eyeOpen = 0.35
+        f.gazeX = CGFloat(0.5 * wobble)
+        f.mouthOpen = 0.3
+        return f
+    }
+
+    /// Doğrulup söylenme: dikilmiş, gergin, ayağını yere vuruyor.
+    private static func grumble(_ e: Double) -> KenFrame {
+        var f = KenFrame()
+        let stomp = max(0, wave(e, 0.7))
+        f.armLeft = -52
+        f.armRight = 52
+        f.legLeft = -14
+        f.legRight = 14 - 26 * stomp
+        f.lean = 2 * wave(e, 0.35)
+        f.lift = CGFloat(-0.02 * stomp)
+        f.squash = CGFloat(0.05 - 0.04 * stomp)
+        f.tail = -0.2 + 0.35 * wave(e, 0.5)
+        f.gazeY = -0.1
+        f.mouthOpen = CGFloat(0.25 * stomp)
         return f
     }
 

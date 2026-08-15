@@ -2,18 +2,20 @@
 //  KenCompanion.swift
 //  Loveyaniask
 //
-//  Ken'in "varlık motoru": ekranlarda kendiliğinden dolaşmasını yöneten
-//  paylaşılan kontrolcü. Tek bir örneği AppDependencies'te oluşturulup hem
-//  KenCompanionView'a (çizim) hem de ilgili ViewModel'lere (olay tetikleri)
-//  enjekte edilir.
+//  Ken'in dış dünyayla bağlantısı: buluttan gelen içerik (dolaşma cümleleri,
+//  ana sayfa notu, ruh hali tonu) ve uygulamadan gelen olaylar (paylaşım,
+//  puanlama, not ekleme, günün ilk açılışı).
+//
+//  Ken'in NEREDE olduğu ve NE YAPTIĞI burada değil, KenWorld'de — bu sınıf
+//  sadece olayları oraya iletiyor. Eskiden Ken'i "gösterip gizleyen" zamanlayıcı
+//  buradaydı; Ken artık hiç kaybolmadığı için o mantık tamamen kalktı.
 //
 
 import Foundation
 import Observation
 
-/// Ken'in sergileyebileceği davranışlar. `idleBehaviors` içindekiler boşta
-/// kendiliğinden seçilir; kalanlar sadece belirli olaylarla tetiklenir
-/// (puanlama, paylaşım, günün ilk açılışı, dönüm günü, uzun ayrılık).
+/// Ken'in sergileyebileceği pozlar. Bir kısmı kalıcı bir duruma karşılık gelir
+/// (KenActivity üzerinden), bir kısmı olayla tetiklenen kısa tepkilerdir.
 enum KenBehavior: CaseIterable, Hashable {
     case peek
     case dangle
@@ -21,7 +23,7 @@ enum KenBehavior: CaseIterable, Hashable {
     case sit
     /// Esneyip gerinme — özellikle sabahları.
     case stretch
-    /// Kıvrılıp uyuklama — sadece gece geç saatlerde.
+    /// Kıvrılıp uyuklama.
     case snooze
     case bounce
     /// Yuvarlak bir beraberlik gününde (100, 200, 365...) coşkulu kutlama.
@@ -29,11 +31,16 @@ enum KenBehavior: CaseIterable, Hashable {
     case greet
     /// Uygulama günlerce açılmadıysa dönüşte: özlemiş hâli.
     case miss
-    /// Sadece ilk girişte, bir kere: büyükçe belirir, kendini tanıtan bir
-    /// konuşma balonu açar, sonra uçup gider. Bkz. triggerIntroductionIfNeeded.
+    /// Sadece ilk girişte, bir kere: kendini tanıtır.
     case introduce
+    /// Parmakla tutulmuş ya da havada uçuyor — çırpınıyor.
+    case held
+    /// Sert düşüşten sonra sersemlemiş.
+    case dizzy
+    /// Doğrulup söylenme (fırlatıldıktan sonra).
+    case grumble
 
-    /// Ekranda kaç saniye görünür kalacağı (bu süre sonunda kendiliğinden kaybolur).
+    /// Olayla tetiklenen tepkilerde pozun ekranda kalma süresi.
     var displayDuration: TimeInterval {
         switch self {
         case .peek: 3.2
@@ -47,47 +54,18 @@ enum KenBehavior: CaseIterable, Hashable {
         case .greet: 3.0
         case .miss: 4.6
         case .introduce: 6.5
+        case .held: 1.0
+        case .dizzy: 1.7
+        case .grumble: 2.4
         }
     }
 
-    /// Ken bu davranışta bir şey söylüyor mu — bazı anlar (kutlama, özlem,
+    /// Ken bu tepkide bir şey söylüyor mu — bazı anlar (kutlama, özlem,
     /// tanıtım) balonsuz eksik kalır, o yüzden garanti konuşur.
     var alwaysSpeaks: Bool {
         switch self {
-        case .celebrate, .miss, .introduce: true
+        case .celebrate, .miss, .introduce, .grumble: true
         default: false
-        }
-    }
-}
-
-/// Ken'i ne sıklıkta görmek istediğiniz. Profil'deki karttan seçilir.
-enum KenFrequency: String, CaseIterable, Identifiable {
-    case rare
-    case normal
-    case often
-
-    static let storageKey = "ken.frequency"
-
-    static var current: KenFrequency {
-        KenFrequency(rawValue: UserDefaults.standard.string(forKey: storageKey) ?? "") ?? .normal
-    }
-
-    var id: String { rawValue }
-
-    var label: String {
-        switch self {
-        case .rare: "Az"
-        case .normal: "Normal"
-        case .often: "Sık"
-        }
-    }
-
-    /// Boşta iki görünme arasındaki bekleme aralığı (saniye).
-    var idleInterval: ClosedRange<TimeInterval> {
-        switch self {
-        case .rare: 55...120
-        case .normal: 20...50
-        case .often: 12...28
         }
     }
 }
@@ -101,14 +79,14 @@ struct KenUpcomingDay: Equatable {
 
 @Observable
 final class KenCompanion {
-    private(set) var currentBehavior: KenBehavior?
+    /// Ken'in kendisi: konumu, ne yaptığı, fiziği.
+    let world = KenWorld()
 
-    /// Bulut routine'inin ürettiği, dolaşırken söylenebilecek taze cümleler —
-    /// canlı dinlenir, routine her çalıştığında otomatik güncellenir.
+    /// Bulut routine'inin ürettiği, dolaşırken söylenebilecek taze cümleler.
     private(set) var cloudLines: [String] = []
 
     /// Son ruh hali verisinden 0 (sıcak/olumlu) ... 1 (soğuk/zor) arası ton —
-    /// Ken'in gövde rengini ve hangi davranışı seçtiğini canlı besler.
+    /// Ken'in gövde rengini besler.
     private(set) var moodTone: Double?
 
     /// Bulut routine'inin ana sayfaya bıraktığı not (bkz. KenHomeNoteCard).
@@ -117,14 +95,11 @@ final class KenCompanion {
     /// Yaklaşan özel gün (varsa) — HomeView her göründüğünde günceller.
     var upcomingSpecialDay: KenUpcomingDay?
 
-    /// Bugün kutlanan yuvarlak beraberlik günü; kutlama bitince temizlenir.
+    /// Bugün kutlanan yuvarlak beraberlik günü ve uygulamanın kaç gün
+    /// açılmadığı — sadece söylenecek cümleyi bağlamlandırmak için.
     private(set) var celebratingDays: Int?
-    /// Uygulamanın kaç gün açılmadığı; "özledim" hâli bitince temizlenir.
     private(set) var missedDays: Int?
 
-    private var pauseCount = 0
-    private var idleLoopStarted = false
-    private var hideTask: Task<Void, Never>?
     private let roamingLinesRepository: KenRoamingLinesRepository
     private let moodToneRepository: KenMoodToneRepository
     private let homeNoteRepository: KenHomeNoteRepository
@@ -152,16 +127,14 @@ final class KenCompanion {
         }
     }
 
-    /// Bir şeyle etkileşimdeyken (yazı yazma vb.) Ken'in araya girmesini durdurur.
-    /// Sayaç tabanlı — iç içe pause/resume çağrılarında da güvenli.
-    func pause() { pauseCount += 1 }
-    func resume() { pauseCount = max(0, pauseCount - 1) }
+    // MARK: - Olaylar
 
-    /// Belirli bir davranışı hemen gösterir; süresi dolunca kendiliğinden gizlenir.
+    func pause() { world.pause() }
+    func resume() { world.resume() }
+
+    /// Belirli bir tepkiyi hemen oynatır.
     func trigger(_ behavior: KenBehavior) {
-        hideTask?.cancel()
-        currentBehavior = behavior
-        scheduleHide(after: behavior.displayDuration)
+        world.react(behavior, seconds: behavior.displayDuration)
     }
 
     /// Olayla tetiklenen sevinç (paylaşım, puanlama, not ekleme...). Zor bir
@@ -171,32 +144,9 @@ final class KenCompanion {
         trigger((moodTone ?? 0) > 0.65 ? .peek : .bounce)
     }
 
-    /// Zaten görünürken tekrar tetiklemeyen tepki. Art arda gelen küçük
-    /// etkileşimlerde (ruh hali çiplerini deneyerek seçmek gibi) Ken'in yanıp
-    /// sönen bir bildirime dönüşmemesi için.
+    /// Zaten bir şeyle meşgulken araya girmeyen tepki.
     func reactIfIdle(_ behavior: KenBehavior) {
-        guard currentBehavior == nil else { return }
-        trigger(behavior)
-    }
-
-    /// Ken'e dokunulduğunda çağrılır: tam o an kaybolmasın diye gizlenme
-    /// sayacını birkaç saniye daha uzatır (balonu okuyacak vakti olsun diye).
-    func keepAlive(extra: TimeInterval = 2.4) {
-        guard currentBehavior != nil else { return }
-        scheduleHide(after: extra)
-    }
-
-    private func scheduleHide(after duration: TimeInterval) {
-        hideTask?.cancel()
-        hideTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
-            guard !Task.isCancelled else { return }
-            await MainActor.run {
-                self?.currentBehavior = nil
-                self?.celebratingDays = nil
-                self?.missedDays = nil
-            }
-        }
+        world.reactIfResting(behavior, seconds: behavior.displayDuration)
     }
 
     /// Uygulamanın ömründe bir kez: Ken kendini tanıtır. Tetiklendiyse `true`
@@ -222,70 +172,28 @@ final class KenCompanion {
             UserDefaults.standard.set(milestone, forKey: Self.lastMilestoneKey)
             celebratingDays = milestone
             trigger(.celebrate)
+            clearContext(after: KenBehavior.celebrate.displayDuration)
             return
         }
 
         if let last, let gap = Self.dayGap(from: last, to: today), gap >= 3 {
             missedDays = gap
             trigger(.miss)
+            clearContext(after: KenBehavior.miss.displayDuration)
             return
         }
 
         trigger(.greet)
     }
 
-    /// Uygulama açıkken arada bir kendiliğinden bir davranış seçip oynatır.
-    /// Sadece bir kez başlatılır (KenCompanionView her göründüğünde tekrar çağırsa da etkisizdir).
-    func startIdleLoop() {
-        guard !idleLoopStarted else { return }
-        idleLoopStarted = true
+    private func clearContext(after seconds: TimeInterval) {
         Task { [weak self] in
-            while !Task.isCancelled {
-                let wait = TimeInterval.random(in: KenFrequency.current.idleInterval)
-                try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
-                guard let self else { return }
-                await MainActor.run {
-                    guard self.pauseCount == 0, self.currentBehavior == nil else { return }
-                    self.trigger(self.pickIdleBehavior())
-                }
+            try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+            await MainActor.run {
+                self?.celebratingDays = nil
+                self?.missedDays = nil
             }
         }
-    }
-
-    /// Boşta hangi davranışın çıkacağı sabit değil: saate ve ruh haline göre
-    /// ağırlıklanıyor. Zor bir dönemdeyken (tone yüksek) sakin davranışlar öne
-    /// çıkıyor, keyifliyken hareketli olanlar. Ruh hali Ken'i ASLA sinirlendirmez;
-    /// sadece hangi hâlde göründüğünü etkiler.
-    private func pickIdleBehavior() -> KenBehavior {
-        let hour = Calendar.current.component(.hour, from: Date())
-        let isNight = hour >= 23 || hour < 6
-        let isMorning = (6..<10).contains(hour)
-        let tone = moodTone ?? 0.35
-        let calm = 0.7 + 0.9 * tone
-        let lively = 1.3 - 0.9 * tone
-
-        var weights: [(KenBehavior, Double)] = [
-            (.peek, calm),
-            (.sit, calm),
-            (.dangle, 0.85 * lively),
-            (.wander, lively),
-            (.stretch, 0.55 * lively + (isMorning ? 0.9 : 0))
-        ]
-        if isNight {
-            weights.append((.snooze, 2.0))
-        }
-        return Self.weightedPick(weights) ?? .sit
-    }
-
-    private static func weightedPick(_ weights: [(KenBehavior, Double)]) -> KenBehavior? {
-        let total = weights.reduce(0) { $0 + max(0, $1.1) }
-        guard total > 0 else { return weights.first?.0 }
-        var roll = Double.random(in: 0..<total)
-        for (behavior, weight) in weights {
-            roll -= max(0, weight)
-            if roll < 0 { return behavior }
-        }
-        return weights.last?.0
     }
 
     /// Kutlanmaya değer yuvarlak günler: her 100 gün ve her yıl.
@@ -295,8 +203,7 @@ final class KenCompanion {
     }
 
     private static func dayGap(from: String, to: String) -> Int? {
-        let formatter = dayFormatter
-        guard let start = formatter.date(from: from), let end = formatter.date(from: to) else { return nil }
+        guard let start = dayFormatter.date(from: from), let end = dayFormatter.date(from: to) else { return nil }
         return Calendar.current.dateComponents([.day], from: start, to: end).day
     }
 

@@ -59,6 +59,8 @@ enum KenLineSelector {
             return weighted(KenTapLines.missed(days: context.missedDays ?? 3), 1)
         case .snooze:
             return weighted(KenTapLines.sleepy, 1) + weighted(KenTapLines.night, 0.5)
+        case .grumble, .dizzy, .held:
+            return weighted(KenTapLines.thrown, 1)
         default:
             break
         }

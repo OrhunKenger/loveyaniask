@@ -5,7 +5,7 @@
 //  Ken'in gövdesi: yuvarlak gövde + kol/bacak/kuyruk + kaş/göz/ağız ile değişen
 //  bir yüz ifadesi. Gövde rengi ruh hali tonuna göre sıcaktan soğuğa kayar
 //  (bkz. KenCompanion.moodTone), ifade ise davranışa göre değişir; art arda
-//  dokununca (KenCompanionView) "gıcık" ifadesine geçebilir.
+//  dokununca (KenStage) "gıcık" ifadesine geçebilir.
 //
 //  Hareket, SwiftUI animasyonlarıyla değil, sürekli zamanın fonksiyonu olarak
 //  üretiliyor (bkz. KenMotion): TimelineView her karede o anki KenFrame'i
@@ -16,8 +16,9 @@
 //  Shape/Ellipse view'ları vardı; her karede ~15 katmanlık view ağacı yeniden
 //  kuruluyor, gradyan stroke'lar + drop shadow + blur ekstra offscreen render
 //  geçişlerine yol açıyordu ve uygulama gözle görülür şekilde kasıyordu.
-//  Canvas'ta hepsi tek geçişte çiziliyor; blur/gölge filtresi kullanılmıyor.
-//  Bu yüzden buraya .shadow/.blur eklemeyin — kasmanın sebebi tam olarak oydu.
+//  Canvas'ta hepsi tek geçişte çiziliyor. Gölge/parıltı gerektiğinde blur
+//  filtresi yerine radyal gradyan kullanılıyor: aynı görüntü, her karede
+//  ekran dışı render geçişi olmadan.
 //
 
 import SwiftUI
@@ -96,7 +97,7 @@ struct KenFace {
 }
 
 /// Ken'in sergileyebileceği yüz ifadeleri. Davranışa göre varsayılanı seçilir;
-/// art arda dokununca (bkz. KenCompanionView) geçici olarak `.annoyed`'e döner.
+/// art arda dokununca (bkz. KenStage) geçici olarak `.annoyed`'e döner.
 enum KenExpression {
     case sweet
     case content
@@ -160,6 +161,9 @@ enum KenExpression {
         case .greet, .introduce: .love
         case .snooze: .sleepy
         case .miss: .longing
+        case .held: .longing
+        case .dizzy: .sleepy
+        case .grumble: .annoyed
         }
     }
 }
@@ -170,7 +174,7 @@ struct KenCharacterView: View {
     let behavior: KenBehavior
     /// 0 (sıcak/olumlu) ... 1 (soğuk/zor) — nil ise varsayılan marka rengi kullanılır.
     var tone: Double? = nil
-    /// Art arda dokunulunca dışarıdan (KenCompanionView) true yapılır.
+    /// Art arda dokunulunca dışarıdan (KenStage) true yapılır.
     var annoyed: Bool = false
     /// Görünmezken hareket motoru duruyor — boşuna kare üretmesin diye.
     var isVisible: Bool = true
@@ -232,9 +236,16 @@ struct KenCharacterView: View {
         // Ken'in bir zemine bastığı hissini veren en ucuz numara.
         let air = min(max(-frame.lift, 0) / 0.3, 1)
         let k = 1 - 0.55 * air
+        let shadowRect = CGRect(x: 0.5 * w - 0.21 * w * k, y: 0.975 * h - 0.0275 * h * k,
+                                width: 0.42 * w * k, height: 0.055 * h * k)
         context.fill(
-            KenPath.ellipse(center: CGPoint(x: 0.5 * w, y: 0.975 * h), width: 0.42 * w * k, height: 0.055 * h * k),
-            with: .color(.black.opacity(0.26 * Double(k)))
+            Path(ellipseIn: shadowRect),
+            with: .radialGradient(
+                Gradient(colors: [.black.opacity(0.3 * Double(k)), .black.opacity(0)]),
+                center: CGPoint(x: shadowRect.midX, y: shadowRect.midY),
+                startRadius: 0,
+                endRadius: shadowRect.width / 2
+            )
         )
 
         // Gövde dönüşümleri (yükselme + çömelme + eğim), taban ortasına göre.
@@ -259,6 +270,18 @@ struct KenCharacterView: View {
         context.stroke(KenPath.limb(anchor: CGPoint(x: 0.62 * w, y: 0.79 * h), degrees: frame.legRight, length: 0.22 * h), with: shading, style: legStyle)
         context.stroke(KenPath.limb(anchor: CGPoint(x: 0.24 * w, y: 0.50 * h), degrees: frame.armLeft, length: 0.20 * h), with: shading, style: armStyle)
 
+        // Gövdenin arkasındaki sıcak parıltı. Eskiden .shadow ile yapılıyordu;
+        // Canvas'ta gölge filtresi her karede blur demek olurdu, o yüzden aynı
+        // görüntüyü radyal gradyanla veriyoruz — bedeli yok.
+        context.fill(
+            Path(ellipseIn: CGRect(x: 0.16 * w, y: 0.16 * h, width: 0.68 * w, height: 0.70 * h)),
+            with: .radialGradient(
+                Gradient(colors: [AppColors.primary.opacity(0.42), AppColors.primary.opacity(0)]),
+                center: CGPoint(x: 0.5 * w, y: 0.53 * h),
+                startRadius: 0.22 * w,
+                endRadius: 0.36 * w
+            )
+        )
         context.fill(KenPath.body(in: rect), with: shading)
 
         drawFace(in: &context, w: w, h: h, rect: rect, frame: frame, face: face, blink: blink, ink: inkShading)
