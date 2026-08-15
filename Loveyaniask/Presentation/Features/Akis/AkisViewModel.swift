@@ -94,9 +94,8 @@ final class AkisViewModel {
             } else {
                 // Gerçek sebebi göster: bağlantı, izin, kota — hepsi farklı çözüm
                 // gerektiriyor, "internetini kontrol et" demek yanlış yönlendiriyor.
-                self.uploadError = "An paylaşılamadı.
-
-\(error?.localizedDescription ?? "Bilinmeyen hata")"
+                let reason = error?.localizedDescription ?? "Bilinmeyen hata"
+                self.uploadError = "An paylaşılamadı.\n\n" + reason
             }
         }
     }
