@@ -29,7 +29,7 @@ struct PlaceDetailBalloon: View {
                     }
                 }
 
-                if let data = viewModel.photoData(for: place), let uiImage = UIImage(data: data) {
+                if let uiImage = viewModel.photo(for: place) {
                     Image(uiImage: uiImage)
                         .resizable()
                         .scaledToFill()

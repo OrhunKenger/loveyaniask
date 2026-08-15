@@ -16,6 +16,9 @@ final class PlacesViewModel {
     var showingAdd = false
     var selectedPlace: Place?
 
+    /// Dosya adına göre çözülmüş fotoğraflar (bkz. `photo(for:)`).
+    @ObservationIgnored private var photoCache: [String: UIImage] = [:]
+
     let currentUser: UserProfile
 
     private let getPlaces: GetPlacesUseCase
@@ -134,9 +137,17 @@ final class PlacesViewModel {
 
     // MARK: - Görsel yardımcılar
 
-    func photoData(for place: Place) -> Data? {
+    /// Mekan fotoğrafı — diskten okuma ve JPEG çözme dosya başına BİR KEZ.
+    /// Eskiden çağıran taraf her çizimde `UIImage(data:)` çağırıyordu; kaydırılan
+    /// bir listede bu, görünen her kart için her karede disk + decode demekti.
+    func photo(for place: Place) -> UIImage? {
         guard let name = place.photoFileName else { return nil }
-        return getPhotoUseCase.execute(fileName: name)
+        if let cached = photoCache[name] { return cached }
+        guard let data = getPhotoUseCase.execute(fileName: name),
+              let image = UIImage(data: data) else { return nil }
+        let prepared = image.preparingForDisplay() ?? image
+        photoCache[name] = prepared
+        return prepared
     }
 
     func coordinate(for place: Place) -> CLLocationCoordinate2D {

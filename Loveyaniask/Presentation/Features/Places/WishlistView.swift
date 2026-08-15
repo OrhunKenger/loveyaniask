@@ -68,8 +68,7 @@ struct WishlistView: View {
 
     private func card(_ place: Place) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            if let data = viewModel.photoData(for: place),
-               let uiImage = UIImage(data: data) {
+            if let uiImage = viewModel.photo(for: place) {
                 Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFill()

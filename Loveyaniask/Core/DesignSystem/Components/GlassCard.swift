@@ -15,18 +15,18 @@ struct GlassCardModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .padding(padding ?? 0)
+            // Zemin ve üstteki ışık sheen'i TEK gradyanda birleştirildi. Eskiden
+            // düz dolgunun üstüne ikinci bir gradyan katmanı biniyordu; her kart
+            // fazladan bir katman demekti ve uygulamada 18 çağrı yeri var
+            // (bir kısmı liste satırı, yani ekranda onlarca kez).
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(AppColors.surface)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(
-                                LinearGradient(
-                                    colors: [Color.white.opacity(0.07), Color.clear],
-                                    startPoint: .top,
-                                    endPoint: .center
-                                )
-                            )
+                    .fill(
+                        LinearGradient(
+                            colors: [Color(hex: "29243E"), AppColors.surface],
+                            startPoint: .top,
+                            endPoint: .center
+                        )
                     )
             )
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))

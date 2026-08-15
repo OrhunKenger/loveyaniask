@@ -90,8 +90,7 @@ struct MemoryJarView: View {
                 // Sol kenar ışık çizgisi
                 RoundedRectangle(cornerRadius: 34, style: .continuous)
                     .trim(from: 0.55, to: 0.72)
-                    .stroke(.white.opacity(0.5), lineWidth: 3)
-                    .blur(radius: 1)
+                    .stroke(.white.opacity(0.32), lineWidth: 3)
                     .allowsHitTesting(false)
             }
             .frame(width: 160, height: 196)
@@ -101,13 +100,19 @@ struct MemoryJarView: View {
     @ViewBuilder
     private var readyGlow: some View {
         if isReady {
-            // Statik parıltı: bir kez çizilir, GPU boşta kalır (eskiden sonsuz
-            // animasyonlu 40pt blur idi → telefonu ısıtan ana sebepti).
+            // Parıltı blur değil, radyal gradyan. Blur her çizimde ekran dışı
+            // bir geçiş demek; kavanoz sürüklenebildiği için bu bedel hareket
+            // boyunca tekrar tekrar ödeniyordu. Görüntü aynı, maliyet yok.
             Circle()
-                .fill(Color(hex: "F4C95D"))
-                .frame(width: 140 * scale, height: 140 * scale)
-                .blur(radius: 40)
-                .opacity(0.5)
+                .fill(
+                    RadialGradient(
+                        colors: [Color(hex: "F4C95D").opacity(0.5), Color(hex: "F4C95D").opacity(0)],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 110 * scale
+                    )
+                )
+                .frame(width: 220 * scale, height: 220 * scale)
                 .offset(y: 25 * scale)
         }
     }

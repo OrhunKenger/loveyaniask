@@ -8,6 +8,7 @@
 
 import Foundation
 import Observation
+import UIKit
 
 /// Sheet'i tarihe göre açmak için Identifiable sarmalayıcı.
 struct CalendarDay: Identifiable {
@@ -17,6 +18,9 @@ struct CalendarDay: Identifiable {
 
 @Observable
 final class MoodViewModel {
+    /// Dosya adına göre çözülmüş fotoğraflar (bkz. `photo(for:partner:)`).
+    @ObservationIgnored private var photoCache: [String: UIImage] = [:]
+
     private(set) var entries: [MoodEntry] = []
     private(set) var analysis: MoodAnalysis?
     var displayedMonth: Date
@@ -103,9 +107,20 @@ final class MoodViewModel {
         entry(for: date, partner: partner)?.mood
     }
 
-    func photoData(for date: Date, partner: Partner) -> Data? {
+    func hasPhoto(for date: Date, partner: Partner) -> Bool {
+        entry(for: date, partner: partner)?.photoFileName != nil
+    }
+
+    /// Gün fotoğrafı — diskten okuma ve JPEG çözme dosya başına BİR KEZ.
+    /// Eskiden çağıran taraf her çizimde `UIImage(data:)` çağırıyordu.
+    func photo(for date: Date, partner: Partner) -> UIImage? {
         guard let name = entry(for: date, partner: partner)?.photoFileName else { return nil }
-        return getPhotoUseCase.execute(fileName: name)
+        if let cached = photoCache[name] { return cached }
+        guard let data = getPhotoUseCase.execute(fileName: name),
+              let image = UIImage(data: data) else { return nil }
+        let prepared = image.preparingForDisplay() ?? image
+        photoCache[name] = prepared
+        return prepared
     }
 
     // MARK: - Aksiyonlar
@@ -125,6 +140,9 @@ final class MoodViewModel {
     }
 
     func setPhoto(date: Date, partner: Partner, imageData: Data) {
+        // Dosya adı gün+kişiye göre sabit olabildiği için önbelleği temizliyoruz,
+        // yoksa değiştirilen fotoğrafın eski hâli ekranda kalır.
+        photoCache.removeAll()
         setPhotoUseCase.execute(date: date, partner: partner, imageData: imageData)
     }
 

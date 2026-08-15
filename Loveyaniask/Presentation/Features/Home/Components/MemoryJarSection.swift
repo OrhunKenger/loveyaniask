@@ -56,8 +56,9 @@ struct MemoryJarSection: View {
 
             MemoryJarView(count: viewModel.count, isReady: viewModel.isReady, scale: 0.6)
         }
+        // Sürükleme gölgesi kaldırıldı: dikdörtgen olmayan bir içeriğin gölgesi
+        // her karede ekran dışı bir geçiş demek ve tam da sürüklerken ödeniyordu.
         .contentShape(Rectangle())
-        .shadow(color: .black.opacity(isDragging ? 0.2 : 0), radius: 12, y: 8)
     }
 
     // MARK: - Sürükleme + dokunma
