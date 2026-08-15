@@ -103,20 +103,21 @@ struct KenStage: View {
                             .allowsHitTesting(false)
                     }
 
-                    KenCharacterView(
-                        behavior: world.activity.behavior,
-                        tone: companion.moodTone,
-                        annoyed: isAnnoyed,
-                        isVisible: true
-                    )
-                    .frame(width: size, height: characterHeight)
-                    .position(characterCenter)
-                    .scaleEffect(tapSquish)
-                    // Saklandığında görünmüyor — kartların arkasına gerçekten
-                    // geçmesi (ayrı çizim katmanı) sonraki adımda.
-                    .opacity(world.isHidden ? 0 : 1)
-                    .animation(.easeInOut(duration: 0.25), value: world.isHidden)
-                    .onTapGesture { handleTap() }
+                    // Arkadayken burada değil, KenBackdrop'ta çiziliyor.
+                    if !world.isBehind {
+                        KenCharacterView(
+                            behavior: world.activity.behavior,
+                            tone: companion.moodTone,
+                            annoyed: isAnnoyed,
+                            isVisible: true
+                        )
+                        .frame(width: size, height: characterHeight)
+                        .position(characterCenter)
+                        // Derinlik: uzaklaştıkça küçülüp soluyor.
+                        .scaleEffect(tapSquish * world.depthScale)
+                        .opacity(1 - world.depthDim)
+                        .onTapGesture { handleTap() }
+                    }
                     .gesture(dragGesture)
                 }
             }

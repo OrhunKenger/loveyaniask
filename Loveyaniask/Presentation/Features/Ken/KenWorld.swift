@@ -25,6 +25,8 @@ enum KenActivity: Equatable {
     case resting
     /// Bir hedefe doğru yürüyor.
     case walking
+    /// Dikey olarak tırmanıyor (tavana çıkmak, tab bar'a çıkmak).
+    case climbing
     /// Kulübesinde uyuyor.
     case sleeping
     /// Parmakla tutulmuş, havada.
@@ -40,6 +42,7 @@ enum KenActivity: Equatable {
         switch self {
         case .resting: .sit
         case .walking: .wander
+        case .climbing: .dangle
         case .sleeping: .snooze
         case .held, .airborne: .held
         case .dizzy: .dizzy
@@ -58,8 +61,14 @@ final class KenWorld {
 
     /// Bakış yönü, -1...1. Sahneler ve kullanıcı etkileşimi birlikte belirliyor.
     private(set) var gaze = CGPoint(x: 0, y: 0)
-    /// Kartların arkasına saklandı mı.
-    private(set) var isHidden = false
+    /// Derinlik: 0 = ön (içeriğin üstünde), 1 = arka (içeriğin altında).
+    /// Saklanmak aslında budur — kartın arkasına geçmek, z'de geriye gitmek.
+    private(set) var depth: CGFloat = 0
+    /// Eşiği geçtiyse artık içeriğin ARKASINDA çiziliyor.
+    var isBehind: Bool { depth > 0.5 }
+    /// Uzaktayken küçülüp soluyor — derinlik hissini yaratan şey bu.
+    var depthScale: CGFloat { 1 - depth * 0.28 }
+    var depthDim: Double { Double(depth) * 0.35 }
     /// Mırıldanıyor mu — görünüm minik nota işaretleri çıkarıyor.
     private(set) var isHumming = false
     /// Söylemek istediği şeyin havuzu; görünüm alıp cümleye çeviriyor.
@@ -75,7 +84,10 @@ final class KenWorld {
     private var loop: Task<Void, Never>?
     private var activityUntil: Date?
     private var nextDecisionAt = Date()
-    private var walkTargetX: CGFloat?
+    private var walkTarget: CGPoint?
+    /// Tavan gibi bir yere tutunmuşsa yerçekimi askıda.
+    private var anchoredY: CGFloat?
+    private var depthTarget: CGFloat = 0
     private var hardLandingPending = false
     private var pauseCount = 0
     private var lastSaveAt = Date.distantPast
@@ -105,6 +117,7 @@ final class KenWorld {
         static let floorBounce: CGFloat = 0.42
         static let wallBounce: CGFloat = 0.55
         static let walkSpeed: CGFloat = 54
+        static let climbSpeed: CGFloat = 68
         /// Bu hızın üstünde yere çakılırsa sersemler.
         static let hardLanding: CGFloat = 900
         static let tickInterval: UInt64 = 33_000_000
@@ -156,10 +169,11 @@ final class KenWorld {
         if activity != .held {
             activity = .held
             activityUntil = nil
-            walkTargetX = nil
+            walkTarget = nil
+            anchoredY = nil
             // Elindeyken sahne oynamaz — bıraktığında yenisi başlar.
             scene = nil
-            isHidden = false
+            depthTarget = 0
             isHumming = false
             isRunning = false
         }
@@ -184,12 +198,14 @@ final class KenWorld {
         guard activity != .held else { return }
         // Olay tepkisi sahneyi keser — Ken ne yapıyorsa bırakıp size döner.
         scene = nil
-        isHidden = false
+        depthTarget = 0
         isHumming = false
         isRunning = false
         activity = .reacting(behavior)
         activityUntil = Date().addingTimeInterval(seconds)
-        walkTargetX = nil
+        walkTarget = nil
+        anchoredY = nil
+        depthTarget = 0
         velocity.dx = 0
         drives[.curiosity] = 0
     }
@@ -226,27 +242,53 @@ final class KenWorld {
         let floorY = stage.height - K.floorInset
         let onGround = position.y >= floorY - 0.5 && abs(velocity.dy) < 20
 
-        if onGround {
-            if activity == .walking, let target = walkTargetX {
-                if abs(target - position.x) < 4 {
-                    walkTargetX = nil
-                    velocity.dx = 0
-                } else {
-                    let direction: CGFloat = target > position.x ? 1 : -1
-                    // Neşeliyken biraz daha çevik yürüyor; koşarken iki katı.
-                    let speed = K.walkSpeed * CGFloat(0.85 + mood * 0.25) * (isRunning ? 2.1 : 1)
-                    velocity.dx = direction * speed
-                    facing = direction
-                }
+        // Bir yere tutunmuşsa (tavan gibi) yerçekimi askıda, orada asılı kalıyor.
+        if let anchored = anchoredY {
+            position.y = anchored
+            velocity.dy = 0
+        }
+
+        var climbing = false
+        if let target = walkTarget {
+            let dx = target.x - position.x
+            let needsHeight = target.y < floorY - 12
+
+            if abs(dx) > 4 {
+                // Önce yatayda hizalan.
+                let direction: CGFloat = dx > 0 ? 1 : -1
+                let speed = K.walkSpeed * CGFloat(0.85 + mood * 0.25) * (isRunning ? 2.1 : 1)
+                velocity.dx = direction * speed
+                facing = direction
+            } else if needsHeight, position.y - target.y > 4 {
+                // Sonra tırman. Yerçekimi bu sırada devre dışı.
+                velocity.dx = 0
+                velocity.dy = -K.climbSpeed
+                climbing = true
+                activity = .climbing
             } else {
-                velocity.dx -= velocity.dx * min(1, 6 * dt)
+                // Vardı.
+                walkTarget = nil
+                velocity.dx = 0
+                if needsHeight {
+                    anchoredY = target.y
+                    velocity.dy = 0
+                }
             }
-        } else {
+        } else if onGround {
+            velocity.dx -= velocity.dx * min(1, 6 * dt)
+        }
+
+        if !onGround, !climbing, anchoredY == nil {
             velocity.dy += K.gravity * dt
         }
 
         position.x += velocity.dx * dt
-        position.y += velocity.dy * dt
+        if anchoredY == nil {
+            position.y += velocity.dy * dt
+        }
+
+        // Derinlik hedefe yumuşak yaklaşıyor — kademeler arası geçiş sert olmasın.
+        depth += (depthTarget - depth) * Swift.min(1, dt * 3)
 
         let impact = velocity.dy
 
@@ -306,7 +348,7 @@ final class KenWorld {
 
         // Sahne oynuyorsa adımları ilerlet.
         if scene != nil {
-            let walkDone = activity == .walking && walkTargetX == nil
+            let walkDone = (activity == .walking || activity == .climbing) && walkTarget == nil
             let timeUp = beatUntil.map { now >= $0 } ?? false
             if walkDone || timeUp { advanceBeat(now) }
             return
@@ -378,12 +420,16 @@ final class KenWorld {
         }
         switch scene.beats[beatIndex] {
         case .walk(let anchor):
-            walkTargetX = position(of: anchor).x
+            walkTarget = position(of: anchor)
+            anchoredY = nil
+            depthTarget = depth(of: anchor)
             activity = .walking
             beatUntil = now.addingTimeInterval(12)   // emniyet: takılırsa geç
 
         case .run(let anchor):
-            walkTargetX = position(of: anchor).x
+            walkTarget = position(of: anchor)
+            anchoredY = nil
+            depthTarget = depth(of: anchor)
             activity = .walking
             isRunning = true
             beatUntil = now.addingTimeInterval(8)
@@ -410,12 +456,14 @@ final class KenWorld {
             beatUntil = now.addingTimeInterval(seconds)
 
         case .hide(let seconds):
-            isHidden = true
+            // Saklanmak = z'de geriye gitmek. İçeriğin arkasına geçiyor.
+            depthTarget = 1
             activity = .resting
             beatUntil = now.addingTimeInterval(seconds)
 
         case .peekOut(let seconds):
-            isHidden = false
+            // Yarı yolda: kenardan görünüyor ama hâlâ arkada.
+            depthTarget = 0.62
             activity = .reacting(.peek)
             beatUntil = now.addingTimeInterval(seconds)
 
@@ -434,10 +482,12 @@ final class KenWorld {
 
     private func finishScene(_ now: Date) {
         scene = nil
-        isHidden = false
+        depthTarget = 0
         isHumming = false
         isRunning = false
-        walkTargetX = nil
+        walkTarget = nil
+        anchoredY = nil
+        depthTarget = 0
         activity = .resting
         satisfyDrive(of: nil)
         scheduleNextDecision(now, minimum: 1.5, maximum: 5)
@@ -495,8 +545,20 @@ final class KenWorld {
         case .leftEdge: return CGPoint(x: K.sideMargin + 6, y: floor)
         case .rightEdge: return CGPoint(x: Swift.max(K.sideMargin, stage.width - K.sideMargin - 6), y: floor)
         case .center: return CGPoint(x: stage.width * 0.5, y: floor)
+        case .behindCards:
+            // Kartların olduğu orta bant — arkasına geçilecek yer.
+            return CGPoint(x: stage.width * CGFloat.random(in: 0.25...0.75), y: stage.height * 0.45)
         case .wherever:
             return CGPoint(x: CGFloat.random(in: K.sideMargin...Swift.max(K.sideMargin, stage.width - K.sideMargin)), y: floor)
+        }
+    }
+
+    /// Çapanın derinliği. Kartların arkası z'de en geride.
+    func depth(of anchor: KenAnchor) -> CGFloat {
+        switch anchor {
+        case .behindCards: return 1
+        case .home: return 0.25
+        default: return 0
         }
     }
 

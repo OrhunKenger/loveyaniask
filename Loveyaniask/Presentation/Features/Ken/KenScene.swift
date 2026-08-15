@@ -31,6 +31,8 @@ enum KenAnchor: Equatable {
     case rightEdge
     /// Ekranın ortası.
     case center
+    /// Kartların bulunduğu bant — arkasına geçmek için.
+    case behindCards
     /// Rastgele bir yer — dolaşmak için.
     case wherever
 }
@@ -146,7 +148,7 @@ enum KenScenes {
         ], weight: 1.2),
 
         KenScene("kartin-arkasina-saklan", .boredom, [
-            .walk(to: .wherever),
+            .walk(to: .behindCards),
             .look(x: 0, y: -0.4, seconds: 0.8),
             .hide(seconds: 3.5),
             .peekOut(seconds: 2.0),

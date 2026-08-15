@@ -40,6 +40,10 @@ struct HomeView: View {
         ZStack {
             GlowBackground()
 
+            // Ken'in ARKA yuvası: arka planla kartlar arasında. Derinlikte
+            // geriye gidince burada çiziliyor, kartlar üstünü kapatıyor.
+            KenBackdrop(companion: kenCompanion)
+
             ScrollView {
                 VStack(spacing: AppSpacing.lg) {
                     HStack(spacing: AppSpacing.sm) {
