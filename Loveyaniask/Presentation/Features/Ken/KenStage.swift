@@ -117,8 +117,8 @@ struct KenStage: View {
                         .scaleEffect(tapSquish * world.depthScale)
                         .opacity(1 - world.depthDim)
                         .onTapGesture { handleTap() }
+                        .gesture(dragGesture)
                     }
-                    .gesture(dragGesture)
                 }
             }
             .coordinateSpace(name: Self.stageSpace)
