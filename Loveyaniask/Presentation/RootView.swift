@@ -3,23 +3,17 @@
 //  Loveyaniask
 //
 //  Uygulamanın kök kabuğu: kaydırarak geçilen sayfalar (TabView .page)
-//  + Instagram tarzı özel alt bar. ViewModel'leri bir kez kurar.
+//  + Instagram tarzı özel alt bar.
 //
 
 import SwiftUI
 
 struct RootView: View {
-    @State private var homeViewModel: HomeViewModel
-    @State private var quickNotesViewModel: QuickNotesViewModel
-    @State private var profileViewModel: ProfileViewModel
-    @State private var specialDaysViewModel: SpecialDaysViewModel
-    @State private var plansViewModel: PlansViewModel
-    @State private var jarViewModel: JarViewModel
-    @State private var moodViewModel: MoodViewModel
-    @State private var periodViewModel: PeriodViewModel
-    @State private var placesViewModel: PlacesViewModel
-    @State private var libraryViewModel: LibraryViewModel
-    @State private var akisViewModel: AkisViewModel
+    /// DİKKAT: ViewModel'ler burada YARATILMAZ. Bu struct üstündeki view her
+    /// çizildiğinde yeniden kurulur; eskiden init içinde 11 ViewModel + 17
+    /// Firebase dinleyicisi baştan bağlanıyor ve uygulama 1-2 fps'e düşüyordu.
+    /// Hazır grafiği alıyoruz (bkz. AppViewModels).
+    private let vm: AppViewModels
     @State private var selectedTab: AppTab = .home
 
     private let canEditPeriod: Bool
@@ -29,17 +23,7 @@ struct RootView: View {
     init(dependencies: AppDependencies, currentUser: UserProfile, onSignOut: @escaping () -> Void) {
         self.onSignOut = onSignOut
         self.kenCompanion = dependencies.kenCompanion
-        _homeViewModel = State(initialValue: dependencies.makeHomeViewModel())
-        _quickNotesViewModel = State(initialValue: dependencies.makeQuickNotesViewModel(currentUser: currentUser))
-        _profileViewModel = State(initialValue: dependencies.makeProfileViewModel(currentUser: currentUser))
-        _specialDaysViewModel = State(initialValue: dependencies.makeSpecialDaysViewModel())
-        _plansViewModel = State(initialValue: dependencies.makePlansViewModel(currentUser: currentUser))
-        _jarViewModel = State(initialValue: dependencies.makeJarViewModel(currentUser: currentUser))
-        _moodViewModel = State(initialValue: dependencies.makeMoodViewModel(currentUser: currentUser))
-        _periodViewModel = State(initialValue: dependencies.makePeriodViewModel())
-        _placesViewModel = State(initialValue: dependencies.makePlacesViewModel(currentUser: currentUser))
-        _libraryViewModel = State(initialValue: dependencies.makeLibraryViewModel(currentUser: currentUser))
-        _akisViewModel = State(initialValue: dependencies.makeAkisViewModel(currentUser: currentUser))
+        self.vm = dependencies.viewModels(for: currentUser)
         canEditPeriod = (currentUser == .sevval)
         // Siri kısayolu (App Intent) hangi kullanıcı adına ekleyeceğini bilsin diye sakla.
         UserDefaults.standard.set(currentUser.rawValue, forKey: "currentUserKey")
@@ -49,19 +33,19 @@ struct RootView: View {
         ZStack {
             VStack(spacing: 0) {
                 TabView(selection: $selectedTab) {
-                    LibraryView(viewModel: libraryViewModel)
+                    LibraryView(viewModel: vm.library)
                         .tag(AppTab.library)
 
-                    AkisView(viewModel: akisViewModel)
+                    AkisView(viewModel: vm.akis)
                         .tag(AppTab.akis)
 
-                    HomeView(viewModel: homeViewModel, quickNotesViewModel: quickNotesViewModel, profileViewModel: profileViewModel, specialDaysViewModel: specialDaysViewModel, moodViewModel: moodViewModel, plansViewModel: plansViewModel, jarViewModel: jarViewModel, kenCompanion: kenCompanion, isActive: selectedTab == .home, onSignOut: onSignOut)
+                    HomeView(viewModel: vm.home, quickNotesViewModel: vm.quickNotes, profileViewModel: vm.profile, specialDaysViewModel: vm.specialDays, moodViewModel: vm.mood, plansViewModel: vm.plans, jarViewModel: vm.jar, kenCompanion: kenCompanion, isActive: selectedTab == .home, onSignOut: onSignOut)
                         .tag(AppTab.home)
 
-                    PeriodView(viewModel: periodViewModel, canEdit: canEditPeriod)
+                    PeriodView(viewModel: vm.period, canEdit: canEditPeriod)
                         .tag(AppTab.period)
 
-                    PlacesView(viewModel: placesViewModel, isActive: selectedTab == .places)
+                    PlacesView(viewModel: vm.places, isActive: selectedTab == .places)
                         .tag(AppTab.places)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))

@@ -9,7 +9,7 @@
 
 import Foundation
 
-struct AppDependencies {
+final class AppDependencies {
     /// Ken'in paylaşılan kontrolcüsü — tek örnek, RootView'daki görsel katman
     /// ve olay tetikleyen ViewModel'ler (Akış, Places, Library) arasında ortak.
     let kenCompanion = KenCompanion(
@@ -17,6 +17,20 @@ struct AppDependencies {
         moodToneRepository: FirebaseKenMoodToneRepository(),
         homeNoteRepository: FirebaseKenHomeNoteRepository()
     )
+
+    /// Kullanıcıya göre BİR KEZ kurulan ViewModel grafiği.
+    ///
+    /// Bunlar view init'inde yaratılmamalı: SwiftUI view struct'ları sık sık
+    /// yeniden kurulur ve her kurulumda repository'ler + Firebase dinleyicileri
+    /// baştan bağlanır. Ayrıntılı açıklama AppViewModels dosyasının başında.
+    private var cachedViewModels: [String: AppViewModels] = [:]
+
+    func viewModels(for currentUser: UserProfile) -> AppViewModels {
+        if let existing = cachedViewModels[currentUser.rawValue] { return existing }
+        let created = AppViewModels(dependencies: self, currentUser: currentUser)
+        cachedViewModels[currentUser.rawValue] = created
+        return created
+    }
 
     func makeAuthViewModel() -> AuthViewModel {
         // Giriş artık Firebase Authentication üzerinden; oturum kalıcı.
