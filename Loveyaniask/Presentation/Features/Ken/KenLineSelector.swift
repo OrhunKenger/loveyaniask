@@ -41,6 +41,21 @@ enum KenLineSelector {
         return line
     }
 
+    /// Sahne adımlarının istediği tondan bir cümle (bkz. KenScene / KenBeat.say).
+    static func line(for pool: KenLinePool, context: KenLineContext) -> String? {
+        let source: [String]
+        switch pool {
+        case .thought: return line(for: .sit, context: context)
+        case .sleepy: source = KenTapLines.sleepy
+        case .playful: source = KenTapLines.playful
+        case .affection: source = KenTapLines.affection
+        case .curious: source = KenTapLines.presence + KenTapLines.identity
+        }
+        guard let picked = pick(from: source.map { ($0, 1.0) }) else { return nil }
+        remember(picked)
+        return picked
+    }
+
     /// "Gıcık oldum" gibi kendi havuzu olan özel durumlar için.
     static func line(from lines: [String]) -> String? {
         guard let line = pick(from: lines.map { ($0, 1.0) }) else { return nil }

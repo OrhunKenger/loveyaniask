@@ -56,6 +56,18 @@ final class KenWorld {
     /// Yürüdüğü yön: -1 sola, 1 sağa. (Çizimde ileride yansıtma için.)
     private(set) var facing: CGFloat = 1
 
+    /// Bakış yönü, -1...1. Sahneler ve kullanıcı etkileşimi birlikte belirliyor.
+    private(set) var gaze = CGPoint(x: 0, y: 0)
+    /// Kartların arkasına saklandı mı.
+    private(set) var isHidden = false
+    /// Mırıldanıyor mu — görünüm minik nota işaretleri çıkarıyor.
+    private(set) var isHumming = false
+    /// Söylemek istediği şeyin havuzu; görünüm alıp cümleye çeviriyor.
+    private(set) var pendingSpeech: KenLinePool?
+    /// Ken'in kendi iç havası: -1 (ağır) ... 1 (neşeli). Ne yapacağını değil,
+    /// NASIL yapacağını belirliyor — hareketin genliği, mırıltının tonu.
+    private(set) var mood: Double = 0.35
+
     /// Sahne boyutu bilinmeden fizik çalışmaz; ilk çizimde set ediliyor.
     private(set) var stage: CGSize = .zero
 
@@ -64,10 +76,25 @@ final class KenWorld {
     private var activityUntil: Date?
     private var nextDecisionAt = Date()
     private var walkTargetX: CGFloat?
-    private var goingHome = false
     private var hardLandingPending = false
     private var pauseCount = 0
     private var lastSaveAt = Date.distantPast
+
+    // MARK: Beyin
+    /// Dürtüler 0...1 arası dolar; en baskın olan hangi sahnenin oynayacağını
+    /// belirler. Rastgele seçim yerine sebepli davranış — "bugün niye hep
+    /// kulübede" sorusunun bir cevabı olsun diye.
+    private var drives: [KenDrive: Double] = [.sleep: 0.1, .boredom: 0.3, .closeness: 0.2, .curiosity: 0.1]
+    private var scene: KenScene?
+    private var beatIndex = 0
+    private var beatUntil: Date?
+    private var gazeTarget = CGPoint(x: 0, y: 0)
+    private var gazeHoldUntil: Date?
+    private var moodDriftAt = Date()
+    private var isRunning = false
+    private var lastSceneDrive: KenDrive?
+    /// Dışarıdan beslenen ton (sizin ruh haliniz) — Ken'in havasını etkiler.
+    var externalTone: Double?
 
     private enum K {
         static let gravity: CGFloat = 2400
@@ -130,7 +157,11 @@ final class KenWorld {
             activity = .held
             activityUntil = nil
             walkTargetX = nil
-            goingHome = false
+            // Elindeyken sahne oynamaz — bıraktığında yenisi başlar.
+            scene = nil
+            isHidden = false
+            isHumming = false
+            isRunning = false
         }
         velocity = .zero
         position = point
@@ -151,16 +182,22 @@ final class KenWorld {
     /// Kısa süreli bir tepki pozu oynat (olay tetikleri buradan geçiyor).
     func react(_ behavior: KenBehavior, seconds: TimeInterval = 2.6) {
         guard activity != .held else { return }
+        // Olay tepkisi sahneyi keser — Ken ne yapıyorsa bırakıp size döner.
+        scene = nil
+        isHidden = false
+        isHumming = false
+        isRunning = false
         activity = .reacting(behavior)
         activityUntil = Date().addingTimeInterval(seconds)
         walkTargetX = nil
         velocity.dx = 0
+        drives[.curiosity] = 0
     }
 
     /// Sadece boştaysa tepki ver — art arda gelen küçük olaylarda Ken'in
     /// yanıp sönen bir bildirime dönüşmemesi için.
     func reactIfResting(_ behavior: KenBehavior, seconds: TimeInterval = 2.6) {
-        guard activity == .resting || activity == .walking else { return }
+        guard activity == .resting || activity == .walking || scene != nil else { return }
         react(behavior, seconds: seconds)
     }
 
@@ -176,6 +213,8 @@ final class KenWorld {
         let dt = CGFloat(min(max(elapsed, 0), 1.0 / 15))
         guard dt > 0 else { return }
 
+        updateDrives(dt, now: now)
+        updateGaze(dt, now: now)
         if activity != .held {
             integrate(dt)
             updateActivity(now: now)
@@ -194,7 +233,9 @@ final class KenWorld {
                     velocity.dx = 0
                 } else {
                     let direction: CGFloat = target > position.x ? 1 : -1
-                    velocity.dx = direction * K.walkSpeed
+                    // Neşeliyken biraz daha çevik yürüyor; koşarken iki katı.
+                    let speed = K.walkSpeed * CGFloat(0.85 + mood * 0.25) * (isRunning ? 2.1 : 1)
+                    velocity.dx = direction * speed
                     facing = direction
                 }
             } else {
@@ -263,32 +304,29 @@ final class KenWorld {
             return
         }
 
+        // Sahne oynuyorsa adımları ilerlet.
+        if scene != nil {
+            let walkDone = activity == .walking && walkTargetX == nil
+            let timeUp = beatUntil.map { now >= $0 } ?? false
+            if walkDone || timeUp { advanceBeat(now) }
+            return
+        }
+
         switch activity {
         case .airborne:
             if settled {
                 activity = .resting
                 scheduleNextDecision(now)
             }
-        case .walking:
-            if walkTargetX == nil {
-                if goingHome {
-                    goingHome = false
-                    activity = .sleeping
-                    scheduleNextDecision(now, minimum: 40, maximum: 90)
-                } else {
-                    activity = .resting
-                    scheduleNextDecision(now)
-                }
-            }
-        case .resting, .sleeping:
+        case .resting, .sleeping, .walking:
             if now >= nextDecisionAt { decide(now) }
         default:
             break
         }
     }
 
-    /// Faz A'nın basit gündemi: çoğunlukla dinlen, arada yürü, gece eve git.
-    /// İhtiyaç sayaçları (uyku/can sıkıntısı/yakınlık/merak) bir sonraki fazda.
+    /// Sahne seçimi: dürtüler doldukça baskın olan kategori öne çıkıyor.
+    /// Rastgele değil sebepli — aynı sahne farklı ruh hâlinde farklı oynanıyor.
     private func decide(_ now: Date) {
         guard pauseCount == 0 else {
             scheduleNextDecision(now)
@@ -297,33 +335,183 @@ final class KenWorld {
         let hour = Calendar.current.component(.hour, from: now)
         let isNight = hour >= 23 || hour < 6
 
-        if isNight, activity != .sleeping, Double.random(in: 0...1) < 0.7 {
-            goingHome = true
-            walkTargetX = homeX
-            activity = .walking
-            return
+        var candidates: [(KenScene, Double)] = []
+        for candidate in KenScenes.all {
+            if candidate.nightOnly, !isNight { continue }
+            if candidate.dayOnly, isNight { continue }
+            let drive = drives[candidate.drive] ?? 0
+            // Dürtü ne kadar doluysa o kategorinin sahneleri o kadar olası.
+            candidates.append((candidate, candidate.weight * (0.15 + drive * 2)))
         }
-        if activity == .sleeping {
-            if isNight {
-                scheduleNextDecision(now, minimum: 40, maximum: 90)
-                return
-            }
-            activity = .resting
-            scheduleNextDecision(now, minimum: 3, maximum: 8)
-            return
-        }
-        if Double.random(in: 0...1) < 0.6 {
-            goingHome = false
-            walkTargetX = CGFloat.random(in: K.sideMargin...max(K.sideMargin, stage.width - K.sideMargin))
-            activity = .walking
-        } else {
-            activity = .resting
+        guard let picked = Self.weightedPick(candidates) else {
             scheduleNextDecision(now)
+            return
         }
+        start(scene: picked, now: now)
+    }
+
+    private func start(scene picked: KenScene, now: Date) {
+        scene = picked
+        lastSceneDrive = picked.drive
+        beatIndex = 0
+        beatUntil = nil
+        beginCurrentBeat(now)
+    }
+
+    /// Sahnenin o anki adımını uygular. Adım bitince bir sonrakine geçilir.
+    private func beginCurrentBeat(_ now: Date) {
+        guard let scene, beatIndex < scene.beats.count else {
+            finishScene(now)
+            return
+        }
+        switch scene.beats[beatIndex] {
+        case .walk(let anchor):
+            walkTargetX = position(of: anchor).x
+            activity = .walking
+            beatUntil = now.addingTimeInterval(12)   // emniyet: takılırsa geç
+
+        case .run(let anchor):
+            walkTargetX = position(of: anchor).x
+            activity = .walking
+            isRunning = true
+            beatUntil = now.addingTimeInterval(8)
+
+        case .pose(let behavior, let seconds):
+            activity = .reacting(behavior)
+            beatUntil = now.addingTimeInterval(seconds * moodPace)
+
+        case .wait(let seconds):
+            activity = .resting
+            beatUntil = now.addingTimeInterval(seconds * moodPace)
+
+        case .say(let pool):
+            pendingSpeech = pool
+            beatUntil = now   // anında sonraki adıma
+
+        case .hum(let seconds):
+            isHumming = true
+            beatUntil = now.addingTimeInterval(seconds)
+
+        case .look(let x, let y, let seconds):
+            gazeTarget = CGPoint(x: x, y: y)
+            gazeHoldUntil = now.addingTimeInterval(seconds)
+            beatUntil = now.addingTimeInterval(seconds)
+
+        case .hide(let seconds):
+            isHidden = true
+            activity = .resting
+            beatUntil = now.addingTimeInterval(seconds)
+
+        case .peekOut(let seconds):
+            isHidden = false
+            activity = .reacting(.peek)
+            beatUntil = now.addingTimeInterval(seconds)
+
+        case .leaveTrace, .cleanTrace:
+            // İzler görünüm katmanının işi; motor sadece haber veriyor.
+            beatUntil = now
+        }
+    }
+
+    private func advanceBeat(_ now: Date) {
+        isHumming = false
+        isRunning = false
+        beatIndex += 1
+        beginCurrentBeat(now)
+    }
+
+    private func finishScene(_ now: Date) {
+        scene = nil
+        isHidden = false
+        isHumming = false
+        isRunning = false
+        walkTargetX = nil
+        activity = .resting
+        satisfyDrive(of: nil)
+        scheduleNextDecision(now, minimum: 1.5, maximum: 5)
+    }
+
+    /// Sahne bitince ilgili dürtü boşalıyor.
+    private func satisfyDrive(of drive: KenDrive?) {
+        guard let drive = drive ?? lastSceneDrive else { return }
+        drives[drive] = max(0, (drives[drive] ?? 0) - 0.75)
+        lastSceneDrive = nil
+    }
+
+    /// Dürtüleri zamanla doldurur ve Ken'in havasını yavaşça sürükler.
+    private func updateDrives(_ dt: CGFloat, now: Date) {
+        let hour = Calendar.current.component(.hour, from: now)
+        let isNight = hour >= 23 || hour < 6
+        let seconds = Double(dt)
+
+        drives[.sleep, default: 0] += seconds * (isNight ? 0.012 : 0.002)
+        drives[.boredom, default: 0] += seconds * 0.010
+        drives[.closeness, default: 0] += seconds * 0.006
+        drives[.curiosity, default: 0] += seconds * 0.001
+        for key in drives.keys {
+            drives[key] = Swift.min(1, drives[key] ?? 0)
+        }
+
+        // Ruh hali: sizin tonunuz + kendi bağımsız dalgalanması.
+        guard now.timeIntervalSince(moodDriftAt) > 20 else { return }
+        moodDriftAt = now
+        // externalTone 0 (sıcak/iyi) ... 1 (soğuk/zor) geliyor; mood ters yönde.
+        let fromYou = externalTone.map { 1 - $0 * 1.6 } ?? mood
+        let ownDrift = Double.random(in: -0.12...0.12)
+        mood = Swift.max(-1, Swift.min(1, mood * 0.75 + fromYou * 0.25 + ownDrift * 0.35))
+    }
+
+    /// Neşeliyken tempolu, ağırken uzun — aynı sahne iki farklı Ken.
+    private var moodPace: Double {
+        1.25 - mood * 0.35
     }
 
     private func scheduleNextDecision(_ now: Date, minimum: TimeInterval = 5, maximum: TimeInterval = 16) {
         nextDecisionAt = now.addingTimeInterval(.random(in: minimum...maximum))
+    }
+
+    // MARK: - Çapalar ve bakış
+
+    /// Çapanın ekrandaki karşılığı. Ken artık "rastgele bir x"e değil,
+    /// anlamı olan yerlere gidiyor.
+    func position(of anchor: KenAnchor) -> CGPoint {
+        let floor = floorY
+        switch anchor {
+        case .home: return housePoint
+        case .ceiling: return CGPoint(x: stage.width * CGFloat.random(in: 0.3...0.7), y: K.ceiling)
+        case .tabBar: return CGPoint(x: stage.width * CGFloat.random(in: 0.25...0.75), y: floor)
+        case .leftEdge: return CGPoint(x: K.sideMargin + 6, y: floor)
+        case .rightEdge: return CGPoint(x: Swift.max(K.sideMargin, stage.width - K.sideMargin - 6), y: floor)
+        case .center: return CGPoint(x: stage.width * 0.5, y: floor)
+        case .wherever:
+            return CGPoint(x: CGFloat.random(in: K.sideMargin...Swift.max(K.sideMargin, stage.width - K.sideMargin)), y: floor)
+        }
+    }
+
+    /// Bakış yumuşak şekilde hedefe yaklaşıyor — ani sıçrama cansız durur.
+    private func updateGaze(_ dt: CGFloat, now: Date) {
+        if let hold = gazeHoldUntil, now >= hold {
+            gazeHoldUntil = nil
+            gazeTarget = .zero
+        }
+        let k = Swift.min(1, Double(dt) * 4)
+        gaze.x += (gazeTarget.x - gaze.x) * CGFloat(k)
+        gaze.y += (gazeTarget.y - gaze.y) * CGFloat(k)
+    }
+
+    /// Kullanıcı bir şey yaptı — Ken ona baksın. "İlgilenmek" sana değil,
+    /// SENİN YAPTIĞIN ŞEYE bakmak demek; hep öne bakması onu maskot yapıyordu.
+    func lookAt(screenPoint: CGPoint, seconds: TimeInterval = 2.5) {
+        guard stage.width > 0 else { return }
+        let dx = (screenPoint.x - position.x) / (stage.width * 0.5)
+        let dy = (screenPoint.y - position.y) / (stage.height * 0.5)
+        gazeTarget = CGPoint(x: Swift.max(-1, Swift.min(1, dx)), y: Swift.max(-1, Swift.min(1, dy)))
+        gazeHoldUntil = Date().addingTimeInterval(seconds)
+    }
+
+    /// Görünüm cümleyi aldıktan sonra çağırıyor.
+    func consumeSpeech() {
+        pendingSpeech = nil
     }
 
     // MARK: - Kulübe
@@ -333,7 +521,6 @@ final class KenWorld {
         CGPoint(x: max(K.sideMargin, stage.width - 52), y: stage.height - K.floorInset)
     }
 
-    private var homeX: CGFloat { housePoint.x - 6 }
 
     /// Zemin çizgisi — kulübe ve Ken aynı hatta bassın diye görünüm tarafı da kullanıyor.
     var floorY: CGFloat { stage.height - K.floorInset }

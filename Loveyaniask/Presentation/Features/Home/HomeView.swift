@@ -57,8 +57,6 @@ struct HomeView: View {
                         .buttonStyle(.plain)
                     }
 
-                    KenHomeNoteCard(companion: kenCompanion)
-
                     SpecialDaysSection(viewModel: specialDaysViewModel)
 
                     QuickNotesSection(viewModel: quickNotesViewModel, kenCompanion: kenCompanion)

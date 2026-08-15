@@ -96,6 +96,13 @@ struct KenStage: View {
                             .allowsHitTesting(false)
                     }
 
+                    if world.isHumming {
+                        hummingNotes
+                            .position(x: characterCenter.x + size * 0.42,
+                                      y: characterCenter.y - characterHeight * 0.45)
+                            .allowsHitTesting(false)
+                    }
+
                     KenCharacterView(
                         behavior: world.activity.behavior,
                         tone: companion.moodTone,
@@ -105,6 +112,10 @@ struct KenStage: View {
                     .frame(width: size, height: characterHeight)
                     .position(characterCenter)
                     .scaleEffect(tapSquish)
+                    // Saklandığında görünmüyor — kartların arkasına gerçekten
+                    // geçmesi (ayrı çizim katmanı) sonraki adımda.
+                    .opacity(world.isHidden ? 0 : 1)
+                    .animation(.easeInOut(duration: 0.25), value: world.isHidden)
                     .onTapGesture { handleTap() }
                     .gesture(dragGesture)
                 }
@@ -113,6 +124,7 @@ struct KenStage: View {
             .ignoresSafeArea()
             .onAppear {
                 world.setStage(geo.size)
+                world.externalTone = companion.moodTone
                 if isEnabled { world.run() }
                 if !companion.triggerIntroductionIfNeeded() {
                     companion.markAppOpenedIfNeeded(daysTogether: daysTogether)
@@ -126,6 +138,14 @@ struct KenStage: View {
             }
             .onChange(of: world.activity) { _, newValue in
                 speakOnReaction(newValue)
+            }
+            .onChange(of: companion.moodTone) { _, tone in
+                world.externalTone = tone
+            }
+            .onChange(of: world.pendingSpeech) { _, pool in
+                guard let pool else { return }
+                speak(KenLineSelector.line(for: pool, context: lineContext))
+                world.consumeSpeech()
             }
         }
         .sensoryFeedback(.impact(weight: .light, intensity: 0.6), trigger: tapTick)
@@ -191,6 +211,7 @@ struct KenStage: View {
     /// açar. 3 saniyede 4+ dokunuş "gıcık oldum" tepkisini garanti eder.
     private func handleTap() {
         tapTick += 1
+        world.lookAt(screenPoint: world.position, seconds: 2.5)
         withAnimation(.easeOut(duration: 0.12)) { tapSquish = 0.85 }
         withAnimation(.spring(response: 0.3, dampingFraction: 0.4).delay(0.12)) { tapSquish = 1 }
 
@@ -251,6 +272,26 @@ struct KenStage: View {
     private func bubbleX(in stage: CGSize, width: CGFloat) -> CGFloat {
         let half = width / 2 + 12
         return min(max(world.position.x, half), max(half, stage.width - half))
+    }
+
+    /// Mırıldanırken havaya süzülen nota işaretleri. Ruh hali neşeliyse
+    /// tempolu ve yukarı, ağırsa yavaş ve alçak süzülüyorlar.
+    private var hummingNotes: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 20.0)) { context in
+            let t = context.date.timeIntervalSinceReferenceDate
+            let pace = 1.9 - world.mood * 0.6
+            ZStack {
+                ForEach(0..<3, id: \.self) { index in
+                    let u = ((t / pace) + Double(index) / 3).truncatingRemainder(dividingBy: 1)
+                    Text(index % 2 == 0 ? "♪" : "♫")
+                        .font(.system(size: 11 + CGFloat(index % 2) * 3, weight: .medium))
+                        .foregroundStyle(AppColors.primary.opacity(0.85 * (1 - u)))
+                        .offset(x: CGFloat(u) * 14 + CGFloat(index) * 3,
+                                y: -CGFloat(u) * CGFloat(26 + world.mood * 10))
+                }
+            }
+        }
+        .frame(width: 40, height: 44)
     }
 
     private func speechBubble(_ text: String, width: CGFloat) -> some View {
