@@ -20,8 +20,6 @@ import CoreGraphics
 /// Ken'i ekranın üstünde yüzen bir şey olmaktan çıkarıp uygulamanın
 /// içinde yaşayan bir şeye çeviren fark bu.
 enum KenAnchor: Equatable {
-    /// Kulübe — uyku ve saklanma yeri.
-    case home
     /// Ekranın üst kenarı; oradan sarkar.
     case ceiling
     /// Alt bar hizası; oraya tüner.
@@ -102,134 +100,164 @@ struct KenScene: Equatable {
     }
 }
 
-/// Sahne kütüphanesi. Buraya eklemek serbest ve ucuz — motor değişmiyor.
+/// Sahne kütüphanesi.
+///
+/// TASARIM KURALI: Ken uygulamaya 15-20 saniyeliğine bakan birine "kendi
+/// işiyle meşgul" görünmeli. Bu yüzden sahneler KISA ve HAREKETLİ:
+/// - her sahnede en az bir yürüme/tırmanma var (hareket = meşguliyet sinyali)
+/// - duruş pozları 2.5 saniyeyi geçmiyor (uzun poz ölü zaman demek)
+/// - bir sahne 6-12 saniye sürüyor, sonra hemen yenisi başlıyor
+///
+/// İlk sürümde pozlar 5-8 saniyeydi ve Ken çoğu zaman oturuyordu; kısa bir
+/// ziyarette hiçbir şey yapmıyor gibi görünüyordu.
 enum KenScenes {
     static let all: [KenScene] = sleep + boredom + closeness + curiosity
 
-    // MARK: - Uyku
+    // MARK: - Uyku (kısa kestirmeler; gece uzuyor)
 
     private static let sleep: [KenScene] = [
-        KenScene("eve-git-uyu", .sleep, [
-            .walk(to: .home),
-            .pose(.stretch, seconds: 2.2),
+        KenScene("kose-kestir", .sleep, [
+            .walk(to: .wherever),
+            .pose(.stretch, seconds: 1.6),
             .say(.sleepy),
-            .pose(.snooze, seconds: 40)
+            .pose(.snooze, seconds: 9)
         ], nightOnly: true, weight: 2),
 
-        KenScene("kestirme", .sleep, [
-            .pose(.stretch, seconds: 1.8),
-            .pose(.snooze, seconds: 18)
+        KenScene("kisa-sekerleme", .sleep, [
+            .pose(.stretch, seconds: 1.4),
+            .pose(.snooze, seconds: 5),
+            .pose(.stretch, seconds: 1.2),
+            .walk(to: .wherever)
         ]),
 
         KenScene("esne-gerin", .sleep, [
-            .pose(.stretch, seconds: 3.5),
-            .hum(seconds: 3)
+            .pose(.stretch, seconds: 2.2),
+            .hum(seconds: 1.8),
+            .walk(to: .wherever)
         ])
     ]
 
-    // MARK: - Can sıkıntısı: kendi kendine oyun
+    // MARK: - Can sıkıntısı: kendi kendine oyun (en sık görülen grup)
 
     private static let boredom: [KenScene] = [
         KenScene("kuyruk-kovala", .boredom, [
-            .pose(.bounce, seconds: 2.0),
-            .look(x: 0.9, y: 0.4, seconds: 0.6),
-            .pose(.wander, seconds: 1.4),
-            .pose(.sit, seconds: 1.5),
-            .hum(seconds: 2.5)
-        ], weight: 1.4),
+            .look(x: 0.9, y: 0.4, seconds: 0.5),
+            .pose(.bounce, seconds: 1.6),
+            .walk(to: .wherever),
+            .pose(.bounce, seconds: 1.2),
+            .hum(seconds: 1.5)
+        ], weight: 1.6),
 
         KenScene("tavana-sark", .boredom, [
             .walk(to: .ceiling),
-            .pose(.dangle, seconds: 6),
-            .hum(seconds: 3),
-            .pose(.held, seconds: 0.6),
-            .pose(.dizzy, seconds: 1.2),
-            .pose(.sit, seconds: 1.5)
-        ], weight: 1.2),
+            .pose(.dangle, seconds: 3),
+            .hum(seconds: 1.8),
+            .pose(.held, seconds: 0.5),
+            .pose(.dizzy, seconds: 1),
+            .walk(to: .wherever)
+        ], weight: 1.4),
 
         KenScene("kartin-arkasina-saklan", .boredom, [
             .walk(to: .behindCards),
-            .look(x: 0, y: -0.4, seconds: 0.8),
-            .hide(seconds: 3.5),
-            .peekOut(seconds: 2.0),
-            .hide(seconds: 1.5),
-            .pose(.peek, seconds: 1.5)
-        ], weight: 1.5),
+            .hide(seconds: 2),
+            .peekOut(seconds: 1.4),
+            .hide(seconds: 1.2),
+            .pose(.peek, seconds: 1.2),
+            .walk(to: .wherever)
+        ], weight: 1.6),
 
-        KenScene("kenarda-dolan", .boredom, [
-            .walk(to: .leftEdge),
-            .pose(.sit, seconds: 2),
-            .hum(seconds: 3),
-            .walk(to: .rightEdge),
-            .pose(.peek, seconds: 2)
-        ]),
+        KenScene("bastan-basa-kos", .boredom, [
+            .run(to: .leftEdge),
+            .pose(.peek, seconds: 1),
+            .run(to: .rightEdge),
+            .pose(.peek, seconds: 1),
+            .hum(seconds: 1.5)
+        ], weight: 1.5),
 
         KenScene("tab-bara-tune", .boredom, [
             .walk(to: .tabBar),
-            .pose(.sit, seconds: 5),
-            .look(x: 0, y: -0.6, seconds: 2),
-            .hum(seconds: 3)
-        ]),
+            .pose(.sit, seconds: 2),
+            .look(x: 0, y: -0.6, seconds: 1.2),
+            .hum(seconds: 1.5),
+            .walk(to: .wherever)
+        ], weight: 1.2),
+
+        KenScene("zikzak-dolan", .boredom, [
+            .walk(to: .wherever),
+            .look(x: -0.7, y: 0, seconds: 0.5),
+            .walk(to: .wherever),
+            .look(x: 0.7, y: 0, seconds: 0.5),
+            .walk(to: .wherever)
+        ], weight: 1.6),
 
         KenScene("iz-birak", .boredom, [
             .walk(to: .wherever),
-            .pose(.sit, seconds: 1.5),
             .leaveTrace,
-            .pose(.bounce, seconds: 1.2),
-            .say(.playful)
-        ], weight: 0.6),
+            .pose(.bounce, seconds: 1),
+            .say(.playful),
+            .walk(to: .wherever)
+        ], weight: 0.7),
 
         KenScene("izini-temizle", .boredom, [
             .walk(to: .wherever),
-            .pose(.sit, seconds: 1.2),
             .cleanTrace,
-            .look(x: -0.6, y: 0, seconds: 0.5),
-            .look(x: 0.6, y: 0, seconds: 0.5),
-            .pose(.wander, seconds: 1.5)
-        ], weight: 0.8)
+            .look(x: -0.6, y: 0, seconds: 0.4),
+            .look(x: 0.6, y: 0, seconds: 0.4),
+            .walk(to: .wherever)
+        ], weight: 0.9),
+
+        KenScene("tirman-in", .boredom, [
+            .walk(to: .ceiling),
+            .pose(.dangle, seconds: 1.6),
+            .pose(.held, seconds: 0.4),
+            .pose(.dizzy, seconds: 0.8),
+            .run(to: .wherever)
+        ], weight: 1.1)
     ]
 
     // MARK: - Yakınlık
 
     private static let closeness: [KenScene] = [
-        KenScene("yanina-gel", .closeness, [
-            .walk(to: .center),
-            .look(x: 0, y: -0.5, seconds: 1.5),
+        KenScene("yanina-kos", .closeness, [
+            .run(to: .center),
+            .look(x: 0, y: -0.5, seconds: 1),
             .say(.affection),
-            .pose(.sit, seconds: 5)
-        ], weight: 1.5),
+            .pose(.bounce, seconds: 1.2),
+            .pose(.sit, seconds: 2)
+        ], weight: 1.6),
 
         KenScene("dikkat-cek", .closeness, [
-            .pose(.greet, seconds: 2.2),
+            .pose(.greet, seconds: 1.8),
             .say(.affection),
-            .pose(.bounce, seconds: 1.6),
-            .pose(.sit, seconds: 2)
-        ]),
+            .pose(.bounce, seconds: 1.2),
+            .walk(to: .wherever)
+        ], weight: 1.3),
 
-        KenScene("sessizce-esllik", .closeness, [
+        KenScene("sessizce-eslik", .closeness, [
             .walk(to: .center),
-            .pose(.sit, seconds: 8),
-            .hum(seconds: 4),
-            .look(x: 0, y: -0.4, seconds: 2)
-        ], weight: 1.2)
+            .pose(.sit, seconds: 2.5),
+            .hum(seconds: 2),
+            .look(x: 0, y: -0.4, seconds: 1.2),
+            .walk(to: .wherever)
+        ])
     ]
 
     // MARK: - Merak
 
     private static let curiosity: [KenScene] = [
         KenScene("ekrana-bak", .curiosity, [
-            .walk(to: .center),
-            .look(x: 0, y: -0.7, seconds: 2.5),
+            .run(to: .center),
+            .look(x: 0, y: -0.7, seconds: 1.5),
             .say(.curious),
-            .pose(.sit, seconds: 2)
-        ], weight: 1.3),
+            .walk(to: .wherever)
+        ], weight: 1.4),
 
         KenScene("etrafi-kolacan", .curiosity, [
-            .pose(.peek, seconds: 1.5),
-            .look(x: -0.8, y: 0, seconds: 1),
-            .look(x: 0.8, y: 0, seconds: 1),
-            .pose(.wander, seconds: 2),
+            .pose(.peek, seconds: 1),
+            .look(x: -0.8, y: 0, seconds: 0.7),
+            .look(x: 0.8, y: 0, seconds: 0.7),
+            .walk(to: .wherever),
             .say(.thought)
-        ])
+        ], weight: 1.2)
     ]
 }

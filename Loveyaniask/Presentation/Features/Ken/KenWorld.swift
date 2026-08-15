@@ -143,6 +143,11 @@ final class KenWorld {
     func run() {
         guard loop == nil else { return }
         lastTick = nil
+        // Açılışta Ken beklemede olmasın: dürtüleri dolu başlat ve hemen bir
+        // sahneye gir. Kullanıcı onu bir işin ORTASINDA yakalamalı.
+        drives[.boredom] = 0.9
+        drives[.closeness] = 0.6
+        nextDecisionAt = Date()
         loop = Task { @MainActor [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: K.tickInterval)
@@ -217,7 +222,8 @@ final class KenWorld {
         react(behavior, seconds: seconds)
     }
 
-    var isSleeping: Bool { activity == .sleeping }
+    /// Uyuyor mu — artık sahne pozundan anlaşılıyor (kulübe kalktı).
+    var isSleeping: Bool { activity.behavior == .snooze }
 
     // MARK: - Simülasyon
 
@@ -490,7 +496,7 @@ final class KenWorld {
         depthTarget = 0
         activity = .resting
         satisfyDrive(of: nil)
-        scheduleNextDecision(now, minimum: 1.5, maximum: 5)
+        scheduleNextDecision(now, minimum: 0.2, maximum: 1.2)
     }
 
     /// Sahne bitince ilgili dürtü boşalıyor.
@@ -528,7 +534,7 @@ final class KenWorld {
         1.25 - mood * 0.35
     }
 
-    private func scheduleNextDecision(_ now: Date, minimum: TimeInterval = 5, maximum: TimeInterval = 16) {
+    private func scheduleNextDecision(_ now: Date, minimum: TimeInterval = 0.3, maximum: TimeInterval = 1.5) {
         nextDecisionAt = now.addingTimeInterval(.random(in: minimum...maximum))
     }
 
@@ -539,7 +545,6 @@ final class KenWorld {
     func position(of anchor: KenAnchor) -> CGPoint {
         let floor = floorY
         switch anchor {
-        case .home: return housePoint
         case .ceiling: return CGPoint(x: stage.width * CGFloat.random(in: 0.3...0.7), y: K.ceiling)
         case .tabBar: return CGPoint(x: stage.width * CGFloat.random(in: 0.25...0.75), y: floor)
         case .leftEdge: return CGPoint(x: K.sideMargin + 6, y: floor)
@@ -557,7 +562,6 @@ final class KenWorld {
     func depth(of anchor: KenAnchor) -> CGFloat {
         switch anchor {
         case .behindCards: return 1
-        case .home: return 0.25
         default: return 0
         }
     }
@@ -588,13 +592,7 @@ final class KenWorld {
         pendingSpeech = nil
     }
 
-    // MARK: - Kulübe
-
-    /// Kulübenin ayak noktası — sağ altta, zeminin üstünde.
-    var housePoint: CGPoint {
-        CGPoint(x: max(K.sideMargin, stage.width - 52), y: stage.height - K.floorInset)
-    }
-
+    // MARK: - Zemin
 
     /// Zemin çizgisi — kulübe ve Ken aynı hatta bassın diye görünüm tarafı da kullanıyor.
     var floorY: CGFloat { stage.height - K.floorInset }

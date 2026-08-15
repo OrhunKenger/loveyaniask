@@ -34,7 +34,6 @@ struct KenStage: View {
     @State private var annoyedTick = 0
 
     private let size: CGFloat = 56
-    private let houseSize = CGSize(width: 62, height: 54)
     private static let stageSpace = "ken.stage"
 
     private static let introText = "Merhaba, ben Ken 🐾\nArtık ailenizin yeni üyesiyim — evcil dijital dostunuzum diyebilirsiniz.\nSevincinizle sevinir, üzüntünüzle üzülürüm. Burada yaşıyorum artık 💗"
@@ -74,14 +73,8 @@ struct KenStage: View {
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .topLeading) {
-                // Kulübe ve balonlar dokunmayı yutmasın — altlarındaki kartlar
+                // Balonlar dokunmayı yutmasın — altlarındaki kartlar
                 // çalışmaya devam etsin. Sadece Ken'in kendisi dokunulabilir.
-                KenHouseView(isOccupied: world.isSleeping)
-                    .frame(width: houseSize.width, height: houseSize.height)
-                    .position(x: world.housePoint.x, y: world.housePoint.y - houseSize.height / 2)
-                    .opacity(isEnabled ? 1 : 0)
-                    .allowsHitTesting(false)
-
                 if isEnabled {
                     if case .reacting(.introduce) = world.activity {
                         speechBubble(Self.introText, width: 240)
