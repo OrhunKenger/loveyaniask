@@ -28,7 +28,7 @@ struct KenBackdrop: View {
             let origin = geo.frame(in: .global).origin
             let height = size * 1.15
 
-            if world.isBehind {
+            if world.isBehind, world.isOnScreen {
                 KenCharacterView(
                     behavior: world.activity.behavior,
                     tone: companion.moodTone,
@@ -38,7 +38,7 @@ struct KenBackdrop: View {
                 .scaleEffect(world.depthScale)
                 .opacity(1 - world.depthDim)
                 .position(
-                    x: world.position.x - origin.x,
+                    x: world.screenX - origin.x,
                     y: world.position.y - height / 2 - origin.y
                 )
             }

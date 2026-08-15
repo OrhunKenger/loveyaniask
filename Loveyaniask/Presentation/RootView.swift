@@ -58,6 +58,10 @@ struct RootView: View {
             // Ken her sekmede yaşıyor — harita hariç. Orada tam ekran bir
             // etkileşim var, Ken hem yolu keser hem de fırlatılacak bir yer değil.
             KenStage(companion: kenCompanion, isEnabled: selectedTab != .places)
+                .onAppear { kenCompanion.world.setCurrentTab(selectedTab.rawValue) }
+                .onChange(of: selectedTab) { _, tab in
+                    kenCompanion.world.setCurrentTab(tab.rawValue)
+                }
         }
     }
 }

@@ -66,8 +66,10 @@ struct KenStage: View {
     private var characterHeight: CGFloat { size * 1.15 }
 
     /// Ken'in gövde merkezinin ekran konumu — dünyada saklanan nokta ayak hizası.
+    /// Ken'in dünya konumunun BU ekrandaki karşılığı. Dünya beş sekme
+    /// genişliğinde; kullanıcı hangi sekmedeyse o pencereden bakıyoruz.
     private var characterCenter: CGPoint {
-        CGPoint(x: world.position.x, y: world.position.y - characterHeight / 2)
+        CGPoint(x: world.screenX, y: world.position.y - characterHeight / 2)
     }
 
     var body: some View {
@@ -97,7 +99,7 @@ struct KenStage: View {
                     }
 
                     // Arkadayken burada değil, KenBackdrop'ta çiziliyor.
-                    if !world.isBehind {
+                    if !world.isBehind, world.isOnScreen {
                         KenCharacterView(
                             behavior: world.activity.behavior,
                             tone: companion.moodTone,
@@ -170,14 +172,14 @@ struct KenStage: View {
                 if !isGrabbing {
                     isGrabbing = true
                     grabOffset = CGSize(
-                        width: world.position.x - value.startLocation.x,
+                        width: world.screenX - value.startLocation.x,
                         height: world.position.y - value.startLocation.y
                     )
                     tapFadeTask?.cancel()
                     tapLine = nil
                     tapLineOpacity = 0
                 }
-                world.grab(at: CGPoint(
+                world.grab(atScreenPoint: CGPoint(
                     x: value.location.x + grabOffset.width,
                     y: value.location.y + grabOffset.height
                 ))
@@ -205,7 +207,7 @@ struct KenStage: View {
     /// açar. 3 saniyede 4+ dokunuş "gıcık oldum" tepkisini garanti eder.
     private func handleTap() {
         tapTick += 1
-        world.lookAt(screenPoint: world.position, seconds: 2.5)
+        world.lookAt(screenPoint: CGPoint(x: world.screenX, y: world.position.y), seconds: 2.5)
         withAnimation(.easeOut(duration: 0.12)) { tapSquish = 0.85 }
         withAnimation(.spring(response: 0.3, dampingFraction: 0.4).delay(0.12)) { tapSquish = 1 }
 
@@ -265,7 +267,7 @@ struct KenStage: View {
     /// Balon ekran kenarından taşmasın diye Ken'in x'i sınırlanıyor.
     private func bubbleX(in stage: CGSize, width: CGFloat) -> CGFloat {
         let half = width / 2 + 12
-        return min(max(world.position.x, half), max(half, stage.width - half))
+        return min(max(world.screenX, half), max(half, stage.width - half))
     }
 
     /// Mırıldanırken havaya süzülen nota işaretleri. Ruh hali neşeliyse

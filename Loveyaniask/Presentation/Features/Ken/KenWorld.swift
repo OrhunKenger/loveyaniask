@@ -77,8 +77,23 @@ final class KenWorld {
     /// NASIL yapacağını belirliyor — hareketin genliği, mırıltının tonu.
     private(set) var mood: Double = 0.35
 
-    /// Sahne boyutu bilinmeden fizik çalışmaz; ilk çizimde set ediliyor.
+    /// Tek bir ekranın boyutu. Ken'in dünyası bundan çok daha geniş.
     private(set) var stage: CGSize = .zero
+
+    /// Ken'in dünyası TÜM SEKMELER boyunca uzanıyor: kütüphanenin en solundan
+    /// haritanın en sağına. x dünya uzayında; hangi sekmede olduğu buradan çıkıyor.
+    private(set) var currentTab: Int = 2
+    private let tabCount = 5
+    var worldWidth: CGFloat { stage.width * CGFloat(tabCount) }
+    /// Ken'in bulunduğu sekmenin indeksi.
+    var tabIndex: Int {
+        guard stage.width > 0 else { return currentTab }
+        return Swift.max(0, Swift.min(tabCount - 1, Int(position.x / stage.width)))
+    }
+    /// O anki ekranda nereye denk geliyor (ekran dışındaysa taşan değer döner).
+    var screenX: CGFloat { position.x - CGFloat(currentTab) * stage.width }
+    /// Kullanıcının baktığı sekmede mi.
+    var isOnScreen: Bool { tabIndex == currentTab }
 
     private var lastTick: Date?
     private var loop: Task<Void, Never>?
@@ -110,10 +125,11 @@ final class KenWorld {
 
     private enum K {
         static let gravity: CGFloat = 2400
-        /// Zeminin ekranın altından yüksekliği — tab bar'ın üstünde dursun diye.
-        static let floorInset: CGFloat = 78
-        static let ceiling: CGFloat = 110
-        static let sideMargin: CGFloat = 28
+        /// Sınırlar bilerek çok serbest: telefonun en üstünden en altına,
+        /// kütüphanenin en solundan haritanın en sağına.
+        static let floorInset: CGFloat = 12
+        static let ceiling: CGFloat = 14
+        static let sideMargin: CGFloat = 16
         static let floorBounce: CGFloat = 0.42
         static let wallBounce: CGFloat = 0.55
         static let walkSpeed: CGFloat = 54
@@ -127,6 +143,12 @@ final class KenWorld {
     private static let posYKey = "ken.world.y"
 
     // MARK: - Sahne ve döngü
+
+    /// Kullanıcı sekme değiştirdi — Ken'in dünya konumu değişmiyor, sadece
+    /// hangi pencereden baktığımız değişiyor.
+    func setCurrentTab(_ index: Int) {
+        currentTab = Swift.max(0, Swift.min(tabCount - 1, index))
+    }
 
     /// Ekran boyutu değiştiğinde (ilk çizim, döndürme) çağrılır.
     func setStage(_ size: CGSize) {
@@ -170,6 +192,12 @@ final class KenWorld {
     // MARK: - Etkileşim
 
     /// Parmakla tutuldu / sürükleniyor. `point` Ken'in olması gereken ayak noktası.
+    /// Parmak ekran uzayında; dünya uzayına çeviriyoruz.
+    func grab(atScreenPoint point: CGPoint) {
+        let world = CGPoint(x: point.x + CGFloat(currentTab) * stage.width, y: point.y)
+        grab(at: world)
+    }
+
     func grab(at point: CGPoint) {
         if activity != .held {
             activity = .held
@@ -314,7 +342,7 @@ final class KenWorld {
         }
 
         let minX = K.sideMargin
-        let maxX = max(minX, stage.width - K.sideMargin)
+        let maxX = max(minX, worldWidth - K.sideMargin)
         if position.x < minX {
             position.x = minX
             velocity.dx = abs(velocity.dx) * K.wallBounce
@@ -544,17 +572,37 @@ final class KenWorld {
     /// anlamı olan yerlere gidiyor.
     func position(of anchor: KenAnchor) -> CGPoint {
         let floor = floorY
+        // Çapalar kullanıcının baktığı sekmeye göre çözülüyor — Ken çoğunlukla
+        // orada olsun, arada bir komşu sekmeye taşsın.
+        let origin = CGFloat(currentTab) * stage.width
+        func onScreen(_ fraction: CGFloat) -> CGFloat { origin + stage.width * fraction }
+
         switch anchor {
-        case .ceiling: return CGPoint(x: stage.width * CGFloat.random(in: 0.3...0.7), y: K.ceiling)
-        case .tabBar: return CGPoint(x: stage.width * CGFloat.random(in: 0.25...0.75), y: floor)
-        case .leftEdge: return CGPoint(x: K.sideMargin + 6, y: floor)
-        case .rightEdge: return CGPoint(x: Swift.max(K.sideMargin, stage.width - K.sideMargin - 6), y: floor)
-        case .center: return CGPoint(x: stage.width * 0.5, y: floor)
+        case .ceiling:
+            return CGPoint(x: onScreen(CGFloat.random(in: 0.2...0.8)), y: K.ceiling)
+        case .tabBar:
+            return CGPoint(x: onScreen(CGFloat.random(in: 0.2...0.8)), y: floor)
+        case .leftEdge:
+            return CGPoint(x: onScreen(0.04), y: floor)
+        case .rightEdge:
+            return CGPoint(x: onScreen(0.96), y: floor)
+        case .center:
+            return CGPoint(x: onScreen(0.5), y: floor)
         case .behindCards:
-            // Kartların olduğu orta bant — arkasına geçilecek yer.
-            return CGPoint(x: stage.width * CGFloat.random(in: 0.25...0.75), y: stage.height * 0.45)
+            return CGPoint(x: onScreen(CGFloat.random(in: 0.25...0.75)), y: stage.height * 0.45)
         case .wherever:
-            return CGPoint(x: CGFloat.random(in: K.sideMargin...Swift.max(K.sideMargin, stage.width - K.sideMargin)), y: floor)
+            // Onda bir ihtimalle komşu sekmeye geçiyor; gerisi bu ekranda.
+            if Double.random(in: 0...1) < 0.12 {
+                let neighbour = currentTab + (Bool.random() ? 1 : -1)
+                let clamped = Swift.max(0, Swift.min(tabCount - 1, neighbour))
+                let x = CGFloat(clamped) * stage.width + stage.width * CGFloat.random(in: 0.2...0.8)
+                return CGPoint(x: x, y: CGFloat.random(in: (K.ceiling + 40)...floor))
+            }
+            // Yükseklik de serbest: her zaman zeminde olmasın.
+            let y = Double.random(in: 0...1) < 0.25
+                ? CGFloat.random(in: (K.ceiling + 30)...(floor - 60))
+                : floor
+            return CGPoint(x: onScreen(CGFloat.random(in: 0.08...0.92)), y: y)
         }
     }
 
@@ -581,7 +629,7 @@ final class KenWorld {
     /// SENİN YAPTIĞIN ŞEYE bakmak demek; hep öne bakması onu maskot yapıyordu.
     func lookAt(screenPoint: CGPoint, seconds: TimeInterval = 2.5) {
         guard stage.width > 0 else { return }
-        let dx = (screenPoint.x - position.x) / (stage.width * 0.5)
+        let dx = (screenPoint.x - screenX) / (stage.width * 0.5)
         let dy = (screenPoint.y - position.y) / (stage.height * 0.5)
         gazeTarget = CGPoint(x: Swift.max(-1, Swift.min(1, dx)), y: Swift.max(-1, Swift.min(1, dy)))
         gazeHoldUntil = Date().addingTimeInterval(seconds)
@@ -601,18 +649,18 @@ final class KenWorld {
 
     private func clampToStage() {
         guard stage != .zero else { return }
-        position.x = position.x.clamped(to: K.sideMargin...max(K.sideMargin, stage.width - K.sideMargin))
+        position.x = position.x.clamped(to: K.sideMargin...Swift.max(K.sideMargin, worldWidth - K.sideMargin))
         position.y = position.y.clamped(to: K.ceiling...max(K.ceiling, stage.height - K.floorInset))
     }
 
     private func restoredPosition(in size: CGSize) -> CGPoint {
         let defaults = UserDefaults.standard
         guard defaults.object(forKey: Self.posXKey) != nil else {
-            return CGPoint(x: size.width * 0.5, y: size.height - K.floorInset)
+            return CGPoint(x: size.width * (CGFloat(currentTab) + 0.5), y: size.height - K.floorInset)
         }
         // Oran olarak saklanıyor ki farklı ekran boyutunda da anlamlı olsun.
         return CGPoint(
-            x: CGFloat(defaults.double(forKey: Self.posXKey)) * size.width,
+            x: CGFloat(defaults.double(forKey: Self.posXKey)) * size.width * CGFloat(tabCount),
             y: CGFloat(defaults.double(forKey: Self.posYKey)) * size.height
         )
     }
@@ -626,7 +674,7 @@ final class KenWorld {
     private func save() {
         guard stage.width > 0, stage.height > 0 else { return }
         let defaults = UserDefaults.standard
-        defaults.set(Double(position.x / stage.width), forKey: Self.posXKey)
+        defaults.set(Double(position.x / Swift.max(1, worldWidth)), forKey: Self.posXKey)
         defaults.set(Double(position.y / stage.height), forKey: Self.posYKey)
     }
 }
