@@ -21,6 +21,7 @@ final class FirebaseMoodRepository: MoodRepository {
     init(currentUser: UserProfile) {
         self.currentUser = currentUser
         handle = ref.observe(.value) { [weak self] snapshot in
+            PerfMonitor.shared.countFirebase()
             guard let self else { return }
             var entries: [MoodEntry] = []
             for case let dayChild as DataSnapshot in snapshot.children {

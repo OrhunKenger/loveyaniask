@@ -29,6 +29,7 @@ final class FirebaseMomentRepository: MomentRepository {
     init(currentUser: UserProfile) {
         self.currentUser = currentUser
         handle = ref.queryLimited(toLast: Self.fetchLimit).observe(.value) { [weak self] snapshot in
+            PerfMonitor.shared.countFirebase()
             guard let self else { return }
             var moments: [Moment] = []
             for case let child as DataSnapshot in snapshot.children {

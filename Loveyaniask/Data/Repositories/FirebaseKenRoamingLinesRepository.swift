@@ -16,6 +16,7 @@ final class FirebaseKenRoamingLinesRepository: KenRoamingLinesRepository {
 
     func observe(_ onChange: @escaping ([String]) -> Void) {
         handle = ref.observe(.value) { snapshot in
+            PerfMonitor.shared.countFirebase()
             let lines: [String]
             if let array = snapshot.value as? [String] {
                 lines = array

@@ -33,6 +33,7 @@ final class FirebasePeriodRepository: PeriodRepository {
         notesRef = root.child("notes")
 
         settingsHandle = settingsRef.observe(.value) { [weak self] snapshot in
+            PerfMonitor.shared.countFirebase()
             guard let self else { return }
             if let d = snapshot.value as? [String: Any] {
                 self.cachedSettings = Self.decodeSettings(d)
@@ -40,6 +41,7 @@ final class FirebasePeriodRepository: PeriodRepository {
             self.onChange?()
         }
         logsHandle = logsRef.observe(.value) { [weak self] snapshot in
+            PerfMonitor.shared.countFirebase()
             guard let self else { return }
             var logs: [PeriodLog] = []
             for case let child as DataSnapshot in snapshot.children {
@@ -53,6 +55,7 @@ final class FirebasePeriodRepository: PeriodRepository {
             self.onChange?()
         }
         notesHandle = notesRef.observe(.value) { [weak self] snapshot in
+            PerfMonitor.shared.countFirebase()
             guard let self else { return }
             var notes: [DayNote] = []
             for case let child as DataSnapshot in snapshot.children {
